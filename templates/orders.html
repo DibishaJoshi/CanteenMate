@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
+    /* Scoped Orders Page Styles */
+#orders .order-card {
+    background-color: var(--white);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+#orders .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+
+#orders .order-number {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-dark);
+}
+
+#orders .order-date {
+    font-size: 14px;
+    color: var(--text-light);
+}
+
+#orders .order-items {
+    margin-bottom: 15px;
+}
+
+#orders .order-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+#orders .item-name {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+#orders .item-quantity {
+    font-size: 14px;
+    color: var(--text-light);
+    margin: 0 15px;
+}
+
+#orders .item-price {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+    min-width: 70px;
+    text-align: right;
+}
+
+#orders .order-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+#orders .order-total {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+#orders .order-actions button {
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    margin-left: 10px;
+    transition: var(--transition);
+}
+
+#orders .track-btn {
+    background-color: rgba(66, 133, 244, 0.1);
+    color: #4285F4;
+}
+
+#orders .reorder-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+#orders .track-btn:hover {
+    background-color: rgba(66, 133, 244, 0.2);
+}
+
+#orders .reorder-btn:hover {
+    background-color: #e55f1e;
+}
+
+</style>
+{% endblock %}
+{% block content %}
+<!-- My Orders Page -->
+        <div id="orders" class="page">
+            <div class="order-card">
+                <div class="order-header">
+                    <span class="order-number">#ORD-7829</span>
+                    <span class="order-date">May 18, 2025</span>
+                </div>
+                <div class="order-items">
+                    <div class="order-item">
+                        <span class="item-name">Chicken Sandwich</span>
+                        <span class="item-quantity">x1</span>
+                        <span class="item-price">$8.99</span>
+                    </div>
+                    <div class="order-item">
+                        <span class="item-name">French Fries</span>
+                        <span class="item-quantity">x1</span>
+                        <span class="item-price">$4.00</span>
+                    </div>
+                </div>
+                <div class="order-footer">
+                    <span class="order-total">Total: $12.99</span>
+                    <div class="order-actions">
+                        <button class="track-btn">Track Order</button>
+                        <button class="reorder-btn">Reorder</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="order-card">
+                <div class="order-header">
+                    <span class="order-number">#ORD-7818</span>
+                    <span class="order-date">May 15, 2025</span>
+                </div>
+                <div class="order-items">
+                    <div class="order-item">
+                        <span class="item-name">Pasta Primavera</span>
+                        <span class="item-quantity">x1</span>
+                        <span class="item-price">$12.50</span>
+                    </div>
+                    <div class="order-item">
+                        <span class="item-name">Coke</span>
+                        <span class="item-quantity">x1</span>
+                        <span class="item-price">$3.00</span>
+                    </div>
+                </div>
+                <div class="order-footer">
+                    <span class="order-total">Total: $15.50</span>
+                    <div class="order-actions">
+                        <button class="track-btn">Track Order</button>
+                        <button class="reorder-btn">Reorder</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+{% endblock %}

@@ -218,24 +218,50 @@ def admin_orders():
         user = User.query.get(user_id)
         return render_template("admin/admin_orders.html", user=user, orders=orders)
     else:
-        return redirect(url_for('login'))  # <-- this is the missing return
-
+        return redirect(url_for('login'))  
 
 @app.route('/orders')
 def orders():
-    return render_template('orders.html', active_page='orders')
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = User.query.get(user_id)
+        return render_template('orders.html',user=user, active_page='orders')
+    else:
+        return redirect(url_for('login'))  
 
-@app.route('/inventory')
-def inventory():
-    return render_template('inventory.html', active_page='inventory')
+@app.route('/menu')
+def user_menu():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = User.query.get(user_id)
+        return render_template('menu.html', user=user,active_page='menu')
+    else:
+        return redirect(url_for('login'))
 
-@app.route('/reports')
-def reports():
-    return render_template('reports.html', active_page='reports')
+@app.route('/transation_history')
+def transaction():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = User.query.get(user_id)
+        return render_template('transaction_history.html',user=user, active_page='transaction')
+    else:
+        return redirect(url_for('login'))
 
-@app.route('/settings')
-def settings():
-    return render_template('settings.html', active_page='settings')
+
+@app.route('/cart')
+def cart():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = User.query.get(user_id)
+        return render_template('cart.html', user=user,active_page='settings')
+    else:
+        return redirect(url_for('login'))
+@app.route('/profile')
+def profile():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        user = User.query.get(user_id)
+        return render_template('profile.html', user=user,active_page='profile')
 
 if __name__ == '__main__':
     with app.app_context():

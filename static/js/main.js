@@ -138,3 +138,214 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Popover(popoverTriggerEl);
     });
 });
+
+
+
+
+//user
+// JavaScript for the CanteenMate System
+        document.addEventListener('DOMContentLoaded', function() {
+            // Navigation Functions
+            const menuItems = document.querySelectorAll('.menu-item');
+            const pages = document.querySelectorAll('.page');
+            const pageTitle = document.querySelector('.page-title');
+            
+            // Function to navigate between pages
+            function navigateToPage(pageName) {
+                // Hide all pages
+                pages.forEach(page => {
+                    page.classList.remove('active');
+                });
+                
+                // Show selected page
+                const selectedPage = document.getElementById(pageName);
+                if (selectedPage) {
+                    selectedPage.classList.add('active');
+                }
+                
+                // Update active menu item
+                menuItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.page === pageName) {
+                        item.classList.add('active');
+                    }
+                });
+                
+                // Update page title
+                if (pageTitle) {
+                    pageTitle.textContent = pageName.charAt(0).toUpperCase() + pageName.slice(1);
+                }
+            }
+            
+            // Add click event listeners to menu items
+            menuItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const pageName = this.dataset.page;
+                    navigateToPage(pageName);
+                    // Update URL hash
+                    window.location.hash = pageName;
+                });
+            });
+            
+            // Check URL hash on page load
+            const checkHash = () => {
+                const hash = window.location.hash.substring(1);
+                if (hash && document.getElementById(hash)) {
+                    navigateToPage(hash);
+                }
+            };
+            
+            // Initialize hash check
+            checkHash();
+            
+            // Listen for hash changes
+            window.addEventListener('hashchange', checkHash);
+            
+            // Tab functionality for profile page
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all tab buttons
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Get tab content id
+                    const tabId = this.dataset.tab;
+                    
+                    // Hide all tab panes
+                    document.querySelectorAll('.tab-pane').forEach(pane => {
+                        pane.classList.remove('active');
+                    });
+                    
+                    // Show selected tab pane
+                    const selectedPane = document.getElementById(tabId);
+                    if (selectedPane) {
+                        selectedPane.classList.add('active');
+                    }
+                });
+            });
+            
+            // Cart functionality
+            const quantityButtons = document.querySelectorAll('.quantity-btn');
+            
+            quantityButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const isIncrement = this.textContent === '+';
+                    const quantityElement = this.parentElement.querySelector('.quantity-value');
+                    let quantity = parseInt(quantityElement.textContent);
+                    
+                    if (isIncrement) {
+                        quantity++;
+                    } else if (quantity > 1) {
+                        quantity--;
+                    }
+                    
+                    quantityElement.textContent = quantity;
+                    updateCartTotals();
+                });
+            });
+            
+            // Remove item from cart
+            const removeButtons = document.querySelectorAll('.remove-item');
+            
+            removeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const cartItem = this.closest('.cart-item');
+                    cartItem.style.opacity = '0';
+                    setTimeout(() => {
+                        cartItem.remove();
+                        updateCartTotals();
+                    }, 300);
+                });
+            });
+            
+            // Add to cart functionality
+            const addToCartButtons = document.querySelectorAll('.add-to-cart');
+            
+            addToCartButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Animation for button
+                    this.textContent = 'Added!';
+                    this.style.backgroundColor = '#34A853';
+                    
+                    setTimeout(() => {
+                        this.textContent = 'Add to Cart';
+                        this.style.backgroundColor = '';
+                    }, 1000);
+                    
+                    // Show notification
+                    showNotification('Item added to cart!');
+                });
+            });
+            
+            // Function to show notification
+            function showNotification(message) {
+                // Create notification element if it doesn't exist
+                let notification = document.querySelector('.notification-popup');
+                
+                if (!notification) {
+                    notification = document.createElement('div');
+                    notification.className = 'notification-popup';
+                    notification.style.position = 'fixed';
+                    notification.style.bottom = '20px';
+                    notification.style.right = '20px';
+                    notification.style.background = 'rgba(52, 168, 83, 0.9)';
+                    notification.style.color = 'white';
+                    notification.style.padding = '12px 20px';
+                    notification.style.borderRadius = '8px';
+                    notification.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+                    notification.style.zIndex = '1000';
+                    notification.style.transition = 'all 0.3s ease';
+                    notification.style.opacity = '0';
+                    document.body.appendChild(notification);
+                }
+                
+                // Update message and show
+                notification.textContent = message;
+                notification.style.opacity = '1';
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                }, 3000);
+            }
+            
+            // Function to update cart totals
+            function updateCartTotals() {
+                // Recalculate cart totals based on current items and quantities
+                let subtotal = 0;
+                
+                document.querySelectorAll('.cart-item').forEach(item => {
+                    const price = parseFloat(item.querySelector('.cart-item-price').textContent.replace(', '));
+                    const quantity = parseInt(item.querySelector('.quantity-value').textContent);
+                    subtotal += price * quantity;
+                });
+                
+                // Update summary values
+                const tax = subtotal * 0.08; // 8% tax
+                const serviceFee = 0.50;
+                const total = subtotal + tax + serviceFee;
+                
+                // Update display
+                // const summaryLines = document.querySelectorAll('.summary-line');
+                // if (summaryLines.length >= 4) {
+                //     summaryLines[0].querySelectorAll('span')[1].textContent = ' + subtotal.toFixed(2);
+                //     summaryLines[1].querySelectorAll('span')[1].textContent = ' + tax.toFixed(2);
+                //     summaryLines[3].querySelectorAll('span')[1].textContent = ' + total.toFixed(2);
+                // }
+                
+                // Update cart count in sidebar
+                const cartItemCount = document.querySelectorAll('.cart-item').length;
+                const cartMenu = document.querySelector('[data-page="cart"]');
+                if (cartMenu) {
+                    cartMenu.innerHTML = `<i class="fas fa-shopping-cart"></i><span>Cart (${cartItemCount})</span>`;
+                }
+            }
+        });

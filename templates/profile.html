@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
+    #profile {
+        padding: 25px;
+    }
+
+    #profile .profile-container {
+        display: flex;
+        gap: 25px;
+        flex-wrap: wrap;
+    }
+
+    #profile .profile-card {
+        background-color: var(--white);
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        text-align: center;
+        flex: 0 0 300px;
+    }
+
+    #profile .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 15px;
+    }
+
+    #profile .profile-name {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 5px;
+    }
+
+    #profile .profile-email {
+        font-size: 14px;
+        color: var(--text-light);
+        margin-bottom: 20px;
+    }
+
+    #profile .profile-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    #profile .stat-box {
+        flex: 1;
+        padding: 10px;
+        background-color: rgba(240, 109, 40, 0.05);
+        border-radius: 8px;
+        margin: 0 5px;
+    }
+
+    #profile .stat-box .value {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+
+    #profile .stat-box .label {
+        font-size: 12px;
+        color: var(--text-light);
+    }
+
+    #profile .profile-actions {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    #profile .profile-action-btn {
+        padding: 8px 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    #profile .edit-profile-btn {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    #profile .logout-btn {
+        background-color: #ddd;
+        color: var(--text-dark);
+    }
+
+    #profile .profile-details {
+        flex: 1;
+        background-color: var(--white);
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+    }
+
+    #profile .tabs-header {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    #profile .tab-btn {
+        background: none;
+        border: none;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 8px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        color: var(--text-dark);
+    }
+
+    #profile .tab-btn.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    #profile .tab-content {
+        border-top: 1px solid var(--border-color);
+        padding-top: 20px;
+    }
+
+    #profile .form-row {
+        margin-bottom: 15px;
+    }
+
+    #profile .form-label {
+        display: block;
+        font-size: 13px;
+        color: var(--text-dark);
+        margin-bottom: 5px;
+    }
+
+    #profile .form-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    #profile .save-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    #profile .save-btn:hover {
+        background-color: #e55f1e;
+    }
+</style>
+{% endblock %}
+{% block content %}
+ <div id="profile" class="page">
+    <div class="profile-container">
+        <div class="profile-card">
+            <img src="{{ url_for('static', filename='img/user.png')}}" alt="User Avatar" class="profile-avatar">
+            <h2 class="profile-name">{{ user.fullname }}</h2>
+            <p class="profile-email">{{ user.email }}</p>
+            
+            <div class="profile-stats">
+                <div class="stat-box">
+                    <p class="value">32</p>
+                    <p class="label">Orders</p>
+                </div>
+                <div class="stat-box">
+                    <p class="value">250</p>
+                    <p class="label">Points</p>
+                </div>
+                <div class="stat-box">
+                    <p class="value">8</p>
+                    <p class="label">Months</p>
+                </div>
+            </div>
+            
+            <div class="profile-actions">
+                <button class="profile-action-btn edit-profile-btn">Edit Profile</button>
+                <button class="profile-action-btn logout-btn" onclick="window.location.href='{{ url_for('logout') }}'">Logout</button>
+            </div>
+        </div>
+        
+        <div class="profile-details">
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="personal">Personal Info</button>
+                <button class="tab-btn" data-tab="address">Address</button>
+                <button class="tab-btn" data-tab="preferences">Preferences</button>
+            </div>
+            
+            <div class="tab-content">
+                <div id="personal" class="tab-pane active">
+                    <div class="form-row">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" value="{{ user.fullname }}">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" value="{{ user.email }}">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" value="+977 9876543212">
+                    </div>
+                    <div class="form-row">
+                        <button class="save-btn">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
