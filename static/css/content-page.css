@@ -1,0 +1,64 @@
+/* categories.css, attribute.css, units.css - Specific styling for these pages */
+
+/* These pages share similar layouts, so we're using similar styling */
+
+/* Categories, attributes, units content container */
+.categories-content,
+.attribute-content,
+.units-content {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Attribute value styling */
+.attribute-values {
+    margin-bottom: 15px;
+}
+
+.attribute-value-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.attribute-value-row input {
+    flex: 1;
+}
+
+.btn-remove {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.btn-remove:hover {
+    background-color: #e9ecef;
+}
+
+.btn-add-value {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 8px 15px;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.btn-add-value:hover {
+    background-color: #e9ecef;
+}
+
+.btn-add-value i {
+    margin-right: 5px;
+}

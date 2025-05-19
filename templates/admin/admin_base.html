@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Canteen Management System{% endblock %}</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.png') }}" type="">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/admin_styles.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/content-page.css') }}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="d-flex">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="brand">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Canteen Logo">
+            
+        </div>
+        
+        <nav>
+            <div class="menu-section">
+                <a href="{{ url_for('dashboard')}}" class="menu-item {% if active_page == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+            </div>
+            
+            <div class="menu-section">
+                <div class="menu-title">ITEM MANAGEMENT</div>
+                <a href="{{ url_for('categories') }}" class="menu-item {% if active_page == 'categories' %}active{% endif %}">
+                    <i class="fas fa-tags"></i>
+                    Categories
+                </a>
+                <a href="{{ url_for('attribute')}}" class="menu-item {% if active_page == 'attribute' %}active{% endif %}">
+                    <i class="fas fa-list-ul"></i>
+                    Attribute
+                </a>
+                <a href="{{ url_for('units')}}" class="menu-item {% if active_page == 'units' %}active{% endif %}">
+                    <i class="fas fa-balance-scale"></i>
+                    Units
+                </a>
+                <a href="{{ url_for('addons')}}" class="menu-item {% if active_page == 'addons' %}active{% endif %}">
+                    <i class="fas fa-puzzle-piece"></i>
+                    Addons
+                </a>
+                <a href="{{ url_for('items')}}" class="menu-item  {% if active_page == 'items' %}active{% endif %}">
+                    <i class="fas fa-utensils"></i>
+                    Item
+                </a>
+            </div>
+            
+            <div class="menu-section">
+                <div class="menu-title">ORDER MANAGEMENT</div>
+                <a href="{{ url_for('menu') }}" class="menu-item  {% if active_page == 'menu' %}active{% endif %}">
+                    <i class="fas fa-clipboard-list"></i>
+                    Menu
+                </a>
+                <a href="{{ url_for('admin_orders') }}" class="menu-item  {% if active_page == 'admin_orders' %}active{% endif %}">
+                    <i class="fas fa-shopping-cart"></i>
+                    Order
+                </a>
+                <a href="{{ url_for('logout') }}" class="menu-item {% if active_page == 'logout' %}active{% endif %}">
+                    <div class="menu-icon"><i class="fas fa-sign-out-alt"></i></div>
+                    <div class="menu-text">Logout</div>
+                </a>
+            </div>
+            
+            <div class="menu-section">
+                <div class="menu-title">STORE MANAGEMENT</div>
+                <a href="" class="menu-item">
+                    <i class="fas fa-boxes"></i>
+                    Inventory
+                </a>
+                <a href="" class="menu-item">
+                    <i class="fas fa-chart-bar"></i>
+                    Reports
+                </a>
+                <a href="" class="menu-item">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-wrapper">
+        <!-- Top Navbar -->
+        <div class="top-navbar">
+            <button class="btn nav-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <div class="search-bar">
+                <input type="text" class="form-control" placeholder="Search everything here...">
+            </div>
+            
+            <div class="d-flex align-items-center">    
+                <div class="user-profile">
+                    <div class="user-info d-none d-md-block">
+                        <div class="user-name">{{ user.name }}</div>
+                        <div class="user-email">{{ user.email }}</div>
+
+                    </div>
+                    <img src="{{ url_for('static', filename='img/admin.jpg') }}" alt="User Avatar">
+                </div>
+            </div>
+        </div>
+    {% block content %}{% endblock %}
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery (needed for some Bootstrap components) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

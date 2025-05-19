@@ -1,0 +1,196 @@
+{% extends "admin/admin_base.html" %}
+{% block extra_css %}
+<style>
+    /* Container */
+.container {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 0 15px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Heading */
+.container h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Table styles */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Table header */
+.table thead tr {
+  background-color: #007bff;
+  color: #fff;
+  text-align: left;
+  font-weight: 600;
+}
+
+.table thead th {
+  padding: 12px 15px;
+  border-bottom: 2px solid #0056b3;
+}
+
+/* Table body */
+.table tbody tr {
+  border-bottom: 1px solid #eaeaea;
+  transition: background-color 0.3s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f5faff;
+}
+
+.table tbody td {
+  color: #555;
+}
+
+/* Status badges */
+.status-completed {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.status-pending {
+  color: #ffc107;
+  font-weight: 600;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  user-select: none;
+  transition: background-color 0.3s ease;
+  border: none;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 0.75rem;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background-color: #a71d2a;
+}
+
+/* Responsive - smaller screens */
+@media (max-width: 768px) {
+  .table thead {
+    display: none;
+  }
+  .table, .table tbody, .table tr, .table td {
+    display: block;
+    width: 100%;
+  }
+  .table tr {
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ddd;
+  }
+  .table td {
+    padding-left: 50%;
+    position: relative;
+    text-align: left;
+  }
+  .table td::before {
+    position: absolute;
+    left: 15px;
+    width: 45%;
+    padding-right: 10px;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #333;
+  }
+  .table td:nth-of-type(1)::before { content: "Order ID"; }
+  .table td:nth-of-type(2)::before { content: "Customer"; }
+  .table td:nth-of-type(3)::before { content: "Item"; }
+  .table td:nth-of-type(4)::before { content: "Category"; }
+  .table td:nth-of-type(5)::before { content: "Attribute"; }
+  .table td:nth-of-type(6)::before { content: "Unit"; }
+  .table td:nth-of-type(7)::before { content: "Addons"; }
+  .table td:nth-of-type(8)::before { content: "Quantity"; }
+  .table td:nth-of-type(9)::before { content: "Total Price"; }
+  .table td:nth-of-type(10)::before { content: "Status"; }
+  .table td:nth-of-type(11)::before { content: "Action"; }
+}
+
+</style>
+{% endblock %}
+{% block content %}
+<div class="container">
+    
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Attribute</th>
+                <th>Unit</th>
+                <th>Addons</th>
+                <th>Quantity</th>
+                <th>Total Price</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.customer_name }}</td>
+                <td>{{ order.item.name }}</td>
+                <td>{{ order.item.category }}</td>
+                <td>{{ order.item.attribute }}</td>
+                <td>{{ order.item.unit }}</td>
+                <td>
+                    {% if order.addons %}
+                        {{ order.addons | join(', ') }}
+                    {% else %}
+                        None
+                    {% endif %}
+                </td>
+                <td>{{ order.quantity }}</td>
+                <td>${{ '%.2f'|format(order.total_price) }}</td>
+                <td class="{{ 'status-completed' if order.status == 'Completed' else 'status-pending' }}">
+                    {{ order.status }}
+                </td>
+                <td>
+                    <a href="" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

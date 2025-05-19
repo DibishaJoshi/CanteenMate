@@ -1,0 +1,110 @@
+{% extends "admin/admin_base.html" %}
+{% block content %}
+<div class="category-section">
+    <div class="section-header">
+        <h1 class="page-title">Categories</h1>
+        <button class="add-btn"><i class="fas fa-plus"></i> Add New Category</button>
+    </div>
+    
+    <div class="section-filters">
+        <div class="search-filter">
+            <input type="text" placeholder="Search categories...">
+            <button><i class="fas fa-search"></i></button>
+        </div>
+        <div class="filter-dropdown">
+            <select>
+                <option>All Categories</option>
+                <option>Active</option>
+                <option>Inactive</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="data-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Items Count</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ category.name }}</td>
+                    <td>{{ category.items_count }}</td>
+                    <td>
+                        <span class="status-badge {{ 'active' if category.is_active else 'inactive' }}">
+                            {{ 'Active' if category.is_active else 'Inactive' }}
+                        </span>
+                    </td>
+                    <td class="actions">
+                        <button class="action-btn edit"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!--<div class="pagination">
+        <button class="page-btn prev"><i class="fas fa-chevron-left"></i></button>
+        <div class="page-numbers">
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <span>...</span>
+            <button class="page-btn">10</button>
+        </div>
+        <button class="page-btn next"><i class="fas fa-chevron-right"></i></button>
+    </div>-->
+     <!-- Modal for adding/editing category -->
+    <div class="modal" id="categoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Category</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <div class="form-group">
+                        <label for="categoryName">Category Name</label>
+                        <input type="text" id="categoryName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryDescription">Description</label>
+                        <textarea id="categoryDescription"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryImage">Image</label>
+                        <input type="file" id="categoryImage">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="status" value="active" checked> Active
+                            </label>
+                            <label>
+                                <input type="radio" name="status" value="inactive"> Inactive
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/categories.js') }}"></script>
+{% endblock %}

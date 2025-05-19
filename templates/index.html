@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1 class="page-title">Special Menu For You</h1>
+    
+    <!-- Menu Categories -->
+    <div class="category-filter">
+        <div class="filter-title">Categories</div>
+        <div class="filter-options">
+            <button class="filter-btn active">All</button>
+            <button class="filter-btn">Breakfast</button>
+            <button class="filter-btn">Lunch</button>
+            <button class="filter-btn">Snacks</button>
+            <button class="filter-btn">Dinner</button>
+            <button class="filter-btn">Drinks</button>
+        </div>
+    </div>
+    
+    <!-- Menu Items Grid -->
+    <div class="menu-grid">
+        {% for item in menu_items %}
+        <div class="menu-item" data-category="{{ item.category }}">
+            <div class="item-image">
+                <img src="{{ url_for('static', filename='images/items/' + item.image) }}" alt="{{ item.name }}">
+                {% if item.is_popular %}
+                <div class="popular-tag"><i class="fas fa-star"></i></div>
+                {% endif %}
+            </div>
+            <div class="item-details">
+                <h3 class="item-name">{{ item.name }}</h3>
+                <div class="item-price">Rs. {{ "%.2f"|format(item.price) }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Current Order Panel -->
+<div class="order-panel">
+    <h2 class="panel-title">Current Order</h2>
+    
+    <!-- Customer Selection -->
+    <div class="customer-selector">
+        <select>
+            <option>Walk-In Customer</option>
+            {% for customer in customers %}
+            <option value="{{ customer.id }}">{{ customer.name }}</option>
+            {% endfor %}
+        </select>
+        <button class="add-customer-btn"><i class="fas fa-plus"></i></button>
+    </div>
+    
+    <!-- Delivery Information -->
+    <div class="delivery-info">
+        <div class="section-header">
+            <h3>Delivery Information</h3>
+            <button class="edit-btn"><i class="fas fa-pencil-alt"></i></button>
+        </div>
+    </div>
+    
+    <!-- Order Items -->
+    <div class="order-items">
+        {% for item in cart_items %}
+        <div class="cart-item">
+            <div class="item-image">
+                <img src="{{ url_for('static', filename='images/items/' + item.image) }}" alt="{{ item.name }}">
+            </div>
+            <div class="item-info">
+                <div class="item-name">{{ item.name }}</div>
+                <div class="item-quantity">
+                    <div class="qty-label">QTY:</div>
+                    <button class="qty-btn minus"><i class="fas fa-minus"></i></button>
+                    <input type="text" value="{{ item.quantity }}" class="qty-input">
+                    <button class="qty-btn plus"><i class="fas fa-plus"></i></button>
+                </div>
+                <div class="item-price">Price: <span>Rs. {{ "%.2f"|format(item.price * item.quantity) }}</span></div>
+            </div>
+            <button class="remove-item-btn"><i class="fas fa-trash"></i></button>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Order Summary -->
+    <div class="order-summary">
+        <div class="summary-item">
+            <div class="label">Addon</div>
+            <div class="value">Rs. 1000</div>
+        </div>
+        <div class="summary-item">
+            <div class="label">Subtotal</div>
+            <div class="value">Rs. 2000</div>
+        </div>
+        <div class="summary-item">
+            <div class="label">Discount</div>
+            <div class="value">Rs. 12</div>
+        </div>
+        <div class="summary-item">
+            <div class="label">Tax</div>
+            <div class="value">Rs.32</div>
+        </div>
+        <div class="summary-item total">
+            <div class="label">Total</div>
+            <div class="value">Rs. 1900</div>
+        </div>
+    </div>
+    
+    <!-- Payment Method -->
+    <div class="payment-method">
+        <h3>Payment Method</h3>
+        <div class="payment-options">
+            <label class="payment-option">
+                <input type="checkbox" name="payment" value="cash" checked>
+                <span>Cash</span>
+            </label>
+            <label class="payment-option">
+                <input type="checkbox" name="payment" value="e-wallet">
+                <span>E-Wallet</span>
+            </label>
+            <label class="payment-option">
+                <input type="checkbox" name="payment" value="credit">
+                <span>Credit</span>
+            </label>
+        </div>
+    </div>
+    
+    <!-- Order Actions -->
+    <div class="order-actions">
+        <button class="clear-cart-btn">Clear Cart</button>
+        <button class="place-order-btn">Place Order</button>
+    </div>
+</div>
+{% endblock %}

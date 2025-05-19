@@ -1,0 +1,147 @@
+{% extends "admin/admin_base.html" %}
+{% block content %}
+    <div class="attribute-content">
+        <div class="action-bar">
+            <button class="add-btn"><i class="fas fa-plus"></i> Add New Attribute</button>
+            <div class="search-box">
+                <input type="text" placeholder="Search attributes...">
+               <button><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+        <div class="attributes-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Values</th>
+                        <th>Applied Items</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Size</td>
+                        <td>Small, Medium, Large</td>
+                        <td>32</td>
+                        <td><span class="status active">Active</span></td>
+                        <td class="actions">
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Spice Level</td>
+                        <td>Mild, Medium, Hot, Extra Hot</td>
+                        <td>18</td>
+                        <td><span class="status active">Active</span></td>
+                        <td class="actions">
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Temperature</td>
+                        <td>Hot, Cold</td>
+                        <td>25</td>
+                        <td><span class="status active">Active</span></td>
+                        <td class="actions">
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>Sugar Level</td>
+                        <td>No Sugar, Less Sugar, Normal, Extra Sugar</td>
+                        <td>15</td>
+                        <td><span class="status active">Active</span></td>
+                        <td class="actions">
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>Cooking Method</td>
+                        <td>Grilled, Fried, Baked, Steamed</td>
+                        <td>12</td>
+                        <td><span class="status inactive">Inactive</span></td>
+                        <td class="actions">
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination">
+            <button class="btn-page"><i class="icon-chevron-left"></i></button>
+            <button class="btn-page active">1</button>
+            <button class="btn-page">2</button>
+            <button class="btn-page">3</button>
+            <button class="btn-page"><i class="icon-chevron-right"></i></button>
+        </div>
+    </div>
+    </main>
+
+
+    <!-- Modal for adding/editing attribute -->
+    <div class="modal" id="attributeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Attribute</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="attributeForm">
+                    <div class="form-group">
+                        <label for="attributeName">Attribute Name</label>
+                        <input type="text" id="attributeName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Attribute Values</label>
+                        <div class="attribute-values">
+                            <div class="attribute-value-row">
+                                <input type="text" placeholder="Value name">
+                                <input type="number" placeholder="Price adjustment" min="0" step="0.01">
+                                <button type="button" class="btn-remove"><i class="icon-minus"></i></button>
+                            </div>
+                            <div class="attribute-value-row">
+                                <input type="text" placeholder="Value name">
+                                <input type="number" placeholder="Price adjustment" min="0" step="0.01">
+                                <button type="button" class="btn-remove"><i class="icon-minus"></i></button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-add-value">
+                            <i class="icon-plus"></i> Add Value
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="status" value="active" checked> Active
+                            </label>
+                            <label>
+                                <input type="radio" name="status" value="inactive"> Inactive
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/attributes.js') }}"></script>
+{% endblock %}

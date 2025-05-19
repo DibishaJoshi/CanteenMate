@@ -1,0 +1,273 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Admin Dashboard - Canteen Management System{% endblock %}
+
+{% block content %}
+
+        
+<!-- Dashboard Content -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary text-white">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <div class="stat-info">
+                    <h4>128</h4>
+                    <p>Total Items</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-success text-white">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="stat-info">
+                    <h4>64</h4>
+                    <p>Today's Orders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning text-white">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h4>256</h4>
+                    <p>Total Customers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-danger text-white">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="stat-info">
+                    <h4>Rs. 25,640</h4>
+                    <p>Today's Revenue</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Recent Orders</span>
+                    <a href="" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>#ORD-001</td>
+                                    <td>John Smith</td>
+                                    <td>3 items</td>
+                                    <td>Rs. 450.00</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary">View</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#ORD-002</td>
+                                    <td>Sarah Johnson</td>
+                                    <td>2 items</td>
+                                    <td>Rs. 320.00</td>
+                                    <td><span class="badge bg-warning text-dark">Processing</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary">View</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#ORD-003</td>
+                                    <td>Michael Williams</td>
+                                    <td>5 items</td>
+                                    <td>Rs. 780.00</td>
+                                    <td><span class="badge bg-info">Preparing</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary">View</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#ORD-004</td>
+                                    <td>Emily Davis</td>
+                                    <td>1 item</td>
+                                    <td>Rs. 150.00</td>
+                                    <td><span class="badge bg-secondary">Pending</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary">View</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <span>Popular Items</span>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ url_for('static', filename='img/items/burger.jpg') }}" alt="Burger" class="rounded" width="40" height="40">
+                                <span class="ms-3">Burger and Fries</span>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">124 sold</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ url_for('static', filename='img/items/pizza.jpg') }}" alt="Pizza" class="rounded" width="40" height="40">
+                                <span class="ms-3">Pepperoni Pizza</span>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">98 sold</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ url_for('static', filename='img/items/coffee.jpg') }}" alt="Coffee" class="rounded" width="40" height="40">
+                                <span class="ms-3">Milk Coffee</span>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">87 sold</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ url_for('static', filename='img/items/momo.jpg') }}" alt="Momo" class="rounded" width="40" height="40">
+                                <span class="ms-3">Chicken Momo</span>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">74 sold</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ url_for('static', filename='img/items/noodles.jpg') }}" alt="Noodles" class="rounded" width="40" height="40">
+                                <span class="ms-3">Noodles</span>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">63 sold</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span>Sales Overview</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="salesChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span>Order Status</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="orderStatusChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+    // Sales Chart
+    const salesCtx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+            datasets: [{
+                label: 'Monthly Sales',
+                data: [65, 59, 80, 81, 56, 55, 72],
+                backgroundColor: 'rgba(247, 148, 29, 0.2)',
+                borderColor: 'rgba(247, 148, 29, 1)',
+                borderWidth: 2,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Order Status Chart
+    const orderStatusCtx = document.getElementById('orderStatusChart').getContext('2d');
+    const orderStatusChart = new Chart(orderStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Completed', 'Processing', 'Preparing', 'Pending', 'Cancelled'],
+            datasets: [{
+                data: [45, 25, 20, 10, 5],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.7)',  // success
+                    'rgba(255, 193, 7, 0.7)',  // warning
+                    'rgba(23, 162, 184, 0.7)', // info
+                    'rgba(108, 117, 125, 0.7)', // secondary
+                    'rgba(220, 53, 69, 0.7)'   // danger
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

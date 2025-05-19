@@ -1,0 +1,161 @@
+{% extends "admin/admin_base.html" %}
+{% block content %}
+<main class="content">
+            
+
+    <div class="addons-content">
+        <div class="action-bar">
+            <button class="btn-primary" id="addAddonBtn">
+                <i class="fas fa-plus"></i> Add Addon
+            </button>
+            <div class="search-box">
+                <input type="text" placeholder="Search addons...">
+                <button><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+        <div class="addons-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Category</th>
+                        <th>Applied Items</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Extra Cheese</td>
+                        <td>$1.50</td>
+                        <td>Toppings</td>
+                        <td>28</td>
+                        <td><span class="status active">Active</span></td>
+                        <td class="actions">
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Extra Sauce</td>
+                        <td>$0.75</td>
+                        <td>Toppings</td>
+                        <td>35</td>
+                        <td><span class="status active">Active</span></td>
+                        <td class="actions">
+                           <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Whipped Cream</td>
+                        <td>$0.50</td>
+                        <td>Toppings</td>
+                        <td>15</td>
+                        <td><span class="status active">Active</span></td>
+                        <td class="actions">
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>Extra Shot (Espresso)</td>
+                        <td>$1.25</td>
+                        <td>Beverages</td>
+                        <td>12</td>
+                        <td><span class="status active">Active</span></td>
+                        <td class="actions">
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>Bacon</td>
+                        <td>$2.00</td>
+                        <td>Toppings</td>
+                        <td>22</td>
+                        <td><span class="status inactive">Inactive</span></td>
+                        <td class="actions">
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination">
+            <button class="btn-page"><i class="icon-chevron-left"></i></button>
+            <button class="btn-page active">1</button>
+            <button class="btn-page">2</button>
+            <button class="btn-page">3</button>
+            <button class="btn-page"><i class="icon-chevron-right"></i></button>
+        </div>
+    </div>
+</main>
+</div>
+
+<!-- Modal for adding/editing addon -->
+<div class="modal" id="addonModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add Addon</h2>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="addonForm">
+                <div class="form-group">
+                    <label for="addonName">Addon Name</label>
+                    <input type="text" id="addonName" required>
+                </div>
+                <div class="form-group">
+                    <label for="addonPrice">Price</label>
+                    <input type="number" id="addonPrice" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="addonCategory">Category</label>
+                    <select id="addonCategory" required>
+                        <option value="">Select Category</option>
+                        <option value="Toppings">Toppings</option>
+                        <option value="Beverages">Beverages</option>
+                        <option value="Extras">Extras</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="addonDescription">Description</label>
+                    <textarea id="addonDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="addonImage">Image</label>
+                    <input type="file" id="addonImage">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="status" value="active" checked> Active
+                        </label>
+                        <label>
+                            <input type="radio" name="status" value="inactive"> Inactive
+                        </label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/addons.js') }}"></script>
+{% endblock %}

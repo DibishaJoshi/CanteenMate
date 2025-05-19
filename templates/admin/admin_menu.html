@@ -1,0 +1,174 @@
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+ <section class="action-bar">
+                <div class="search-container">
+                    <input type="text" placeholder="Search menus..." id="search-menu">
+                    <button class="search-btn">🔍</button>
+                </div>
+                <button class="add-btn" id="add-menu-btn">+ Create New Menu</button>
+            </section>
+
+            <section class="menu-days">
+                <div class="day-tab active" data-day="monday">Monday</div>
+                <div class="day-tab" data-day="tuesday">Tuesday</div>
+                <div class="day-tab" data-day="wednesday">Wednesday</div>
+                <div class="day-tab" data-day="thursday">Thursday</div>
+                <div class="day-tab" data-day="friday">Friday</div>
+                <div class="day-tab" data-day="saturday">Saturday</div>
+                <div class="day-tab" data-day="sunday">Sunday</div>
+            </section>
+
+            <section class="menu-categories">
+                <div class="category-section">
+                    <div class="category-header">
+                        <h3>Breakfast</h3>
+                        <div class="category-actions">
+                            <button class="edit-category">Edit</button>
+                        </div>
+                    </div>
+                    <div class="menu-items">
+                        <div class="menu-item">
+                            <img src="/api/placeholder/80/80" alt="Scrambled Eggs">
+                            <div class="item-details">
+                                <h4>Scrambled Eggs</h4>
+                                <p>Fresh eggs with toast and sides</p>
+                                <span class="price">$4.99</span>
+                            </div>
+                            <div class="item-actions">
+                                <button class="remove-item">Remove</button>
+                            </div>
+                        </div>
+                        <div class="menu-item">
+                            <img src="/api/placeholder/80/80" alt="Pancakes">
+                            <div class="item-details">
+                                <h4>Pancakes</h4>
+                                <p>Stack of 3 with maple syrup</p>
+                                <span class="price">$5.50</span>
+                            </div>
+                            <div class="item-actions">
+                                <button class="remove-item">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="category-section">
+                    <div class="category-header">
+                        <h3>Lunch</h3>
+                        <div class="category-actions">
+                            <button class="edit-category">Edit</button>
+                        </div>
+                    </div>
+                    <div class="menu-items">
+                        <div class="menu-item">
+                            <img src="/api/placeholder/80/80" alt="Caesar Salad">
+                            <div class="item-details">
+                                <h4>Caesar Salad</h4>
+                                <p>Fresh romaine with dressing and croutons</p>
+                                <span class="price">$4.50</span>
+                            </div>
+                            <div class="item-actions">
+                                <button class="remove-item">Remove</button>
+                            </div>
+                        </div>
+                        <div class="menu-item">
+                            <img src="/api/placeholder/80/80" alt="Chicken Sandwich">
+                            <div class="item-details">
+                                <h4>Chicken Sandwich</h4>
+                                <p>Grilled chicken with lettuce and mayo</p>
+                                <span class="price">$5.99</span>
+                            </div>
+                            <div class="item-actions">
+                                <button class="remove-item">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="category-section">
+                    <div class="category-header">
+                        <h3>Dinner</h3>
+                        <div class="category-actions">
+                            <button class="edit-category">Edit</button>
+                        </div>
+                    </div>
+                    <div class="menu-items">
+                        <div class="menu-item">
+                            <img src="/api/placeholder/80/80" alt="Pasta Alfredo">
+                            <div class="item-details">
+                                <h4>Pasta Alfredo</h4>
+                                <p>Creamy pasta with parmesan</p>
+                                <span class="price">$7.99</span>
+                            </div>
+                            <div class="item-actions">
+                                <button class="remove-item">Remove</button>
+                            </div>
+                        </div>
+                        <div class="menu-item">
+                            <img src="/api/placeholder/80/80" alt="Grilled Salmon">
+                            <div class="item-details">
+                                <h4>Grilled Salmon</h4>
+                                <p>Fresh salmon with vegetables</p>
+                                <span class="price">$9.99</span>
+                            </div>
+                            <div class="item-actions">
+                                <button class="remove-item">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div id="menu-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2 id="modal-title">Add Items to Menu</h2>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="menu-category">Select Category</label>
+                            <select id="menu-category">
+                                <option value="Breakfast">Breakfast</option>
+                                <option value="Lunch">Lunch</option>
+                                <option value="Dinner">Dinner</option>
+                                <option value="Snacks">Snacks</option>
+                                <option value="Beverages">Beverages</option>
+                            </select>
+                        </div>
+                        
+                        <div class="available-items">
+                            <h3>Available Items</h3>
+                            <div class="items-container">
+                                <div class="item-checkbox">
+                                    <input type="checkbox" id="item1" value="item1">
+                                    <label for="item1">French Toast - $4.50</label>
+                                </div>
+                                <div class="item-checkbox">
+                                    <input type="checkbox" id="item2" value="item2">
+                                    <label for="item2">Fruit Bowl - $3.99</label>
+                                </div>
+                                <div class="item-checkbox">
+                                    <input type="checkbox" id="item3" value="item3">
+                                    <label for="item3">Yogurt Parfait - $4.25</label>
+                                </div>
+                                <div class="item-checkbox">
+                                    <input type="checkbox" id="item4" value="item4">
+                                    <label for="item4">Breakfast Burrito - $5.75</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="cancel-btn">Cancel</button>
+                            <button type="button" class="save-btn">Add to Menu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+{% endblock %}
+    
