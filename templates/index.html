@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="main-dashboard-wrapper">
 <div class="dashboard-container">
     <h1 class="page-title">Special Menu For You</h1>
     
@@ -20,9 +21,10 @@
     <!-- Menu Items Grid -->
     <div class="menu-grid">
         {% for item in menu_items %}
-        <div class="menu-item" data-category="{{ item.category }}">
+        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}" data-image="{{ url_for('static', filename='images/items/' + item.image) }}"data-category="{{ item.category }}">
             <div class="item-image">
                 <img src="{{ url_for('static', filename='images/items/' + item.image) }}" alt="{{ item.name }}">
+                <div class="item-badge">{{ item.category }}</div>
                 {% if item.is_popular %}
                 <div class="popular-tag"><i class="fas fa-star"></i></div>
                 {% endif %}
@@ -129,5 +131,6 @@
         <button class="clear-cart-btn">Clear Cart</button>
         <button class="place-order-btn">Place Order</button>
     </div>
+</div>
 </div>
 {% endblock %}

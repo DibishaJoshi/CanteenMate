@@ -18,36 +18,36 @@
             </div>
             
             <div class="sidebar-menu">
-                <a href="{{ url_for('dashboard') }}" class="menu-item {% if active_page == 'dashboard' %}active{% endif %}">
+                <a href="{{ url_for('dashboard') }}" class="side-menu-item {% if active_page == 'dashboard' %}active{% endif %}">
                     <div class="menu-icon"><i class="fas fa-home"></i></div>
                     <div class="menu-text">Dashboard</div>
                 </a>
                 
-                <a href="{{ url_for('user_menu')}}" class="menu-item {% if active_page == 'menu' %}active{% endif %}">
+                <a href="{{ url_for('user_menu')}}" class="side-menu-item {% if active_page == 'menu' %}active{% endif %}">
                     <div class="menu-icon"><i class="fas fa-clipboard-list"></i></div>
                     <div class="menu-text">Menu</div>
                 </a>
                 
-                <a href="{{ url_for('orders') }}" class="menu-item {% if active_page == 'orders' %}active{% endif %}">
+                <a href="{{ url_for('orders') }}" class="side-menu-item {% if active_page == 'orders' %}active{% endif %}">
                     <div class="menu-icon"><i class="fas fa-receipt"></i></div>
                     <div class="menu-text">My Orders</div>
                 </a>
-                <a href="{{ url_for('cart')}}" class="menu-item {% if active_page == 'cart' %}active{% endif %}">
+                <a href="{{ url_for('cart')}}" class="side-menu-item {% if active_page == 'cart' %}active{% endif %}">
                     <div class="menu-icon"><i class="fas fa-shopping-cart"></i></div>
                     <div class="menu-text">Cart</div>
                 </a>
                 
-                <a href="{{ url_for('transaction')}}" class="menu-item {% if active_page == 'transaction' %}active{% endif %}">
+                <a href="{{ url_for('transaction')}}" class="side-menu-item {% if active_page == 'transaction' %}active{% endif %}">
                     <div class="menu-icon"><i class="fas fa-history"></i></div>
                     <div class="menu-text">Transaction History</div>
                 </a>
                 
-                <a href="{{ url_for('profile')}}" class="menu-item {% if active_page == 'profile' %}active{% endif %}">
+                <a href="{{ url_for('profile')}}" class="side-menu-item {% if active_page == 'profile' %}active{% endif %}">
                     <div class="menu-icon"><i class="fas fa-user"></i></div>
                     <div class="menu-text">Profile</div>
                 </a>
                 
-                <a href="{{ url_for('logout') }}" class="menu-item {% if active_page == 'logout' %}active{% endif %}">
+                <a href="{{ url_for('logout') }}" class="side-menu-item {% if active_page == 'logout' %}active{% endif %}">
                     <div class="menu-icon"><i class="fas fa-sign-out-alt"></i></div>
                     <div class="menu-text">Logout</div>
                 </a>
@@ -68,8 +68,13 @@
                 <div class="user-menu">
                    
                     
-                    <div class="notifications">
+                    <div class="notifications" onclick="toggleDropdown(); fetchNotifications();">
                         <i class="fas fa-bell"></i>
+                        <span class="notif-badge" id="notif-badge">3</span>
+
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <!-- Notifications will be loaded here -->
+                        </div>
                     </div>
                     
                     <div class="user-profile">
