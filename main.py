@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session,jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import timedelta
+from datetime import datetime,timedelta
 import os
 import functools
 
@@ -123,11 +123,50 @@ def admin():
 
 @app.route('/dashboard')
 def user_dashboard():
-        user_id = session.get('user_id')
-        if 'user_id' in session:
-            user= User.query.get(user_id)
-            return render_template('index.html',user=user,active_page='dashboard')
-        return render_template('login_signup.html')
+    menu_items = [
+        {
+            "name": "Chicken Mo:Mo",
+            "price": 150.00,
+            "image": "static/img/chicken_momo.jpeg",
+            "category": "momo",
+            "is_popular": True,
+            "category":"Dinner"
+        },
+        {
+            "name": "Veg Chowmein",
+            "price": 120.00,
+            "image": "veg_chowmein.jpg",
+            "category": "noodles",
+            "is_popular": False,
+            "category":"Dinner"
+        },
+        {
+            "name": "Buff Burger",
+            "price": 180.00,
+            "image": "buff_burger.jpg",
+            "category": "burger",
+            "is_popular": True
+        },
+        {
+            "name": "French Fries",
+            "price": 100.00,
+            "image": "french_fries.jpg",
+            "category": "snacks",
+            "is_popular": False
+        },
+        {
+            "name": "Masala Tea",
+            "price": 40.00,
+            "image": "masala_tea.jpg",
+            "category": "beverages",
+            "is_popular": True
+        }
+    ]
+    user_id = session.get('user_id')
+    if 'user_id' in session:
+        user= User.query.get(user_id)
+        return render_template('index.html',user=user,active_page='dashboard',menu_items=menu_items)
+    return render_template('login_signup.html')
 
 @app.route('/admin/categories')
 def categories():
@@ -219,6 +258,17 @@ def admin_orders():
         return render_template("admin/admin_orders.html", user=user, orders=orders)
     else:
         return redirect(url_for('login'))  
+    
+@app.route('/notifications')
+def get_notifications():
+    # Replace with DB query in real app
+    notifications = [
+        {"message": "🍔 Your Order is being prepared" ,"time": datetime.now().strftime("%I:%M %p")},
+        {"message": "⚠️ Your Order is canceled", "time": datetime.now().strftime("%I:%M %p")},
+        {"message": "✅ Your order is delivered", "time": datetime.now().strftime("%I:%M %p")},
+    ]
+    return jsonify(notifications)
+
 
 @app.route('/orders')
 def orders():
