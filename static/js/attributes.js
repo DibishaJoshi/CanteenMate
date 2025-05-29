@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
         newRow.innerHTML = `
             <input type="text" placeholder="Value name">
             <input type="number" placeholder="Price adjustment" min="0" step="0.01">
-            <button type="button" class="btn-remove"><i class="icon-minus"></i></button>
+            <button type="button" class="btn-remove"><i class="fas fa-minus"></i></button>
         `;
         attributeValues.appendChild(newRow);
     });

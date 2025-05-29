@@ -21,7 +21,36 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% for attribute in attributes %}
                     <tr>
+                        <td>{{ attribute.id }}</td>
+                        <td>{{ attribute.name }}</td>
+                        <td>
+                            {{ attribute.values | map(attribute='value') | join(', ') }}
+                        </td>
+                        <td>{{ attribute.items|length }}</td>
+                        <td>
+                            <span class="status {{ 'active' if attribute.status else 'inactive' }}">
+                                {{ 'Active' if attribute.status else 'Inactive' }}
+                            </span>
+                        </td>
+                        <td class="actions">
+                            <button class="btn-edit"
+                                data-id="{{ attribute.id }}"
+                                data-name="{{ attribute.name }}"
+                                data-status="{{ 'active' if attribute.status else 'inactive' }}"
+                                data-values-count="{{ attribute.values|length }}"
+                                {% for i, v in attribute.values %}
+                                  data-value{{ i }}="{{ v.value }}"
+                                  data-price{{ i }}="{{ v.price_adjustment }}"
+                                {% endfor %}
+                            ><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                {% endfor %}
+
+                    <!--<tr>
                         <td>1</td>
                         <td>Size</td>
                         <td>Small, Medium, Large</td>
@@ -75,7 +104,7 @@
                             <button class="btn-edit"><i class="fas fa-edit"></i></button>
                             <button class="btn-delete"><i class="fas fa-trash"></i></button>
                         </td>
-                    </tr>
+                    </tr>-->
                 </tbody>
             </table>
         </div>
@@ -91,34 +120,53 @@
 
 
     <!-- Modal for adding/editing attribute -->
-    <div class="modal" id="attributeModal">
+    <div class="modal" id="attributeModal" style="{% with messages = get_flashed_messages(with_categories=true) %}
+              {% for category, message in messages %}
+                {% if 'attribute_' in category %}
+                  display: block;
+                {% endif %}
+              {% endfor %}
+            {% endwith %}">
         <div class="modal-content">
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                  {% for category, message in messages %}
+                    {% if 'attribute_' in category %}
+                      <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                        <span>{{ message }}</span>
+                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+            {% endwith %}
             <div class="modal-header">
                 <h2>Add Attribute</h2>
                 <button class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="attributeForm">
+                <form id="attributeForm" action="{{ url_for('add_attribute') }}" method="POST">
                     <div class="form-group">
                         <label for="attributeName">Attribute Name</label>
-                        <input type="text" id="attributeName" required>
+                        <input type="text" id="attributeName" name="attribute_name" required>
                     </div>
                     <div class="form-group">
                         <label>Attribute Values</label>
                         <div class="attribute-values">
                             <div class="attribute-value-row">
-                                <input type="text" placeholder="Value name">
-                                <input type="number" placeholder="Price adjustment" min="0" step="0.01">
-                                <button type="button" class="btn-remove"><i class="icon-minus"></i></button>
+                                <input type="text" name = "value_name[]" placeholder="Value name">
+                                <input type="number" placeholder="Price adjustment" name="price_adjustment[]" min="0" step="0.01">
+                                <button type="button" class="btn-remove"><i class="fas fa-minus"></i></button>
                             </div>
                             <div class="attribute-value-row">
-                                <input type="text" placeholder="Value name">
-                                <input type="number" placeholder="Price adjustment" min="0" step="0.01">
-                                <button type="button" class="btn-remove"><i class="icon-minus"></i></button>
+                                <input type="text" name="value_names[]" placeholder="Value name">
+                                <input type="number" placeholder="Price adjustment" name="price_adjustments[]" min="0" step="0.01">
+                                <button type="button" class="btn-remove"><i class="fas fa-minus"></i></button>
                             </div>
                         </div>
                         <button type="button" class="btn-add-value">
-                            <i class="icon-plus"></i> Add Value
+                            <i class="fas fa-plus"></i> Add Value
                         </button>
                     </div>
                     <div class="form-group">
