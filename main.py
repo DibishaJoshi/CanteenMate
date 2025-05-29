@@ -4,7 +4,7 @@ from datetime import datetime,timedelta
 import os
 import functools
 
-from models import db, User
+from models import db, User, Category, Item, Attribute, AttributeValue 
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -117,11 +117,12 @@ def dashboard():
         return redirect(url_for('user_dashboard'))
 # Admin and feature pages
 @app.route('/admin')
+@login_required
 def admin():
-   if 'user_id' in session:
-        return redirect(url_for('dashboard'))
+    return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
+@login_required
 def user_dashboard():
     menu_items = [
         {
@@ -163,63 +164,145 @@ def user_dashboard():
         }
     ]
     user_id = session.get('user_id')
-    if 'user_id' in session:
-        user= User.query.get(user_id)
-        return render_template('index.html',user=user,active_page='dashboard',menu_items=menu_items)
-    return render_template('login_signup.html')
+    user= User.query.get(user_id)
+    return render_template('index.html',user=user,active_page='dashboard',menu_items=menu_items)
 
 @app.route('/admin/categories')
+@login_required
 def categories():
-    categories = [
-        {'name': 'Beverages', 'items_count': 12, 'is_active': True},
-        {'name': 'Snacks', 'items_count': 8, 'is_active': False},
-        {'name': 'Main Course', 'items_count': 15, 'is_active': True},
-        {'name': 'Desserts', 'items_count': 5, 'is_active': True},
-        {'name': 'Frozen Items', 'items_count': 4, 'is_active': False}
-    ]
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id) # Assuming you have a Category model
-        return render_template('admin/categories.html', categories=categories, user=user, active_page='categories')
-    else:
-        return redirect(url_for('login'))
+    categories = Category.query.all()
+    user = User.query.get(session['user_id'])
+    return render_template('admin/categories.html', categories=categories, user=user, active_page='categories')
+@app.route('/admin/categories/add', methods=['POST'])
+@login_required
+def add_category():
+    name = request.form.get('name')
+    status_str = request.form.get('status', 'inactive')
+    status = True if status_str == 'active' else False
+
+    if not name:
+        flash('Category name is required.', 'danger')
+        return redirect(url_for('categories'))
+
+    new_category = Category(name=name, status=status)
+    db.session.add(new_category)
+    db.session.commit()
+
+    flash('Category added successfully!', 'success')
+    return redirect(url_for('categories'))
+
+@app.route('/admin/categories/edit/<int:id>', methods=['POST'])
+def edit_category(id):
+    category = Category.query.get_or_404(id)
+    category.name = request.form['name']
+    category.status = request.form['status'] == 'active'
+    db.session.commit()
+
+    return redirect(url_for('categories'))
+
+
+# def categories():
+#     categories = [
+#         {'name': 'Beverages', 'items_count': 12, 'is_active': True},
+#         {'name': 'Snacks', 'items_count': 8, 'is_active': False},
+#         {'name': 'Main Course', 'items_count': 15, 'is_active': True},
+#         {'name': 'Desserts', 'items_count': 5, 'is_active': True},
+#         {'name': 'Frozen Items', 'items_count': 4, 'is_active': False}
+#     ]
+#     if 'user_id' in session:
+#         user_id = session['user_id']
+#         user = User.query.get(user_id) # Assuming you have a Category model
+#         return render_template('admin/categories.html', categories=categories, user=user, active_page='categories')
+#     else:
+#         return redirect(url_for('login'))
    
 
 @app.route('/admin/attributes')
+@login_required
 def attribute():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template('admin/attribute.html', user=user, active_page='attributes')
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    attributes = Attribute.query.all()
+    return render_template('admin/attribute.html',attributes=attributes, user=user, active_page='attributes')
+
+@app.route('/admin/attributes', methods=['GET', 'POST'])
+def add_attribute():
+    if request.method == 'POST':
+        # Extract form data
+        attribute_name = request.form.get('attribute_name')
+        status = request.form.get('status') == 'active'  # convert to bool
+
+        # The form fields for values will be multiple, like:
+        # value_name_1, price_adjustment_1, value_name_2, price_adjustment_2 ...
+        # Or if you want simpler, you can send them as lists (e.g. value_names[] and price_adjustments[])
+
+        # For this example, let's assume the client sends:
+        # 'value_names[]' and 'price_adjustments[]' arrays in the form data
+        value_names = request.form.getlist('value_names[]')
+        price_adjustments = request.form.getlist('price_adjustments[]')
+
+        if not attribute_name:
+            flash("Attribute name is required.", "attribute_error")
+            return redirect(url_for('add_attribute'))
+
+        # Create Attribute
+        new_attribute = Attribute(name=attribute_name, status=status)
+        db.session.add(new_attribute)
+        db.session.flush()  # to get new_attribute.id for FK
+
+        # Create AttributeValues
+        for v_name, p_adj in zip(value_names, price_adjustments):
+            if v_name.strip():  # ignore empty value names
+                try:
+                    p_adj_float = float(p_adj)
+                except ValueError:
+                    p_adj_float = 0.0
+
+                attr_value = AttributeValue(
+                    value=v_name.strip(),
+                    price_adjustment=p_adj_float,
+                    attribute=new_attribute
+                )
+                db.session.add(attr_value)
+
+        db.session.commit()
+        flash("Attribute added successfully!", "attribute_success")
+        return redirect(url_for('add_attribute'))
+
+    # For GET: render the template with all attributes (implement this template as needed)
+    attributes = Attribute.query.all()
+    return render_template('admin/attributes.html', attributes=attributes)
 
 @app.route('/admin/units')
+@login_required
 def units():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template('admin/units.html', user=user, active_page='units')
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template('admin/units.html', user=user, active_page='units')
 
 @app.route('/admin/addons')
+@login_required
 def addons():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template('admin/addons.html', user=user, active_page='addons')
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template('admin/addons.html', user=user, active_page='addons')
 
 @app.route('/admin/items')
+@login_required
 def items():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template('admin/items.html', user=user, active_page='items')
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template('admin/items.html', user=user, active_page='items')
 
 @app.route('/admin/menu')
+@login_required
 def menu():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template('admin/admin_menu.html', user=user,active_page='menu')
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template('admin/admin_menu.html', user=user,active_page='menu')
+
 @app.route('/admin/orders')
+@login_required
 def admin_orders():
     orders = [
         {
@@ -251,15 +334,12 @@ def admin_orders():
             "status": "Pending"
         }
     ]
-
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template("admin/admin_orders.html", user=user, orders=orders)
-    else:
-        return redirect(url_for('login'))  
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template("admin/admin_orders.html", user=user, orders=orders)
     
 @app.route('/notifications')
+@login_required
 def get_notifications():
     # Replace with DB query in real app
     notifications = [
@@ -271,47 +351,39 @@ def get_notifications():
 
 
 @app.route('/orders')
+@login_required
 def orders():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template('orders.html',user=user, active_page='orders')
-    else:
-        return redirect(url_for('login'))  
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template('orders.html',user=user, active_page='orders')
 
 @app.route('/menu')
+@login_required
 def user_menu():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template('menu.html', user=user,active_page='menu')
-    else:
-        return redirect(url_for('login'))
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template('menu.html', user=user,active_page='menu')
 
 @app.route('/transation_history')
+@login_required
 def transaction():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template('transaction_history.html',user=user, active_page='transaction')
-    else:
-        return redirect(url_for('login'))
-
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template('transaction_history.html',user=user, active_page='transaction')
 
 @app.route('/cart')
+@login_required
 def cart():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template('cart.html', user=user,active_page='settings')
-    else:
-        return redirect(url_for('login'))
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template('cart.html', user=user,active_page='settings')
+    
 @app.route('/profile')
+@login_required
 def profile():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        user = User.query.get(user_id)
-        return render_template('profile.html', user=user,active_page='profile')
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template('profile.html', user=user,active_page='profile')
 
 if __name__ == '__main__':
     with app.app_context():

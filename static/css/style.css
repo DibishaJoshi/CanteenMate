@@ -28,6 +28,7 @@ body {
 /* Sidebar Styling */
 .sidebar {
     height: 100vh; /* Full height of viewport */
+    flex: 0 0 250px; 
     overflow-y: auto; /* Enable vertical scroll */
     position: fixed; /* Optional: keeps sidebar in place while scrolling */
     width: 250px; /* Or whatever width you're using */
@@ -100,7 +101,7 @@ body {
 /* Content Wrapper */
 .content-wrapper {
     margin-left: 250px; /* Match the sidebar width exactly */
-    width: calc(100% - 250px); /* Prevent right-side overflow */
+    width: 100% ; /* Prevent right-side overflow */
     padding: 20px;
     transition: margin-left 0.3s;
     overflow-x: hidden; /* Ensures no horizontal scroll */

@@ -1,12 +1,6 @@
 console.log("✅ categories.js loaded");
-document.addEventListener('DOMContentLoaded', function () {
-    // Tooltip init (if used)
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (el) {
-        return new bootstrap.Tooltip(el);
-    });
 
-    // Modal Elements
+document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('categoryModal');
     const openBtn = document.querySelector('.add-btn');
     const closeBtn = document.querySelector('.close-btn');
@@ -35,44 +29,73 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Handle Form Submit
-    categoryForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const name = document.getElementById('categoryName').value;
-        const description = document.getElementById('categoryDescription').value;
-        const image = document.getElementById('categoryImage').value;
-        const status = document.querySelector('input[name="status"]:checked').value;
+    // categoryForm.addEventListener('submit', function (e) {
+    //     e.preventDefault();
+    //     const name = document.getElementById('categoryName').value.trim();
+    //     const status = document.querySelector('input[name="status"]:checked').value;
 
-        console.log('Form submitted:', { name, description, image, status });
+    //     if (!name) {
+    //         alert("Category name is required.");
+    //         return;
+    //     }
 
-        const successAlert = document.createElement('div');
-        successAlert.className = 'alert alert-success';
-        successAlert.textContent = 'Category saved successfully!';
-        document.querySelector('.category-section').insertBefore(successAlert, document.querySelector('.section-header'));
+    //     console.log('Form submitted:', { name, status });
 
-        closeModal();
+    //     fetch('/admin/categories/add', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json'
+    //         },
+    //         body: JSON.stringify({ name, status })
+    //     })
+    //     .then(response => response.json())
+    //     .then(data => {
+    //         if (data.success) {
+    //             const successAlert = document.createElement('div');
+    //             successAlert.className = 'alert alert-success';
+    //             successAlert.textContent = 'Category saved successfully!';
+    //             document.querySelector('.category-section').insertBefore(successAlert, document.querySelector('.section-header'));
 
-        setTimeout(() => successAlert.remove(), 3000);
-    });
+    //             closeModal();
 
-    // Edit Buttons
+    //             setTimeout(() => {
+    //                 successAlert.remove();
+    //                 window.location.reload();
+    //             }, 1500);
+    //         } else {
+    //             alert(data.message || "Something went wrong.");
+    //         }
+    //     })
+    //     .catch(error => {
+    //         console.error("Error:", error);
+    //         alert("Error saving category.");
+    //     });
+    // });
+
+    // Edit Button (pre-fills form)
     document.querySelectorAll('.action-btn.edit').forEach(button => {
-        button.addEventListener('click', function () {
-            const row = this.closest('tr');
-            const name = row.cells[1].textContent.trim();
-            const description = ""; // You don’t show description in table. Adjust as needed.
-            const status = row.querySelector('.status-badge').classList.contains('active') ? 'active' : 'inactive';
+    button.addEventListener('click', function () {
+        const row = this.closest('tr');
+        const id = row.dataset.id;
+        const name = row.dataset.name;
+        const status = row.dataset.status;
 
-            document.getElementById('categoryName').value = name;
-            document.getElementById('categoryDescription').value = description;
-            document.querySelector(`input[name="status"][value="${status}"]`).checked = true;
+        document.querySelector('.modal-header h2').textContent = 'Edit Category';
+        document.getElementById('categoryName').value = name;
+        document.querySelector(`input[name="status"][value="${status}"]`).checked = true;
 
-            document.querySelector('.modal-header h2').textContent = 'Edit Category';
-            modal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        });
+        // dynamically set form action
+        const form = document.getElementById('categoryForm');
+        form.action = `/admin/categories/edit/${id}`;
+
+        document.getElementById('categoryModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
     });
+});
 
-    // Delete Buttons
+
+
+    // Delete Button (simple visual feedback)
     document.querySelectorAll('.action-btn.delete').forEach(button => {
         button.addEventListener('click', function () {
             const row = this.closest('tr');
@@ -113,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Pagination buttons (demo)
+    // Pagination (dummy interaction)
     document.querySelectorAll('.page-btn').forEach(btn => {
         btn.addEventListener('click', function () {
             document.querySelectorAll('.page-btn').forEach(b => b.classList.remove('active'));
