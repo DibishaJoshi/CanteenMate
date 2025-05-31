@@ -24,8 +24,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const newRow = document.createElement('div');
         newRow.classList.add('attribute-value-row');
         newRow.innerHTML = `
-            <input type="text" placeholder="Value name">
-            <input type="number" placeholder="Price adjustment" min="0" step="0.01">
+            <input type="text" name="value_name[]" placeholder="Value name">
+            <input type="number" name="price_adjustment[]" placeholder="Price adjustment" min="0" step="0.01">
             <button type="button" class="btn-remove"><i class="fas fa-minus"></i></button>
         `;
         attributeValues.appendChild(newRow);
@@ -58,5 +58,50 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    console.log('✅ attributes.js loaded');
+// Edit attribute
+document.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const modal = document.getElementById('attributeModal');
+        const form = document.getElementById('attributeForm');
+
+        // Get values from data attributes
+        const id = btn.dataset.id;
+        const name = btn.dataset.name;
+        const status = btn.dataset.status;
+        const valuesCount = parseInt(btn.dataset.valuesCount);
+        
+        const nameInput = document.getElementById('attributeName');
+        const idInput = document.getElementById('attributeId');
+        const valueContainer = document.querySelector('.attribute-values');
+
+        // Set form action if needed (optional if using one POST route for both)
+        // form.action = `/edit_attribute/${id}`; // Only if using separate route
+
+        // Set field values
+        idInput.value = id;
+        nameInput.value = name;
+        document.querySelector(`input[name="status"][value="${status}"]`).checked = true;
+
+        // Clear current value rows
+        valueContainer.innerHTML = '';
+
+        for (let i = 0; i < valuesCount; i++) {
+            const value = btn.dataset[`value${i}`];
+            const price = btn.dataset[`price${i}`];
+
+            const row = document.createElement('div');
+            row.classList.add('attribute-value-row');
+            row.innerHTML = `
+                <input type="text" name="value_name[]" value="${value}" placeholder="Value name">
+                <input type="number" name="price_adjustment[]" value="${price}" placeholder="Price adjustment" min="0" step="0.01">
+                <button type="button" class="btn-remove"><i class="fas fa-minus"></i></button>
+            `;
+            valueContainer.appendChild(row);
+        }
+
+        modal.style.display = 'block';
+    });
+});
+
+    console.log('attributes.js loaded');
 });

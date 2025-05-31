@@ -9,7 +9,7 @@
     <div class="section-filters">
         <div class="search-filter">
             <input type="text" placeholder="Search categories...">
-            <button><i class="fas fa-search"></i></button>
+            <button style="background-color:#b4623c;"><i class="fas fa-search"></i></button>
         </div>
         <div class="filter-dropdown">
             <select>
@@ -36,7 +36,7 @@
                 <tr data-id="{{ category.id }}" data-name="{{ category.name }}" data-status="{{ 'active' if category.is_active else 'inactive' }}">
                     <td>{{ loop.index }}</td>
                     <td>{{ category.name }}</td>
-                    <td>{{ category.name }}</td>
+                    <td>{{ category.items|length }}</td>
                     <!--<td>{{ category.items_count }}</td>-->
                     <td>
                          <span class="status-badge {{ 'active' if category.status == 1 else 'inactive' }}">

@@ -80,7 +80,7 @@ header {
 }
 
 .btn-primary {
-    background-color: var(--primary-color);
+    background-color: #b4623c;
     color: #fff;
     margin-bottom: 8px;
     border: none;
@@ -115,7 +115,7 @@ header {
 }
 
 .search-box button {
-    background-color: var(--primary-color);
+    background-color: #b4623c;
     color: #fff;
     border: none;
     padding: 8px 15px;
@@ -399,7 +399,7 @@ table tbody tr:hover {
     margin-bottom: 20px;
 }
 .add-btn{
-    background-color: var(--primary-color);
+    background-color: #b4623c;
     color: #fff;
     margin-bottom: 8px;
     border: none;
@@ -483,7 +483,7 @@ h1, h2, h3, h4 {
 
 .add-btn {
     padding: 8px 16px;
-    background-color: var(--primary-color);
+    background-color: #b4623c;
     color: white;
     border-radius: var(--border-radius);
     font-weight: 500;
@@ -491,7 +491,7 @@ h1, h2, h3, h4 {
 }
 
 .add-btn:hover {
-    background-color: var(--primary-dark);
+    background-color: rgb(202, 164, 94);
 }
 
 .filter-options {

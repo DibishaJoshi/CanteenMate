@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 db = SQLAlchemy()
 item_attribute_values = db.Table('item_attribute_values',
@@ -32,7 +33,6 @@ class Category(db.Model):
     def items_count(self):
         return len(self.items)
 
-
 class Item(db.Model):
     __tablename__ = 'items'
 
@@ -41,12 +41,16 @@ class Item(db.Model):
     price = db.Column(db.Integer, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
 
+    description = db.Column(db.Text, nullable=True)
+    image_filename = db.Column(db.String(255), nullable=True)
+    available = db.Column(db.Boolean, default=True)
+
     attribute_values = db.relationship(
         'AttributeValue',
         secondary='item_attribute_values',
         back_populates='items'
     )
-
+    
     def __repr__(self):
         return f"<Item {self.name}>"
 
@@ -62,7 +66,7 @@ class Attribute(db.Model):
     values = db.relationship('AttributeValue', backref='attribute', cascade='all, delete-orphan')
 
     def __repr__(self):
-        return f"<Attribute {self.name}>"
+        return self.name
 
 # AttributeValue model
 class AttributeValue(db.Model):
@@ -80,4 +84,20 @@ class AttributeValue(db.Model):
     )
 
     def __repr__(self):
-        return f"<AttributeValue {self.value_name}>"
+        return f"<AttributeValue {self.value}>"
+
+class Menu(db.Model):
+    __tablename__ = 'menus'
+    id = db.Column(db.Integer, primary_key=True)
+    day = db.Column(db.String(20), nullable=False)  # monday, tuesday, etc.
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    category = db.relationship('Category', backref='menu_items')
+    item = db.relationship('Item', backref='menu_assignments')
+
+    __table_args__ = (
+        db.UniqueConstraint('day', 'category_id', 'item_id', name='unique_menu_item'),
+    )
+

@@ -41,10 +41,11 @@ body {
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
+    padding-left: 20%;
 }
 
 .brand img {
-    height: 70px;
+    height: 80px;
 }
 
 .brand span {
@@ -80,7 +81,7 @@ body {
 
 .menu-item:hover, .menu-item.active {
     background-color: var(--light-gray);
-    color: var(--primary-color);
+    color: #b4623c;
 }
 
 .menu-item i {

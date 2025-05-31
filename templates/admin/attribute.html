@@ -8,7 +8,25 @@
                <button><i class="fas fa-search"></i></button>
             </div>
         </div>
-        <div class="attributes-list">
+        <div class="attributes-list" style="{% with messages = get_flashed_messages(with_categories=true) %}
+              {% for category, message in messages %}
+                {% if 'attribute_' in category %}
+                  display: block;
+                {% endif %}
+              {% endfor %}
+            {% endwith %}">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                  {% for category, message in messages %}
+                    {% if 'attribute_' in category %}
+                      <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                        <span>{{ message }}</span>
+                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+            {% endwith %}
             <table>
                 <thead>
                     <tr>
@@ -30,23 +48,24 @@
                         </td>
                         <td>{{ attribute.items|length }}</td>
                         <td>
-                            <span class="status {{ 'active' if attribute.status else 'inactive' }}">
+                            <span class="status-badge {{ 'active' if attribute.status else 'inactive' }}">
                                 {{ 'Active' if attribute.status else 'Inactive' }}
                             </span>
                         </td>
                         <td class="actions">
-                            <button class="btn-edit"
-                                data-id="{{ attribute.id }}"
-                                data-name="{{ attribute.name }}"
-                                data-status="{{ 'active' if attribute.status else 'inactive' }}"
-                                data-values-count="{{ attribute.values|length }}"
-                                {% for i, v in attribute.values %}
-                                  data-value{{ i }}="{{ v.value }}"
-                                  data-price{{ i }}="{{ v.price_adjustment }}"
-                                {% endfor %}
-                            ><i class="fas fa-edit"></i></button>
-                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                          <button class="btn-edit"
+                              data-id="{{ attribute.id }}"
+                              data-name="{{ attribute.name }}"
+                              data-status="{{ 'active' if attribute.status else 'inactive' }}"
+                              data-values-count="{{ attribute.values|length }}"
+                              {% for v in attribute.values %}
+                                data-value{{ loop.index0 }}="{{ v.value }}"
+                                data-price{{ loop.index0 }}="{{ v.price_adjustment }}"
+                              {% endfor %}
+                          ><i class="fas fa-edit"></i></button>
+                          <button class="btn-delete"><i class="fas fa-trash"></i></button>
                         </td>
+
                     </tr>
                 {% endfor %}
 
@@ -120,36 +139,19 @@
 
 
     <!-- Modal for adding/editing attribute -->
-    <div class="modal" id="attributeModal" style="{% with messages = get_flashed_messages(with_categories=true) %}
-              {% for category, message in messages %}
-                {% if 'attribute_' in category %}
-                  display: block;
-                {% endif %}
-              {% endfor %}
-            {% endwith %}">
+    <div class="modal" id="attributeModal">
         <div class="modal-content">
-            
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                  {% for category, message in messages %}
-                    {% if 'attribute_' in category %}
-                      <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
-                        <span>{{ message }}</span>
-                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
-                      </div>
-                    {% endif %}
-                  {% endfor %}
-                {% endif %}
-            {% endwith %}
             <div class="modal-header">
                 <h2>Add Attribute</h2>
                 <button class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="attributeForm" action="{{ url_for('add_attribute') }}" method="POST">
+                <form id="attributeForm" action="{{ url_for('manage_attributes') }}" method="POST">
+                    <input type="hidden" id="attributeId" name="attribute_id">
+
                     <div class="form-group">
                         <label for="attributeName">Attribute Name</label>
-                        <input type="text" id="attributeName" name="attribute_name" required>
+                        <input type="text" id="attributeName" name="attribute_name" >
                     </div>
                     <div class="form-group">
                         <label>Attribute Values</label>

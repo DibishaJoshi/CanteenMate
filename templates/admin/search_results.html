@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - Menu Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-search me-2"></i>
+                            Search Results for "{{ query }}"
+                        </h5>
+                        <div>
+                            <span class="badge bg-light text-dark me-2">{{ count }} results</span>
+                            <a href="{{ url_for('menu') }}" class="btn btn-light btn-sm">
+                                <i class="fas fa-arrow-left me-1"></i>Back to Menu
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Search Form -->
+                        <div class="row mb-4">
+                            <div class="col-md-8 col-lg-6">
+                                <form method="GET" action="{{ url_for('search_menu') }}" class="d-flex">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="q" 
+                                           value="{{ query }}" 
+                                           placeholder="Search menu items..."
+                                           required>
+                                    <button type="submit" class="btn btn-primary ms-2">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        {% if results %}
+                            <!-- Results Table -->
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Day</th>
+                                            <th>Category</th>
+                                            <th>Price</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for result in results %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    {% if result.item.image_filename %}
+                                                        <img src="/static/uploads/items/{{ result.item.image_filename }}" 
+                                                             alt="{{ result.item_name }}" 
+                                                             class="rounded me-2" 
+                                                             style="width: 40px; height: 40px; object-fit: cover;">
+                                                    {% else %}
+                                                        <div class="bg-secondary rounded d-flex align-items-center justify-content-center me-2" 
+                                                             style="width: 40px; height: 40px;">
+                                                            <i class="fas fa-image text-white"></i>
+                                                        </div>
+                                                    {% endif %}
+                                                    <div>
+                                                        <strong>{{ result.item_name }}</strong>
+                                                        {% if result.item.description %}
+                                                            <br><small class="text-muted">{{ result.item.description[:50] }}{% if result.item.description|length > 50 %}...{% endif %}</small>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">{{ result.day }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ result.category }}</span>
+                                            </td>
+                                            <td>
+                                                <strong class="text-success">{{ result.price }}</strong>
+                                            </td>
+                                            <td>
+                                                {% if result.item.available %}
+                                                    <span class="badge bg-success">Available</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Unavailable</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <form method="POST" action="{{ url_for('remove_item_from_menu', menu_id=result.menu_id) }}" class="d-inline">
+                                                        <button type="submit" 
+                                                                class="btn btn-outline-danger btn-sm"
+                                                                onclick="return confirm('Remove this item from the menu?')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Bulk Actions -->
+                            <div class="mt-4">
+                                <form method="POST" action="{{ url_for('menu_bulk_action') }}">
+                                    <div class="row align-items-end">
+                                        <div class="col-md-3">
+                                            <label class="form-label">Bulk Actions:</label>
+                                            <select name="action" class="form-select" required>
+                                                <option value="">Select Action</option>
+                                                <option value="delete">Remove from Menu</option>
+                                                <option value="activate">Activate Items</option>
+                                                <option value="copy">Copy to Day</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Target Day (for copy):</label>
+                                            <select name="target_day" class="form-select">
+                                                <option value="">Select Day</option>
+                                                <option value="monday">Monday</option>
+                                                <option value="tuesday">Tuesday</option>
+                                                <option value="wednesday">Wednesday</option>
+                                                <option value="thursday">Thursday</option>
+                                                <option value="friday">Friday</option>
+                                                <option value="saturday">Saturday</option>
+                                                <option value="sunday">Sunday</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button type="submit" class="btn btn-warning">Apply to All Results</button>
+                                        </div>
+                                    </div>
+                                    {% for result in results %}
+                                        <input type="hidden" name="menu_ids[]" value="{{ result.menu_id }}">
+                                    {% endfor %}
+                                </form>
+                            </div>
+                        {% else %}
+                            <!-- No Results -->
+                            <div class="text-center py-5">
+                                <i class="fas fa-search text-muted mb-3" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted">No results found</h5>
+                                <p class="text-muted">No menu items match your search for "{{ query }}"</p>
+                                <div class="mt-3">
+                                    <a href="{{ url_for('menu') }}" class="btn btn-primary me-2">
+                                        <i class="fas fa-arrow-left me-1"></i>Back to Menu
+                                    </a>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="document.querySelector('input[name=q]').value=''; document.querySelector('input[name=q]').focus();">
+                                        <i class="fas fa-search me-1"></i>New Search
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

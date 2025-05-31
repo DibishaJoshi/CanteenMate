@@ -180,6 +180,17 @@
                 signupForm.style.display = 'block';
             }
         }
+
+  setTimeout(() => {
+    const flashMessages = document.querySelectorAll('.alert');
+    flashMessages.forEach(msg => {
+      msg.style.transition = 'opacity 0.5s ease';
+      msg.style.opacity = '0';
+      setTimeout(() => msg.remove(), 500); // Remove after fade-out
+    });
+  }, 3000); // 3 seconds
+
+
     </script>
 </body>
 </html>
