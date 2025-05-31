@@ -1,174 +1,652 @@
 {% extends "admin/admin_base.html" %}
 
+{% block title %}Menu Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .menu-management {
+        padding: 20px;
+        background:white;
+    }
+    
+    .action-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+    }
+    
+    .search-container {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .search-container input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 250px;
+    }
+    
+    .search-btn, .add-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    
+    .search-btn {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .add-btn {
+        background:rgb(181, 139, 71);
+        color: white;
+    }
+    
+    .menu-days {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 20px;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .day-tab {
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: #666;
+    }
+    
+    .day-tab:hover {
+        background: #f8f9fa;
+        color: #333;
+    }
+    
+    .day-tab.active {
+        background:rgb(217, 140, 39);
+        color: white;
+    }
+    
+    .menu-categories {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .category-section {
+        background: rgba(204, 154, 84, 0.1);;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow: hidden;
+        width:100%;
+        }
+    
+    .category-header {
+        
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        background:rgb(234, 230, 225);
+        border-radius:6px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .category-header h3 {
+        margin: 0;
+        color: #333;
+        font-size: 18px;
+    }
+    
+    .category-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .edit-category, .add-items-btn {
+        padding: 6px 12px;
+        border: 1px solid #007bff;
+        background: transparent;
+        color: #007bff;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .edit-category:hover, .add-items-btn:hover {
+        background: #007bff;
+        color: white;
+    }
+    
+    .menuitems {
+        padding: 20px;
+    }
+    
+    .menu-itemss {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+        background:rgb(216, 205, 191);
+    }
+    
+    .menu-itemss:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .menu-itemss img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+    
+    .item-details {
+        flex: 1;
+    }
+    
+    .item-details h4 {
+        margin: 0 0 5px 0;
+        color: #333;
+        font-size: 16px;
+    }
+    
+    .item-details p {
+        margin: 0 0 5px 0;
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .price {
+        font-weight: bold;
+        color: #28a745;
+        font-size: 16px;
+    }
+    
+    .item-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .remove-item {
+        padding: 6px 12px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .remove-item:hover {
+        background: #c82333;
+    }
+    
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+    }
+    
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 8px;
+        width: 80%;
+        max-width: 600px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .close {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .close:hover {
+        color: black;
+    }
+    
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .form-group select, .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .available-items {
+        margin-top: 20px;
+    }
+    
+    .available-items h3 {
+        margin-bottom: 15px;
+        color: #333;
+    }
+    
+    .items-container {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        padding: 15px;
+    }
+    
+    .item-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .item-checkbox:last-child {
+        border-bottom: none;
+    }
+    
+    .item-checkbox input[type="checkbox"] {
+        width: auto;
+    }
+    
+    .item-checkbox label {
+        margin: 0;
+        cursor: pointer;
+        font-weight: normal;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    
+    .cancel-btn, .save-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    
+    .cancel-btn {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .save-btn {
+        background: #28a745;
+        color: white;
+    }
+    
+    .empty-category {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-style: italic;
+    }
+    
+    .menu-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background:rgb(234, 230, 225);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .menu-actions button {
+        padding: 8px 16px;
+        border: 1px solid #007bff;
+        background: transparent;
+        color: #007bff;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .menu-actions button:hover {
+        background: #007bff;
+        color: white;
+    }
+    
+    .menu-actions .danger {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+    
+    .menu-actions .danger:hover {
+        background: #dc3545;
+        color: white;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
- <section class="action-bar">
-                <div class="search-container">
-                    <input type="text" placeholder="Search menus..." id="search-menu">
-                    <button class="search-btn">🔍</button>
-                </div>
-                <button class="add-btn" id="add-menu-btn">+ Create New Menu</button>
-            </section>
+<div class="menu-management">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category.startswith('menu_') %}
+                    <div class="alert alert-{{ 'danger' if 'danger' in category else 'success' if 'success' in category else 'warning' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-dismiss="alert"></button>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <!-- Action Bar -->
+    <section class="action-bar">
+        <div class="search-container">
+            <form method="GET" action="{{ url_for('search_menu') }}" >
+                <input type="text" name="q" placeholder="Search menu items..." value="{{ search_query or '' }}">
+                <input type="hidden" name="day" value="{{ current_day }}">
+                <button type="submit" class="search-btn"><search class="fas fa-search"></search></button>
+            </form>
+        </div>
+        <button class="add-btn" id="add-menu-btn">+ Add Items to Menu</button>
+    </section>
 
-            <section class="menu-days">
-                <div class="day-tab active" data-day="monday">Monday</div>
-                <div class="day-tab" data-day="tuesday">Tuesday</div>
-                <div class="day-tab" data-day="wednesday">Wednesday</div>
-                <div class="day-tab" data-day="thursday">Thursday</div>
-                <div class="day-tab" data-day="friday">Friday</div>
-                <div class="day-tab" data-day="saturday">Saturday</div>
-                <div class="day-tab" data-day="sunday">Sunday</div>
-            </section>
+    <!-- Menu Actions -->
+    <section class="menu-actions">
+        <button type="button" onclick="openCopyModal()">Copy Day</button>
+        <button type="button" onclick="confirmClearDay()" class="danger">Clear Day</button>
+        <span style="margin-left: auto; color: #666;">
+            Menu for {{ current_day.title() }}
+        </span>
+    </section>
 
-            <section class="menu-categories">
-                <div class="category-section">
-                    <div class="category-header">
-                        <h3>Breakfast</h3>
-                        <div class="category-actions">
-                            <button class="edit-category">Edit</button>
-                        </div>
-                    </div>
-                    <div class="menu-items">
-                        <div class="menu-item">
-                            <img src="/api/placeholder/80/80" alt="Scrambled Eggs">
-                            <div class="item-details">
-                                <h4>Scrambled Eggs</h4>
-                                <p>Fresh eggs with toast and sides</p>
-                                <span class="price">$4.99</span>
-                            </div>
-                            <div class="item-actions">
-                                <button class="remove-item">Remove</button>
-                            </div>
-                        </div>
-                        <div class="menu-item">
-                            <img src="/api/placeholder/80/80" alt="Pancakes">
-                            <div class="item-details">
-                                <h4>Pancakes</h4>
-                                <p>Stack of 3 with maple syrup</p>
-                                <span class="price">$5.50</span>
-                            </div>
-                            <div class="item-actions">
-                                <button class="remove-item">Remove</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Day Tabs -->
+    <section class="menu-days">
+        <a href="{{ url_for('menu', day='monday') }}" class="day-tab {{ 'active' if current_day == 'monday' else '' }}">Monday</a>
+        <a href="{{ url_for('menu', day='tuesday') }}" class="day-tab {{ 'active' if current_day == 'tuesday' else '' }}">Tuesday</a>
+        <a href="{{ url_for('menu', day='wednesday') }}" class="day-tab {{ 'active' if current_day == 'wednesday' else '' }}">Wednesday</a>
+        <a href="{{ url_for('menu', day='thursday') }}" class="day-tab {{ 'active' if current_day == 'thursday' else '' }}">Thursday</a>
+        <a href="{{ url_for('menu', day='friday') }}" class="day-tab {{ 'active' if current_day == 'friday' else '' }}">Friday</a>
+        <a href="{{ url_for('menu', day='saturday') }}" class="day-tab {{ 'active' if current_day == 'saturday' else '' }}">Saturday</a>
+        <a href="{{ url_for('menu', day='sunday') }}" class="day-tab {{ 'active' if current_day == 'sunday' else '' }}">Sunday</a>
+    </section>
 
-                <div class="category-section">
-                    <div class="category-header">
-                        <h3>Lunch</h3>
-                        <div class="category-actions">
-                            <button class="edit-category">Edit</button>
-                        </div>
-                    </div>
-                    <div class="menu-items">
-                        <div class="menu-item">
-                            <img src="/api/placeholder/80/80" alt="Caesar Salad">
-                            <div class="item-details">
-                                <h4>Caesar Salad</h4>
-                                <p>Fresh romaine with dressing and croutons</p>
-                                <span class="price">$4.50</span>
-                            </div>
-                            <div class="item-actions">
-                                <button class="remove-item">Remove</button>
-                            </div>
-                        </div>
-                        <div class="menu-item">
-                            <img src="/api/placeholder/80/80" alt="Chicken Sandwich">
-                            <div class="item-details">
-                                <h4>Chicken Sandwich</h4>
-                                <p>Grilled chicken with lettuce and mayo</p>
-                                <span class="price">$5.99</span>
-                            </div>
-                            <div class="item-actions">
-                                <button class="remove-item">Remove</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="category-section">
-                    <div class="category-header">
-                        <h3>Dinner</h3>
-                        <div class="category-actions">
-                            <button class="edit-category">Edit</button>
-                        </div>
-                    </div>
-                    <div class="menu-items">
-                        <div class="menu-item">
-                            <img src="/api/placeholder/80/80" alt="Pasta Alfredo">
-                            <div class="item-details">
-                                <h4>Pasta Alfredo</h4>
-                                <p>Creamy pasta with parmesan</p>
-                                <span class="price">$7.99</span>
-                            </div>
-                            <div class="item-actions">
-                                <button class="remove-item">Remove</button>
-                            </div>
-                        </div>
-                        <div class="menu-item">
-                            <img src="/api/placeholder/80/80" alt="Grilled Salmon">
-                            <div class="item-details">
-                                <h4>Grilled Salmon</h4>
-                                <p>Fresh salmon with vegetables</p>
-                                <span class="price">$9.99</span>
-                            </div>
-                            <div class="item-actions">
-                                <button class="remove-item">Remove</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <div id="menu-modal" class="modal">
-                <div class="modal-content">
-                    <span class="close">&times;</span>
-                    <h2 id="modal-title">Add Items to Menu</h2>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="menu-category">Select Category</label>
-                            <select id="menu-category">
-                                <option value="Breakfast">Breakfast</option>
-                                <option value="Lunch">Lunch</option>
-                                <option value="Dinner">Dinner</option>
-                                <option value="Snacks">Snacks</option>
-                                <option value="Beverages">Beverages</option>
-                            </select>
-                        </div>
-                        
-                        <div class="available-items">
-                            <h3>Available Items</h3>
-                            <div class="items-container">
-                                <div class="item-checkbox">
-                                    <input type="checkbox" id="item1" value="item1">
-                                    <label for="item1">French Toast - $4.50</label>
-                                </div>
-                                <div class="item-checkbox">
-                                    <input type="checkbox" id="item2" value="item2">
-                                    <label for="item2">Fruit Bowl - $3.99</label>
-                                </div>
-                                <div class="item-checkbox">
-                                    <input type="checkbox" id="item3" value="item3">
-                                    <label for="item3">Yogurt Parfait - $4.25</label>
-                                </div>
-                                <div class="item-checkbox">
-                                    <input type="checkbox" id="item4" value="item4">
-                                    <label for="item4">Breakfast Burrito - $5.75</label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="button" class="cancel-btn">Cancel</button>
-                            <button type="button" class="save-btn">Add to Menu</button>
-                        </div>
-                    </div>
+    <!-- Menu Categories -->
+    <section class="menu-categories">
+        {% for category_name, items in menu_items.items() %}
+        <div class="category-section">
+            <div class="category-header">
+                <h3>{{ category_name }}</h3>
+                <div class="category-actions">
+                    <button class="add-items-btn" onclick="openAddModal('{{ category_name }}')">Add Items</button>
+                    {% if items %}
+                        <form method="POST" action="{{ url_for('toggle_menu_category') }}" style="display: inline;">
+                            <input type="hidden" name="category_id" value="{{ items[0].category.id if items }}">
+                            <input type="hidden" name="day" value="{{ current_day }}">
+                            <input type="hidden" name="action" value="hide">
+                            <button type="submit" class="edit-category" onclick="return confirm('Remove all {{ category_name }} items from {{ current_day.title() }} menu?')">Remove All</button>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
-        </main>
+            <div class="menuitems">
+                {% if items %}
+                    {% for item in items %}
+                    <div class="menu-itemss">
+                        <img src="{{ url_for('static', filename='uploads/items/' + item.image_filename) if item.image_filename else url_for('static', filename='img/placeholder.jpg') }}" alt="{{ item.name }}">
+                        <div class="item-details">
+                            <h4>{{ item.name }}</h4>
+                            <p>{{ item.description or 'No description available' }}</p>
+                            <span class="price">Rs. {{ "%.2f"|format(item.price / 100) }}</span>
+                        </div>
+                        <div class="item-actions">
+                            <form method="POST" action="{{ url_for('remove_menu_item') }}" style="display: inline;">
+                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                <input type="hidden" name="category_id" value="{{ item.category.id }}">
+                                <input type="hidden" name="day" value="{{ current_day }}">
+                                <button type="submit" class="remove-item" onclick="return confirm('Remove {{ item.name }} from menu?')">Remove</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-category">
+                        <p>No items in {{ category_name }} for {{ current_day.title() }}</p>
+                        <button class="add-items-btn" onclick="openAddModal('{{ category_name }}')">Add Items</button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+
+    <!-- Add Items Modal -->
+    <div id="menu-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Items to Menu</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('add_menu_items') }}">
+                    <input type="hidden" name="day" value="{{ current_day }}">
+                    
+                    <div class="form-group">
+                        <label for="menu-category">Select Category</label>
+                        <select id="menu-category" name="category" required>
+                            {% for category in categories %}
+                            <option value="{{ category.name }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="available-items">
+                        <h3>Available Items</h3>
+                        <div class="items-container" id="items-container">
+                            {% for item in available_items %}
+                            <div class="item-checkbox" data-category="{{ item.category.name if item.category else 'Other' }}">
+                                <input type="checkbox" id="item{{ item.id }}" name="selected_items" value="{{ item.id }}">
+                                <label for="item{{ item.id }}">{{ item.name }} - ${{ "%.2f"|format(item.price / 100) }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="save-btn">Add to Menu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
+
+    <!-- Copy Day Modal -->
+    <div id="copy-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Copy Menu</h2>
+                <span class="close" onclick="closeCopyModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('copy_menu_day') }}">
+                    <div class="form-group">
+                        <label for="source-day">Copy From</label>
+                        <select id="source-day" name="source_day" required>
+                            <option value="monday" {{ 'selected' if current_day == 'monday' else '' }}>Monday</option>
+                            <option value="tuesday" {{ 'selected' if current_day == 'tuesday' else '' }}>Tuesday</option>
+                            <option value="wednesday" {{ 'selected' if current_day == 'wednesday' else '' }}>Wednesday</option>
+                            <option value="thursday" {{ 'selected' if current_day == 'thursday' else '' }}>Thursday</option>
+                            <option value="friday" {{ 'selected' if current_day == 'friday' else '' }}>Friday</option>
+                            <option value="saturday" {{ 'selected' if current_day == 'saturday' else '' }}>Saturday</option>
+                            <option value="sunday" {{ 'selected' if current_day == 'sunday' else '' }}>Sunday</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="target-day">Copy To</label>
+                        <select id="target-day" name="target_day" required>
+                            <option value="monday">Monday</option>
+                            <option value="tuesday">Tuesday</option>
+                            <option value="wednesday">Wednesday</option>
+                            <option value="thursday">Thursday</option>
+                            <option value="friday">Friday</option>
+                            <option value="saturday">Saturday</option>
+                            <option value="sunday">Sunday</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="cancel-btn" onclick="closeCopyModal()">Cancel</button>
+                        <button type="submit" class="save-btn">Copy Menu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
+
 {% block extra_js %}
-    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+<script>
+    // Modal functions
+    function openAddModal(category = '') {
+        const modal = document.getElementById('menu-modal');
+        const categorySelect = document.getElementById('menu-category');
+        if (category) {
+            categorySelect.value = category;
+            filterItems(category);
+        }
+        modal.style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('menu-modal').style.display = 'none';
+    }
+
+    function openCopyModal() {
+        document.getElementById('copy-modal').style.display = 'block';
+    }
+
+    function closeCopyModal() {
+        document.getElementById('copy-modal').style.display = 'none';
+    }
+
+    // Filter items by category
+    function filterItems(selectedCategory) {
+        const items = document.querySelectorAll('.item-checkbox');
+        items.forEach(item => {
+            const itemCategory = item.getAttribute('data-category');
+            if (itemCategory === selectedCategory) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    // Clear day confirmation
+    function confirmClearDay() {
+        if (confirm('Are you sure you want to clear all items from {{ current_day.title() }} menu? This action cannot be undone.')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("clear_menu_day") }}';
+            
+            const dayInput = document.createElement('input');
+            dayInput.type = 'hidden';
+            dayInput.name = 'day';
+            dayInput.value = '{{ current_day }}';
+            
+            form.appendChild(dayInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add menu button
+        document.getElementById('add-menu-btn').addEventListener('click', function() {
+            openAddModal();
+        });
+
+        // Category filter
+        document.getElementById('menu-category').addEventListener('change', function() {
+            filterItems(this.value);
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('menu-modal');
+            const copyModal = document.getElementById('copy-modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+            if (event.target === copyModal) {
+                closeCopyModal();
+            }
+        });
+
+        // Initial filter
+        const categorySelect = document.getElementById('menu-category');
+        if (categorySelect.value) {
+            filterItems(categorySelect.value);
+        }
+    });
+     setTimeout(() => {
+    const flashMessages = document.querySelectorAll('.alert');
+    flashMessages.forEach(msg => {
+      msg.style.transition = 'opacity 0.5s ease';
+      msg.style.opacity = '0';
+      setTimeout(() => msg.remove(), 500); // Remove after fade-out
+    });
+  }, 3000); // 3 seconds
+</script>
 {% endblock %}
-    

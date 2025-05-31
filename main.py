@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session,jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime,timedelta
 import os
 import functools
 
-from models import db, User, Category, Item, Attribute, AttributeValue 
+from models import db, User, Category, Item, Attribute, AttributeValue ,Menu
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -224,54 +225,73 @@ def attribute():
     user = User.query.get(user_id)
     attributes = Attribute.query.all()
     return render_template('admin/attribute.html',attributes=attributes, user=user, active_page='attributes')
-
 @app.route('/admin/attributes', methods=['GET', 'POST'])
-def add_attribute():
-    if request.method == 'POST':
-        # Extract form data
-        attribute_name = request.form.get('attribute_name')
-        status = request.form.get('status') == 'active'  # convert to bool
-
-        # The form fields for values will be multiple, like:
-        # value_name_1, price_adjustment_1, value_name_2, price_adjustment_2 ...
-        # Or if you want simpler, you can send them as lists (e.g. value_names[] and price_adjustments[])
-
-        # For this example, let's assume the client sends:
-        # 'value_names[]' and 'price_adjustments[]' arrays in the form data
-        value_names = request.form.getlist('value_names[]')
-        price_adjustments = request.form.getlist('price_adjustments[]')
-
-        if not attribute_name:
-            flash("Attribute name is required.", "attribute_error")
-            return redirect(url_for('add_attribute'))
-
-        # Create Attribute
-        new_attribute = Attribute(name=attribute_name, status=status)
-        db.session.add(new_attribute)
-        db.session.flush()  # to get new_attribute.id for FK
-
-        # Create AttributeValues
-        for v_name, p_adj in zip(value_names, price_adjustments):
-            if v_name.strip():  # ignore empty value names
-                try:
-                    p_adj_float = float(p_adj)
-                except ValueError:
-                    p_adj_float = 0.0
-
-                attr_value = AttributeValue(
-                    value=v_name.strip(),
-                    price_adjustment=p_adj_float,
-                    attribute=new_attribute
-                )
-                db.session.add(attr_value)
-
-        db.session.commit()
-        flash("Attribute added successfully!", "attribute_success")
-        return redirect(url_for('add_attribute'))
-
-    # For GET: render the template with all attributes (implement this template as needed)
+@login_required
+def manage_attributes():
+    user_id = session['user_id']
+    user = User.query.get(user_id)
     attributes = Attribute.query.all()
-    return render_template('admin/attributes.html', attributes=attributes)
+
+    if request.method == 'POST':
+        attribute_id = request.form.get('attribute_id')
+        name = request.form.get('attribute_name')
+        status = True if request.form.get('status') == 'active' else False
+        value_names = request.form.getlist('value_name[]')
+        price_adjustments = request.form.getlist('price_adjustment[]')
+
+        if not name:
+            flash("Attribute name is required.", "attribute_error")
+            return redirect(url_for('manage_attributes'))
+
+        if attribute_id:
+            # Update existing attribute
+            attribute = Attribute.query.get(attribute_id)
+            if attribute:
+                attribute.name = name
+                attribute.status = status
+
+                # Delete old values
+                AttributeValue.query.filter_by(attribute_id=attribute.id).delete()
+
+                # Add new values
+                for vname, padj in zip(value_names, price_adjustments):
+                    if vname.strip():
+                        try:
+                            padj_float = float(padj)
+                        except ValueError:
+                            padj_float = 0.0
+                        db.session.add(AttributeValue(
+                            value=vname.strip(),
+                            price_adjustment=padj_float,
+                            attribute_id=attribute.id
+                        ))
+
+                db.session.commit()  # ✅ Commit only once after adding new values
+                flash('Attribute updated successfully', 'attribute_success')
+                return redirect(url_for('attribute'))
+        else:
+            # Create new attribute
+            new_attr = Attribute(name=name, status=status)
+            db.session.add(new_attr)
+            db.session.flush()  # Get new_attr.id without full commit
+
+            for vname, padj in zip(value_names, price_adjustments):
+                if vname.strip():
+                    try:
+                        padj_float = float(padj)
+                    except ValueError:
+                        padj_float = 0.0
+                    db.session.add(AttributeValue(
+                        value=vname.strip(),
+                        price_adjustment=padj_float,
+                        attribute_id=new_attr.id
+                    ))
+
+            db.session.commit()
+            flash('Attribute added successfully', 'attribute_success')
+            return redirect(url_for('attribute'))
+
+    return render_template('admin/attribute.html', attributes=attributes, user=user, active_page='attributes')
 
 @app.route('/admin/units')
 @login_required
@@ -292,14 +312,375 @@ def addons():
 def items():
     user_id = session['user_id']
     user = User.query.get(user_id)
-    return render_template('admin/items.html', user=user, active_page='items')
+    categories = Category.query.filter_by(status=True).all()
+    items = Item.query.all()  # Fetch all items from DB
+    return render_template('admin/items.html', categories=categories, user=user, items=items, active_page='items')
 
+@app.route('/admin/add-item', methods=['POST'])
+def add_item():
+    item_id = request.form.get('item-id')  # <-- hidden input in form
+    name = request.form.get('item-name')
+    category_name = request.form.get('item-category')
+    price = request.form.get('item-price')
+    description = request.form.get('item-description')
+    available = request.form.get('item-available') == 'on'
+    image = request.files.get('item-image')
+
+    if not name or not category_name or not price:
+        flash("Please fill in all required fields.", "items_danger")
+        return redirect(url_for('items'))
+
+    category = Category.query.filter_by(name=category_name).first()
+    if not category:
+        flash("Invalid category selected.", "items_danger")
+        return redirect(url_for('items'))
+
+    image_filename = None
+    if image and '.' in image.filename:
+        ext = image.filename.rsplit('.', 1)[1].lower()
+        if ext in {'png', 'jpg', 'jpeg', 'gif'}:
+            filename = secure_filename(image.filename)
+            image_path = os.path.join(app.root_path, 'static/uploads/items', filename)
+            os.makedirs(os.path.dirname(image_path), exist_ok=True)
+            image.save(image_path)
+            image_filename = filename
+
+    # Check if this is an update or new insert
+    if item_id:  # Editing existing item
+        item = Item.query.get(int(item_id))
+        if not item:
+            flash("Item not found.", "items_danger")
+            return redirect(url_for('items'))
+
+        item.name = name
+        item.category_id = category.id
+        item.price = int(float(price) * 100)
+        item.description = description
+        item.available = available
+
+        if image_filename:
+            item.image_filename = image_filename
+
+        db.session.commit()
+        flash("Item updated successfully!", "items_success")
+    else:  # New item
+        new_item = Item(
+            name=name,
+            price=int(float(price) * 100),
+            category_id=category.id,
+            description=description,
+            image_filename=image_filename,
+            available=available
+        )
+        db.session.add(new_item)
+        db.session.commit()
+        flash("Item added successfully!", "items_success")
+
+    return redirect(url_for('items'))
 @app.route('/admin/menu')
 @login_required
 def menu():
     user_id = session['user_id']
     user = User.query.get(user_id)
-    return render_template('admin/admin_menu.html', user=user,active_page='menu')
+
+    categories = Category.query.filter_by(status=True).all()
+    available_items = Item.query.filter_by(available=True).all()
+    current_day = request.args.get('day', 'monday')
+
+    menu_items = {}
+    for category in categories:
+        menu_items[category.name] = []
+
+    menu_entries = Menu.query.filter_by(day=current_day).all()
+    for entry in menu_entries:
+        if entry.category.name not in menu_items:
+            menu_items[entry.category.name] = []
+        menu_items[entry.category.name].append(entry.item)
+
+    return render_template('admin/admin_menu.html', 
+                           user=user, 
+                           active_page='menu',
+                           categories=categories,
+                           available_items=available_items,
+                           menu_items=menu_items,
+                           current_day=current_day)
+
+@app.route('/admin/menu/add_items', methods=['POST'])
+@login_required
+def add_menu_items():
+    """Add selected items to menu for specific day and category"""
+    try:
+        day = request.form.get('day', 'monday')
+        category_name = request.form.get('category')
+        selected_items = request.form.getlist('selected_items')
+        
+        if not category_name or not selected_items:
+            flash('Please select a category and at least one item.', 'menu_danger')
+            return redirect(url_for('menu'))
+        
+        # Get category
+        category = Category.query.filter_by(name=category_name).first()
+        if not category:
+            flash('Invalid category selected.', 'menu_danger')
+            return redirect(url_for('menu'))
+        
+        # Add items to menu (if using Menu model)
+        added_count = 0
+        for item_id in selected_items:
+            item = Item.query.get(item_id)
+            if item:
+                # Check if item already exists in menu for this day/category
+                existing = Menu.query.filter_by(day=day, category_id=category.id, item_id=item.id).first()
+                if not existing:
+                    new_menu_item = Menu(day=day, category_id=category.id, item_id=item.id)
+                    db.session.add(new_menu_item)
+                    added_count += 1
+                # added_count += 1
+        
+        db.session.commit()
+        
+        if added_count > 0:
+            flash(f'Successfully added {added_count} items to {category_name} menu for {day.title()}.', 'menu_success')
+        else:
+            flash('No new items were added. Items may already exist in the menu.', 'menu_warning')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while adding items to menu.', 'menu_danger')
+    
+    return redirect(url_for('menu') + f'?day={day}')
+
+@app.route('/admin/menu/remove_item', methods=['POST'])
+@login_required
+def remove_menu_item():
+    """Remove an item from the menu"""
+    try:
+        day = request.form.get('day', 'monday')
+        item_id = request.form.get('item_id')
+        category_id = request.form.get('category_id')
+        
+        if not item_id or not category_id:
+            flash('Invalid item or category.', 'menu_danger')
+            return redirect(url_for('menu'))
+        
+        # Remove item from menu (if using Menu model)
+        menu_item = Menu.query.filter_by(day=day, category_id=category_id, item_id=item_id).first()
+        if menu_item:
+            db.session.delete(menu_item)
+            db.session.commit()
+            flash('Item removed from menu successfully.', 'menu_success')
+        else:
+            flash('Item not found in menu.', 'menu_warning')
+        
+        
+            
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while removing item from menu.', 'menu_danger')
+    
+    return redirect(url_for('menu') + f'?day={day}')
+
+@app.route('/admin/menu/search')
+@login_required
+def search_menu():
+    """Search menu items"""
+    search_query = request.args.get('q', '').strip()
+    day = request.args.get('day', 'monday')
+    
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    categories = Category.query.filter_by(status=True).all()
+    available_items = Item.query.filter_by(available=True).all()
+    
+    menu_items = {}
+    
+    if search_query:
+        # Search in menu items
+        # If using Menu model:
+        search_results = db.session.query(Menu).join(Item).filter(
+            Menu.day == day,
+            Item.name.ilike(f'%{search_query}%')
+        ).all()
+        
+        # For demo, search in all items
+        # search_results = Item.query.filter(
+        #     Item.name.ilike(f'%{search_query}%'),
+        #     Item.available == True
+        # ).all()
+        
+        # Group by category
+        for menu_entry in search_results:
+            item = menu_entry.item
+            category_name = item.category.name if item.category else 'Other'
+            if category_name not in menu_items:
+                menu_items[category_name] = []
+            menu_items[category_name].append(item)
+
+    else:
+        # Return all menu items for the day
+        return redirect(url_for('menu') + f'?day={day}')
+    
+    return render_template('admin/admin_menu.html', 
+                         user=user, 
+                         active_page='menu',
+                         categories=categories,
+                         available_items=available_items,
+                         menu_items=menu_items,
+                         current_day=day,
+                         search_query=search_query)
+
+@app.route('/admin/menu/copy_day', methods=['POST'])
+@login_required
+def copy_menu_day():
+    """Copy menu from one day to another"""
+    try:
+        source_day = request.form.get('source_day')
+        target_day = request.form.get('target_day')
+        
+        if not source_day or not target_day:
+            flash('Please select both source and target days.', 'menu_danger')
+            return redirect(url_for('menu'))
+        
+        if source_day == target_day:
+            flash('Source and target days cannot be the same.', 'menu_warning')
+            return redirect(url_for('menu'))
+        
+        # Copy menu items (if using Menu model)
+        source_items = Menu.query.filter_by(day=source_day).all()
+        copied_count = 0
+        
+        for source_item in source_items:
+            # Check if item already exists for target day
+            existing = Menu.query.filter_by(
+                day=target_day, 
+                category_id=source_item.category_id, 
+                item_id=source_item.item_id
+            ).first()
+            
+            if not existing:
+                new_menu_item = Menu(
+                    day=target_day,
+                    category_id=source_item.category_id,
+                    item_id=source_item.item_id
+                )
+                db.session.add(new_menu_item)
+                copied_count += 1
+        
+        db.session.commit()
+        
+        # For demo
+        # copied_count = 5
+        
+        if copied_count > 0:
+            flash(f'Successfully copied {copied_count} items from {source_day.title()} to {target_day.title()}.', 'menu_success')
+        else:
+            flash(f'No new items to copy. {target_day.title()} may already have all items from {source_day.title()}.', 'menu_warning')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while copying menu.', 'menu_danger')
+    
+    return redirect(url_for('menu') + f'?day={target_day}')
+
+@app.route('/admin/menu/clear_day', methods=['POST'])
+@login_required
+def clear_menu_day():
+    """Clear all menu items for a specific day"""
+    try:
+        day = request.form.get('day')
+        
+        if not day:
+            flash('Please specify a day to clear.', 'menu_danger')
+            return redirect(url_for('menu'))
+        
+        # Clear menu items for the day (if using Menu model)
+        deleted_count = Menu.query.filter_by(day=day).count()
+        Menu.query.filter_by(day=day).delete()
+        db.session.commit()
+        
+        # For demo
+        # deleted_count = 8
+        
+        flash(f'Successfully cleared {deleted_count} items from {day.title()} menu.', 'menu_success')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while clearing menu.', 'menu_danger')
+    
+    return redirect(url_for('menu') + f'?day={day}')
+
+@app.route('/admin/menu/toggle_category', methods=['POST'])
+@login_required
+def toggle_menu_category():
+    """Toggle visibility of a category in menu"""
+    try:
+        category_id = request.form.get('category_id')
+        day = request.form.get('day', 'monday')
+        action = request.form.get('action')  # 'show' or 'hide'
+        
+        category = Category.query.get(category_id)
+        if not category:
+            flash('Category not found.', 'menu_danger')
+            return redirect(url_for('menu'))
+        
+        if action == 'hide':
+            # Remove all items of this category from the day's menu
+            Menu.query.filter_by(day=day, category_id=category_id).delete()
+            db.session.commit()
+            flash(f'{category.name} items removed from {day.title()} menu.', 'menu_success')
+        elif action == 'show':
+            # Add all items of this category to the day's menu
+            category_items = Item.query.filter_by(category_id=category_id, available=True).all()
+            added_count = 0
+            for item in category_items:
+                existing = Menu.query.filter_by(day=day, category_id=category_id, item_id=item.id).first()
+                if not existing:
+                    new_menu_item = Menu(day=day, category_id=category_id, item_id=item.id)
+                    db.session.add(new_menu_item)
+                    added_count += 1
+            db.session.commit()
+            flash(f'{category.name} items added to {day.title()} menu.', 'menu_success')
+            
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while updating menu category.', 'menu_danger')
+    
+    return redirect(url_for('menu') + f'?day={day}')
+
+# Helper function to get menu statistics
+def get_menu_statistics():
+    """Get menu statistics for dashboard"""
+    try:
+        # If using Menu model:
+        total_menu_items = Menu.query.count()
+        items_by_day = db.session.query(Menu.day, db.func.count(Menu.id)).group_by(Menu.day).all()
+        popular_categories = db.session.query(Category.name, db.func.count(Menu.id)).join(Menu).group_by(Category.name).order_by(db.func.count(Menu.id).desc()).limit(5).all()
+        
+        # For demo purposes
+        # stats = {
+        #     'total_menu_items': 45,
+        #     'items_by_day': {
+        #         'monday': 8,
+        #         'tuesday': 7,
+        #         'wednesday': 6,
+        #         'thursday': 8,
+        #         'friday': 7,
+        #         'saturday': 5,
+        #         'sunday': 4
+        #     },
+        #     'popular_categories': [
+        #         ('Dinner', 15),
+        #         ('Lunch', 12),
+        #         ('Breakfast', 10),
+        #         ('Snacks', 5),
+        #         ('Beverages', 3)
+        #     ]
+        # }
+        
+        # return stats
+    except Exception as e:
+        return None
+
 
 @app.route('/admin/orders')
 @login_required
@@ -336,7 +717,7 @@ def admin_orders():
     ]
     user_id = session['user_id']
     user = User.query.get(user_id)
-    return render_template("admin/admin_orders.html", user=user, orders=orders)
+    return render_template("admin/admin_orders.html", user=user,active_page='admin_orders', orders=orders)
     
 @app.route('/notifications')
 @login_required
