@@ -2,89 +2,56 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
 {% endblock %}
+
 {% block content %}
 <div id="menu" class="page">
-    <div class="category-section">
-        <div class="section-header">
-            <h2 class="section-title">Today's Specials</h2>
+
+    {% for category_name, items in menu_items.items() %}
+        {% if items %}
+        <div class="category-section">
+            <div class="section-header">
+                <h2 class="section-title">{{ category_name }}</h2>
+            </div>
+            
+            <div class="menu-grid">
+                {% for item in items %}
+                <div class="menu-item"
+                     data-id="{{ item.id }}"
+                     data-name="{{ item.name }}"
+                     data-price="{{ '%.2f' % (item.price / 100) }}"
+                     data-image="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/250/160' }}"
+                     data-category="{{ category_name }}">
+
+                    <div class="item-image">
+                        <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/250/160' }}" alt="{{ item.name }}">
+                        <div class="item-badge">{{ category_name }}</div>
+                        {% if item.is_popular %}
+                        <div class="popular-tag"><i class="fas fa-star"></i></div>
+                        {% endif %}
+                    </div>
+
+                    <div class="item-details">
+                        <h3 style="font-size:20px;font-weight:bolder;" class="item-name">{{ item.name }}</h3>
+                        <p class="item-description">{{ item.description or 'No description available.' }}</p>
+                        
+                        <span style="padding-top:4px;" class="item-price">Rs. {{ '%.2f' % (item.price / 100) }}</span><br>
+                        <button style="margin-top:8px;" class="add-to-cart">Add to Cart</button>
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+
         </div>
-        <div class="menu-container">
-            <div class="food-item">
-                <img src="/api/placeholder/250/160" alt="Chicken Tikka Masala" class="food-img">
-                <div class="food-details">
-                    <h3 class="food-title">Chicken Tikka Masala</h3>
-                    <p class="food-description">Rich tomato sauce with grilled chicken pieces and aromatic spices.</p>
-                    <div class="food-meta">
-                        <span class="food-price">$12.99</span>
-                        <button class="add-to-cart">Add to Cart</button>
-                    </div>
-                </div>
+        {% else %}
+        <div class="category-section">
+            <div class="section-header">
+                <h2 class="section-title">{{ category_name }}</h2>
             </div>
-            <div class="food-item">
-                <img src="/api/placeholder/250/160" alt="Vegetable Pasta" class="food-img">
-                <div class="food-details">
-                    <h3 class="food-title">Vegetable Pasta</h3>
-                    <p class="food-description">Fresh pasta tossed with seasonal vegetables and pesto sauce.</p>
-                    <div class="food-meta">
-                        <span class="food-price">$9.50</span>
-                        <button class="add-to-cart">Add to Cart</button>
-                    </div>
-                </div>
-            </div>
-            <div class="food-item">
-                <img src="/api/placeholder/250/160" alt="Mediterranean Salad" class="food-img">
-                <div class="food-details">
-                    <h3 class="food-title">Mediterranean Salad</h3>
-                    <p class="food-description">Mixed greens with feta cheese, olives, tomatoes, and olive oil dressing.</p>
-                    <div class="food-meta">
-                        <span class="food-price">$8.25</span>
-                        <button class="add-to-cart">Add to Cart</button>
-                    </div>
-                </div>
-            </div>
-            <div class="food-item">
-                <img src="/api/placeholder/250/160" alt="Classic Burger" class="food-img">
-                <div class="food-details">
-                    <h3 class="food-title">Classic Burger</h3>
-                    <p class="food-description">Juicy beef patty with cheese, lettuce, tomato, and special sauce.</p>
-                    <div class="food-meta">
-                        <span class="food-price">$10.99</span>
-                        <button class="add-to-cart">Add to Cart</button>
-                    </div>
-                </div>
-            </div>
+            <p>No items for {{ current_day }}.</p>
         </div>
-    </div>
-    <div class="category-section">
-        <div class="section-header">
-            <h2 class="section-title">Main Courses</h2>
-        </div>
-        <div class="menu-container">
-            <!-- More food items here -->
-            <div class="food-item">
-                <img src="/api/placeholder/250/160" alt="Grilled Salmon" class="food-img">
-                <div class="food-details">
-                    <h3 class="food-title">Grilled Salmon</h3>
-                    <p class="food-description">Fresh salmon fillet grilled to perfection, served with steamed vegetables.</p>
-                    <div class="food-meta">
-                        <span class="food-price">$15.99</span>
-                        <button class="add-to-cart">Add to Cart</button>
-                    </div>
-                </div>
-            </div>
-             <div class="food-item">
-                <img src="/api/placeholder/250/160" alt="Grilled Salmon" class="food-img">
-                <div class="food-details">
-                    <h3 class="food-title">Grilled Salmon</h3>
-                    <p class="food-description">Fresh salmon fillet grilled to perfection, served with steamed vegetables.</p>
-                    <div class="food-meta">
-                        <span class="food-price">$15.99</span>
-                        <button class="add-to-cart">Add to Cart</button>
-                    </div>
-                </div>
-            <!-- More food items similar to above -->
-        </div>
-        
-    </div>
+        {% endif %}
+    {% endfor %}
+
 </div>
 {% endblock %}
