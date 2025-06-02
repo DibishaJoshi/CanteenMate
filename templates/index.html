@@ -21,7 +21,7 @@
     <!-- Menu Items Grid -->
     <div class="menu-grid">
         {% for item in menu_items %}
-        <div class="menu-item" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}" data-image="{{ url_for('static', filename='images/items/' + item.image) }}"data-category="{{ item.category }}">
+        <div class="menu-item" style="background:white;"data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}" data-image="{{ url_for('static', filename='images/items/' + item.image) }}"data-category="{{ item.category }}">
             <div class="item-image">
                 <img src="{{ url_for('static', filename='images/items/' + item.image) }}" alt="{{ item.name }}">
                 <div class="item-badge">{{ item.category }}</div>

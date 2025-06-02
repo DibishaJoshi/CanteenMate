@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime,timedelta
@@ -377,6 +377,7 @@ def add_item():
         flash("Item added successfully!", "items_success")
 
     return redirect(url_for('items'))
+
 @app.route('/admin/menu')
 @login_required
 def menu():
@@ -736,14 +737,36 @@ def get_notifications():
 def orders():
     user_id = session['user_id']
     user = User.query.get(user_id)
-    return render_template('orders.html',user=user, active_page='orders')
 
 @app.route('/menu')
 @login_required
 def user_menu():
-    user_id = session['user_id']
+    # Get day from query parameter or use today's real-time day
+    current_day = request.args.get('day')
+    if not current_day:
+        current_day = datetime.today().strftime('%A').lower()  # e.g., 'monday', 'tuesday'
+
+    user_id = session.get('user_id')
     user = User.query.get(user_id)
-    return render_template('menu.html', user=user,active_page='menu')
+
+    categories = Category.query.filter_by(status=True).all()
+    menu_items = {}
+
+    for category in categories:
+        menu_items[category.name] = []
+
+    menu_entries = Menu.query.filter_by(day=current_day).all()
+    for entry in menu_entries:
+        if entry.category.name not in menu_items:
+            menu_items[entry.category.name] = []
+        menu_items[entry.category.name].append(entry.item)
+
+    return render_template('menu.html',
+                           user=user,
+                           menu_items=menu_items,
+                           current_day=current_day,
+                           categories=categories,
+                           active_page='menu')
 
 @app.route('/transation_history')
 @login_required
