@@ -4,7 +4,25 @@
 {% endblock %}
 
 {% block content %}
-<div id="menu" class="page">
+<div id="menu" class="page" style="{% with messages = get_flashed_messages(with_categories=true) %}
+                                                    {% for category, message in messages %}
+                                                      {% if 'cart_' in category %}
+                                                        display: block;
+                                                      {% endif %}
+                                                    {% endfor %}
+                                                {% endwith %}">
+                 {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                  {% for category, message in messages %}
+                    {% if 'cart_' in category %}
+                      <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                        <span>{{ message }}</span>
+                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+            {% endwith %}
 
     {% for category_name, items in menu_items.items() %}
         {% if items %}
@@ -35,7 +53,15 @@
                         <p class="item-description">{{ item.description or 'No description available.' }}</p>
                         
                         <span style="padding-top:4px;" class="item-price">Rs. {{ '%.2f' % (item.price / 100) }}</span><br>
-                        <button style="margin-top:8px;" class="add-to-cart">Add to Cart</button>
+                        <form method="POST" action="{{ url_for('add_to_cart') }}">
+    <input type="hidden" name="item_id" value="{{ item.id }}">
+    <input type="hidden" name="item_name" value="{{ item.name }}">
+    <input type="hidden" name="item_price" value="{{ '%.2f' % (item.price / 100) }}">
+    <input type="hidden" name="item_image" value="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/250/160' }}">
+    <input type="hidden" name="category" value="{{ category_name }}">
+    <button type="submit" class="add-to-cart">Add to Cart</button>
+</form>
+
                     </div>
 
                 </div>
@@ -53,5 +79,19 @@
         {% endif %}
     {% endfor %}
 
+
 </div>
+{% block extra_js %}
+<script>
+    setTimeout(() => {
+    const flashMessages = document.querySelectorAll('.alert');
+    flashMessages.forEach(msg => {
+      msg.style.transition = 'opacity 0.5s ease';
+      msg.style.opacity = '0';
+      setTimeout(() => msg.remove(), 500); // Remove after fade-out
+    });
+  }, 3000); // 3 seconds
+</script>
+
+{% endblock %}
 {% endblock %}

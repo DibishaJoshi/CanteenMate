@@ -138,80 +138,85 @@
 
 </style>
 {% endblock %}
+
 {% block content %}
+
 <div id="cart" class="page">
     <div class="cart-container">
         <div class="cart-items">
             <div class="section-header">
-                <h2 class="section-title">Your Cart (3)</h2>
+                <h2 class="section-title">Your Cart ({{ session.cart | length if session.cart else 0 }})</h2>
             </div>
             
-            <div class="cart-item">
-                <img src="/api/placeholder/70/70" alt="Classic Burger" class="cart-item-img">
-                <div class="cart-item-info">
-                    <h3 class="cart-item-title">Classic Burger</h3>
-                    <p class="cart-item-price">$10.99</p>
-                </div>
-                <div class="cart-item-actions">
-                    <div class="quantity-control">
-                        <button class="quantity-btn">-</button>
-                        <span class="quantity-value">1</span>
-                        <button class="quantity-btn">+</button>
+            
+            {% if session.cart and session.cart|length > 0 %}
+                {% for item_id, item in session.cart.items() %}
+                <div class="cart-item">
+                    <img src="{{ item.image }}" alt="{{ item.name }}" class="cart-item-img">
+                    <div class="cart-item-info">
+                        <h3 class="cart-item-title">{{ item.name }}</h3>
+                        <p class="cart-item-price">Rs. {{ '%.2f' % item.price }}</p>
                     </div>
-                    <button class="remove-item"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-            <div class="cart-item">
-                <img src="/api/placeholder/70/70" alt="French Fries" class="cart-item-img">
-                <div class="cart-item-info">
-                    <h3 class="cart-item-title">French Fries</h3>
-                    <p class="cart-item-price">$4.00</p>
-                </div>
-                <div class="cart-item-actions">
-                    <div class="quantity-control">
-                        <button class="quantity-btn">-</button>
-                        <span class="quantity-value">1</span>
-                        <button class="quantity-btn">+</button>
+                    <div class="cart-item-actions">
+                        <div class="quantity-control">
+                            <form method="POST" action="{{ url_for('update_cart_quantity') }}" style="display: inline;">
+                                <input type="hidden" name="item_id" value="{{ item_id }}">
+                                <button class="quantity-btn" name="action" value="decrease" type="submit">-</button>
+                            </form>
+                            <span class="quantity-value">{{ item.quantity }}</span>
+                            <form method="POST" action="{{ url_for('update_cart_quantity') }}" style="display: inline;">
+                                <input type="hidden" name="item_id" value="{{ item_id }}">
+                                <button class="quantity-btn" name="action" value="increase" type="submit">+</button>
+                            </form>
+                        </div>
+                        <form method="POST" action="{{ url_for('remove_from_cart') }}" style="display: inline;">
+                            <input type="hidden" name="item_id" value="{{ item_id }}">
+                            <button class="remove-item" type="submit" title="Remove item"><i class="fas fa-trash"></i></button>
+                        </form>
                     </div>
-                    <button class="remove-item"><i class="fas fa-trash"></i></button>
                 </div>
-            </div>
-            <div class="cart-item">
-                <img src="/api/placeholder/70/70" alt="Coke" class="cart-item-img">
-                <div class="cart-item-info">
-                    <h3 class="cart-item-title">Coke</h3>
-                    <p class="cart-item-price">$3.00</p>
-                </div>
-                <div class="cart-item-actions">
-                    <div class="quantity-control">
-                        <button class="quantity-btn">-</button>
-                        <span class="quantity-value">2</span>
-                        <button class="quantity-btn">+</button>
-                    </div>
-                    <button class="remove-item"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
+                {% endfor %}
+            {% else %}
+                <p>Your cart is empty.</p>
+            {% endif %}
         </div>
+
         <div class="cart-summary">
-            <h2 class="section-title">Order Summary</h2>
-            <div class="summary-line">
-                <span>Subtotal</span>
-                <span>$20.99</span>
-            </div>
-            <div class="summary-line">
-                <span>Tax</span>
-                <span>$1.68</span>
-            </div>
-            <div class="summary-line">
-                <span>Service Fee</span>
-                <span>$0.50</span>
-            </div>
-            <div class="summary-line total">
-                <span>Total</span>
-                <span>$23.17</span>
-            </div>
-            <button class="checkout-btn">Proceed to Checkout</button>
-        </div>
+    <h2 class="section-title">Order Summary</h2>
+ {% set ns = namespace(subtotal=0) %}
+{% if session.cart %}
+    {% for item in session.cart.values() %}
+        {% set ns.subtotal = ns.subtotal + (item.price | float * item.quantity | int) %}
+    {% endfor %}
+{% endif %}
+
+<div class="summary-line">
+    <span>Subtotal</span>
+    <span>Rs. {{ '%.2f' % ns.subtotal }}</span>
+</div>
+
+{% set tax = ns.subtotal * 0.08 %}
+{% set service_fee = 10 %}
+{% set total = ns.subtotal + tax + service_fee %}
+
+<div class="summary-line">
+    <span>Tax (8%)</span>
+    <span>Rs. {{ '%.2f' % tax }}</span>
+</div>
+<div class="summary-line">
+    <span>Service Fee</span>
+    <span>Rs. {{ '%.2f' % service_fee }}</span>
+</div>
+<div class="summary-line total">
+    <span>Total</span>
+    <span>Rs. {{ '%.2f' % total }}</span>
+</div>
+
+    <form action="{{ url_for('checkout')}}" method="POST">
+        <button class="checkout-btn" type="submit">Proceed to Checkout</button>
+    </form>
+</div>
+
     </div>
 </div>
 {% endblock %}

@@ -9,7 +9,7 @@ from models import db, User, Category, Item, Attribute, AttributeValue ,Menu
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SECRET_KEY'] = 'dibisha'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///canteen.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.permanent_session_lifetime = timedelta(days=7)
@@ -737,14 +737,14 @@ def get_notifications():
 def orders():
     user_id = session['user_id']
     user = User.query.get(user_id)
+    return render_template('orders.html' ,user=user)
 
 @app.route('/menu')
 @login_required
 def user_menu():
-    # Get day from query parameter or use today's real-time day
     current_day = request.args.get('day')
     if not current_day:
-        current_day = datetime.today().strftime('%A').lower()  # e.g., 'monday', 'tuesday'
+        current_day = datetime.today().strftime('%A').lower()  
 
     user_id = session.get('user_id')
     user = User.query.get(user_id)
@@ -768,19 +768,115 @@ def user_menu():
                            categories=categories,
                            active_page='menu')
 
-@app.route('/transation_history')
-@login_required
-def transaction():
-    user_id = session['user_id']
-    user = User.query.get(user_id)
-    return render_template('transaction_history.html',user=user, active_page='transaction')
+
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    item_id = request.form.get('item_id')
+    item_name = request.form.get('item_name')
+    item_price = request.form.get('item_price')  # as string, e.g. '120.00'
+    item_image = request.form.get('item_image')
+    category = request.form.get('category')
+
+    if not item_id:
+        flash('Invalid item.')
+        return redirect(url_for('show_menu'))
+
+    # Get or create cart
+    cart = session.get('cart', {})
+
+    if item_id in cart:
+        cart[item_id]['quantity'] += 1
+    else:
+        cart[item_id] = {
+            'id': item_id,
+            'name': item_name,
+            'price': float(item_price), 
+            'image': item_image,
+            'category': category,
+            'quantity': 1
+        }
+
+    session['cart'] = cart
+    flash('Added "{}" to cart'.format(item_name), 'cart_success')
+
+    return redirect(url_for('user_menu'))
+
 
 @app.route('/cart')
 @login_required
 def cart():
     user_id = session['user_id']
     user = User.query.get(user_id)
+    # Ensure cart is in session
+    if 'cart' not in session:
+        session['cart'] = {}
     return render_template('cart.html', user=user,active_page='settings')
+
+@app.route('/update_cart_quantity', methods=['POST'])
+def update_cart_quantity():
+    item_id = request.form.get('item_id')
+    action = request.form.get('action')  # "increase" or "decrease"
+
+    if not item_id or 'cart' not in session:
+        flash('Invalid request.', 'carts_error')
+        return redirect(url_for('cart'))
+
+    cart = session['cart']
+
+    if item_id in cart:
+        if action == 'increase':
+            cart[item_id]['quantity'] += 1
+        elif action == 'decrease':
+            cart[item_id]['quantity'] -= 1
+            if cart[item_id]['quantity'] <= 0:
+                del cart[item_id]
+        session['cart'] = cart
+        flash('Cart updated.', 'carts_success')
+    else:
+        flash('Item not found in cart.', 'cart_error')
+
+    return redirect(url_for('cart'))
+
+@app.route('/remove_from_cart', methods=['POST'])
+def remove_from_cart():
+    item_id = request.form.get('item_id')
+    if not item_id or 'cart' not in session:
+        flash('Invalid request.', 'items_error')
+        return redirect(url_for('cart'))
+
+    cart = session['cart']
+    if item_id in cart:
+        del cart[item_id]
+        session['cart'] = cart
+        flash('Item removed from cart.', 'items_success')
+    else:
+        flash('Item not found in cart.', 'items_error')
+
+    return redirect(url_for('cart'))
+@app.route('/transation_history')
+@login_required
+def transaction():
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    return render_template('transaction_history.html',user=user, active_page='transaction')
+@app.route('/checkout', methods=['GET', 'POST'])
+def checkout():
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    # if request.method == 'POST':
+    #     # Retrieve and process form data after user submits the checkout form
+    #     delivery_option = request.form.get('delivery_option')
+    #     payment_method = request.form.get('payment_method')
+    #     name = request.form.get('name')
+    #     address = request.form.get('address')
+    #     phone = request.form.get('phone')
+
+    #     # You can now save this to a database or session, then redirect or show confirmation
+    #     return render_template('confirmation.html', user=user)
+
+    return render_template('checkout.html',user=user)
+
+
     
 @app.route('/profile')
 @login_required
