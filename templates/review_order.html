@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+.review-container .review-card {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.review-container .review-header {
+    font-weight: bold;
+    font-size: 1.25rem;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+.review-container .review-form {
+    margin-top: 15px;
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+}
+
+.review-container textarea {
+    width: 100%;
+    height: 90px;
+    padding: 8px;
+    resize: vertical;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.review-container .recommend-options {
+    display: flex;
+    gap: 15px;
+    margin-top: 6px;
+}
+
+.review-container .star-rating {
+    display: inline-block;
+    font-size: 1.2rem;
+    color: #ccc;
+    cursor: pointer;
+    user-select: none;
+}
+
+.review-container .star-rating .star {
+    padding: 0 3px;
+    color: #ccc;
+    transition: color 0.2s;
+}
+
+.review-container .star-rating .star.active {
+    color: #ffc107;
+}
+
+.alert {
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+</style>
+
+<div class="review-container">
+     {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% if 'review_' in category %}
+                        <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                            <span>{{ message }}</span>
+                            <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    {% for item in order.items %}
+    <div class="card review-card">
+       <div class="review-header">
+          {{ item.name }}
+          {% if item.item_id in reviewed_item_ids %}
+            <span class="badge bg-info text-white ms-2" style="color:blue;">✅ Reviewed</span>
+          {% else %}
+            <button class="btn btn-success btn-sm float-end" onclick="showReviewForm({{ item.item_id }}, '{{ item.name }}')">
+              <i class="fas fa-star"></i> Add Review
+            </button>
+          {% endif %}
+        </div>
+
+        {% if item.item_id in reviewed_item_ids %}
+          <div class="existing-review p-3 bg-light rounded mb-3">
+            <p><strong>Your Rating:</strong> {{ reviews_by_item[item.item_id].rating }} / 5</p>
+            <p><strong>Your Review:</strong> {{ reviews_by_item[item.item_id].comment or 'No comment provided.' }}</p>
+            <p><strong>Recommended:</strong> {{ 'Yes' if reviews_by_item[item.item_id].would_recommend else 'No' }}</p>
+          </div>
+        {% endif %}
+      
+        <div class="review-form" id="reviewForm_{{ item.item_id }}" style="display:none;">
+            <form action="{{ url_for('submit_review', order_id=order.id) }}" method="POST">
+                <input type="hidden" name="item_id" value="{{ item.item_id }}">
+                <div class="mb-3">
+                    <label class="form-label">Rating:</label>
+                    <input type="hidden" name="rating" id="rating_{{ item.item_id }}" required>
+                    <div class="star-rating" data-rating="rating_{{ item.item_id }}">
+                        {% for i in range(1,6) %}
+                        <span class="star" data-value="{{ i }}">&#9733;</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="review_{{ item.item_id }}" class="form-label">Your Review:</label>
+                    <textarea name="review" id="review_{{ item.item_id }}" class="form-control" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Would you recommend this item?</label>
+                    <div class="recommend-options">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="recommend" value="yes" required>
+                            <label class="form-check-label">Yes</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="recommend" value="no" >
+                            <label class="form-check-label">No</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Submit
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="hideReviewForm({{ item.item_id }})">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="card review-card">
+        <div class="review-header">
+            <i class="fas fa-shopping-cart"></i> Order Summary
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <p><strong>Order ID:</strong> {{ order.id }}</p>
+                    <p><strong>Date:</strong> {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    <p><strong>Status:</strong>
+                        <span class="badge bg-success">{{ order.status }}</span>
+                    </p>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <p><strong>Total Price:</strong> Rs. {{ order.total_price }}</p>
+                    <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+                    <p><strong>Delivery Address:</strong> {{ order.delivery_address }}</p>
+                </div>
+                <div class="mb-3">
+  <a href="{{ url_for('orders') }}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Orders
+  </a>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showReviewForm(itemId, itemName) {
+    const formDiv = document.getElementById('reviewForm_' + itemId);
+    if (formDiv) {
+        formDiv.style.display = 'block';
+        window.scrollTo({
+            top: formDiv.offsetTop - 50,
+            behavior: 'smooth'
+        });
+    }
+}
+
+function hideReviewForm(itemId) {
+    const formDiv = document.getElementById('reviewForm_' + itemId);
+    if (formDiv) {
+        formDiv.style.display = 'none';
+    }
+}
+
+document.querySelectorAll('.star-rating').forEach(ratingDiv => {
+    const stars = ratingDiv.querySelectorAll('.star');
+    const inputId = ratingDiv.getAttribute('data-rating');
+    const input = document.getElementById(inputId);
+
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const val = star.getAttribute('data-value');
+            input.value = val;
+            stars.forEach(s => {
+                s.classList.toggle('active', s.getAttribute('data-value') <= val);
+            });
+        });
+
+        star.addEventListener('mouseover', () => {
+            stars.forEach(s => {
+                s.classList.toggle('active', s.getAttribute('data-value') <= star.getAttribute('data-value'));
+            });
+        });
+
+        star.addEventListener('mouseout', () => {
+            const val = input.value || 0;
+            stars.forEach(s => {
+                s.classList.toggle('active', s.getAttribute('data-value') <= val);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

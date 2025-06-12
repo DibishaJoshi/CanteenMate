@@ -1,196 +1,98 @@
 {% extends "admin/admin_base.html" %}
 {% block extra_css %}
 <style>
-    /* Container */
-.container {
-  max-width: 1200px;
-  margin: 20px auto;
-  padding: 0 15px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Heading */
-.container h2 {
-  font-size: 2rem;
+    .status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
   font-weight: 600;
-  margin-bottom: 20px;
-  color: #333;
+  color: #fff;
+  text-transform: capitalize;
+  font-size: 0.9rem;
 }
 
-/* Table styles */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  box-shadow: 0 0 10px rgba(0,0,0,0.05);
-  border-radius: 6px;
-  overflow: hidden;
+.status-badge.pending {
+  background-color: orange;
 }
 
-/* Table header */
-.table thead tr {
+.status-badge.processing {
   background-color: #007bff;
-  color: #fff;
-  text-align: left;
-  font-weight: 600;
 }
 
-.table thead th {
-  padding: 12px 15px;
-  border-bottom: 2px solid #0056b3;
+.status-badge.shipped {
+  background-color: purple;
+}
+.status-badge.ready {
+  background-color: orange;
+}
+.status-badge.delivered {
+  background-color: green;
 }
 
-/* Table body */
-.table tbody tr {
-  border-bottom: 1px solid #eaeaea;
-  transition: background-color 0.3s ease;
+.status-badge.cancelled {
+  background-color: red;
 }
 
-.table tbody tr:hover {
-  background-color: #f5faff;
+.status-badge.unknown {
+  background-color: gray;
 }
-
-.table tbody td {
-  color: #555;
-}
-
-/* Status badges */
-.status-completed {
-  color: #28a745;
-  font-weight: 600;
-}
-
-.status-pending {
-  color: #ffc107;
-  font-weight: 600;
-}
-
-/* Buttons */
-.btn {
-  display: inline-block;
-  font-size: 0.85rem;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  text-decoration: none;
-  user-select: none;
-  transition: background-color 0.3s ease;
-  border: none;
-}
-
-.btn-sm {
-  padding: 5px 10px;
-  font-size: 0.75rem;
-}
-
-.btn-primary {
-  background-color: #007bff;
-  color: #fff;
-}
-
-.btn-primary:hover {
-  background-color: #0056b3;
-}
-
-.btn-danger {
-  background-color: #dc3545;
-  color: #fff;
-}
-
-.btn-danger:hover {
-  background-color: #a71d2a;
-}
-
-/* Responsive - smaller screens */
-@media (max-width: 768px) {
-  .table thead {
-    display: none;
-  }
-  .table, .table tbody, .table tr, .table td {
-    display: block;
-    width: 100%;
-  }
-  .table tr {
-    margin-bottom: 15px;
-    border-bottom: 2px solid #ddd;
-  }
-  .table td {
-    padding-left: 50%;
-    position: relative;
-    text-align: left;
-  }
-  .table td::before {
-    position: absolute;
-    left: 15px;
-    width: 45%;
-    padding-right: 10px;
-    white-space: nowrap;
-    font-weight: 600;
-    color: #333;
-  }
-  .table td:nth-of-type(1)::before { content: "Order ID"; }
-  .table td:nth-of-type(2)::before { content: "Customer"; }
-  .table td:nth-of-type(3)::before { content: "Item"; }
-  .table td:nth-of-type(4)::before { content: "Category"; }
-  .table td:nth-of-type(5)::before { content: "Attribute"; }
-  .table td:nth-of-type(6)::before { content: "Unit"; }
-  .table td:nth-of-type(7)::before { content: "Addons"; }
-  .table td:nth-of-type(8)::before { content: "Quantity"; }
-  .table td:nth-of-type(9)::before { content: "Total Price"; }
-  .table td:nth-of-type(10)::before { content: "Status"; }
-  .table td:nth-of-type(11)::before { content: "Action"; }
-}
-
 </style>
 {% endblock %}
 {% block content %}
-<div class="container">
-    
+<div class="attribute-content">
+    <div class="action-bar">
+        <!-- If you want, you can add a button or search box here -->
+        <!-- Example: -->
+        <!-- <button class="add-btn"><i class="fas fa-plus"></i> Add New Order</button> -->
+        <div class="search-box">
+            <input type="text" placeholder="Search orders...">
+            <button><i class="fas fa-search"></i></button>
+        </div> 
+    </div>
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Order ID</th>
-                <th>Customer</th>
-                <th>Item</th>
-                <th>Category</th>
-                <th>Attribute</th>
-                <th>Unit</th>
-                <th>Addons</th>
-                <th>Quantity</th>
-                <th>Total Price</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in orders %}
-            <tr>
-                <td>{{ order.id }}</td>
-                <td>{{ order.customer_name }}</td>
-                <td>{{ order.item.name }}</td>
-                <td>{{ order.item.category }}</td>
-                <td>{{ order.item.attribute }}</td>
-                <td>{{ order.item.unit }}</td>
-                <td>
-                    {% if order.addons %}
-                        {{ order.addons | join(', ') }}
-                    {% else %}
-                        None
+    <div class="attributes-list">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% if 'order_' in category %}
+                        <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                            <span>{{ message }}</span>
+                            <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
                     {% endif %}
-                </td>
-                <td>{{ order.quantity }}</td>
-                <td>${{ '%.2f'|format(order.total_price) }}</td>
-                <td class="{{ 'status-completed' if order.status == 'Completed' else 'status-pending' }}">
-                    {{ order.status }}
-                </td>
-                <td>
-                    <a href="" class="btn btn-sm btn-primary">Edit</a>
-                    <a href="" class="btn btn-sm btn-danger">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <h2 style="padding-bottom:10px;">Orders</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ order.name }}</td>
+                    <td>Rs. {{ '%.2f'|format(order.total_amount) }}</td>
+                    <td>
+                        <span class="status-badge {{ order.status|lower }}">
+                            {{ order.status }}
+                        </span>
+                    </td>
+                    <td class="actions">
+                        <a href="{{ url_for('admin_order_view', order_id=order.id) }}" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i> View</a>
+                        <a href="#" class="btn-delete"><i class="fas fa-trash"></i> Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
 </div>
 {% endblock %}

@@ -2,7 +2,6 @@
 
 {% block extra_css %}
 <style>
-
 .checkout-container {
   display: flex;
   gap: 2rem;
@@ -75,13 +74,18 @@
   background: #254edb;
 }
 
+.checkout-form button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
 .order-summary {
   flex: 1;
   background: white;
   padding: 1.5rem;
   border-radius: 10px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
-  height:fit-content;
+  height: fit-content;
 }
 
 .order-summary h3 {
@@ -109,77 +113,437 @@
   padding-top: 0.5rem;
 }
 
+.alert {
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 5px;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border-color: #ffeaa7;
+}
+
+.form-error {
+  margin-bottom: 1rem;
+}
+
+.field-error {
+  color: #721c24;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.input-error {
+  border-color: #f5c6cb !important;
+  background-color: #fdf2f2;
+}
+
+#khalti-section {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+  border: 1px solid #dee2e6;
+}
 </style>
 {% endblock %}
+
 {% block content %}
 <div class="checkout-container">
-  <form class="checkout-form" action="{{ url_for('checkout') }}" method="post" id="checkoutForm">
+
+  {% set ns = namespace(subtotal=0) %}
+  {% for item in cart.values() %}
+    {% set ns.subtotal = ns.subtotal + (item.price * item.quantity) %}
+  {% endfor %}
+  {% set tax = ns.subtotal * 0.08 %}
+  {% set service_fee = 10 %}
+  {% set total = ns.subtotal + tax + service_fee %}
+
+  <form class="checkout-form" method="POST" action="{{ url_for('checkout') }}" id="checkout-form">
     <h2>Checkout</h2>
 
-    <h3>User Information</h3>
-    <label for="name">Full Name</label>
-    <input type="text" id="name" name="name" required>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' if category == 'success' else 'warning' }} d-flex justify-content-between align-items-center" role="alert">
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
 
-    <label for="email">Email</label>
-    <input type="email" id="email" name="email" required>
+    <h3>User Information</h3>
+    <label for="name">Full Name *</label>
+    <input type="text" id="name" name="name" value="{{ form_data.get('name', '') }}" >
+
+    <label for="contact">Contact Number *</label>
+    <input type="text" id="contact" name="contact" value="{{ form_data.get('contact', '') }}" 
+           placeholder="E.g. +1234567890 or 9812345678" >
+
+    <label for="email">Email *</label>
+    <input type="text" id="email" name="email" value="{{ form_data.get('email', '') }}" >
 
     <h3>Delivery Option</h3>
     <div class="radio-group">
-      <label><input type="radio" name="delivery" value="pickup" checked onchange="toggleAddress()"> Pickup</label>
-      <label><input type="radio" name="delivery" value="home" onchange="toggleAddress()"> Home Delivery</label>
+      <label>
+        <input type="radio" name="delivery" value="pickup" 
+               {% if form_data.get('delivery', 'pickup') == 'pickup' %}checked{% endif %} 
+               onchange="toggleAddress()"> 
+        Pickup
+      </label>
+      <label>
+        <input type="radio" name="delivery" value="home" 
+               {% if form_data.get('delivery') == 'home' %}checked{% endif %} 
+               onchange="toggleAddress()"> 
+        Home Delivery
+      </label>
     </div>
 
-    <div id="addressFields" style="display: none;">
-      <h3>Shipping Address</h3>
-      <label for="address">Address</label>
-      <input type="text" id="address" name="address">
+    <div id="address-fields" style="display: {{ 'block' if form_data.get('delivery') == 'home' else 'none' }};">
+      <h3>Delivery Address</h3>
+      <label for="building">Building / Block *</label>
+      <input type="text" id="building" name="building" value="{{ form_data.get('building', '') }}">
 
-      <div class="form-row">
-        <div>
-          <label for="street">Street</label>
-          <input type="text" id="street" name="street">
-        </div>
-        <div>
-          <label for="city">City</label>
-          <input type="text" id="city" name="city">
-        </div>
-      </div>
+      <label for="floor">Floor / Room No. *</label>
+      <input type="text" id="floor" name="floor" value="{{ form_data.get('floor', '') }}">
     </div>
 
     <h3>Payment Method</h3>
     <div class="radio-group">
-      <label><input type="radio" name="payment" value="cash" checked> Cash on Delivery</label>
-      <label><input type="radio" name="payment" value="card"> Card</label>
+      <label>
+        <input type="radio" name="payment" value="cash" 
+               {% if form_data.get('payment', 'cash') == 'cash' %}checked{% endif %}> 
+        Cash on Delivery
+      </label>
+      <!--<label>
+        <input type="radio" name="payment" value="card" 
+               {% if form_data.get('payment') == 'card' %}checked{% endif %}> 
+        Card Payment
+      </label>-->
+      <label>
+        <input type="radio" name="payment" value="khalti" 
+               {% if form_data.get('payment') == 'khalti' %}checked{% endif %}> 
+        Khalti
+      </label>
     </div>
 
+    <div id="khalti-section" style="display: none;">
+      <h4>🎯 Khalti Payment</h4>
+      <p>You will be redirected to Khalti payment gateway to complete your payment securely.</p>
+      <p><strong>Amount to pay: Rs. {{ "%.2f"|format(total) }}</strong></p>
+    </div>
+
+    <input type="hidden" name="khalti_token" id="khalti_token">
+    <input type="hidden" name="total_amount" id="total_amount" value="{{ total }}">
+
     <hr>
-    <button type="submit">Place Order</button>
+    <button type="submit" id="submit-button">Place Order</button>
   </form>
 
   <div class="order-summary">
     <h3>Order Summary</h3>
-    {% set ns = namespace(subtotal=0) %}
-    {% for item in session.cart.values() %}
-      {% set ns.subtotal = ns.subtotal + (item.price * item.quantity) %}
+    {% for item in cart.values() %}
       <div class="item">
-        <strong>{{ item.name }}</strong>
+        <div>
+          <strong>{{ item.name }}</strong>
+          <div class="meta">Quantity: {{ item.quantity }} × Rs. {{ "%.2f"|format(item.price) }}</div>
+        </div>
         <span>Rs. {{ "%.2f"|format(item.price * item.quantity) }}</span>
-        <div class="meta">Quantity: {{ item.quantity }}</div>
       </div>
     {% endfor %}
-    {% set tax = ns.subtotal * 0.08 %}
-    {% set service_fee = 10 %}
-    {% set total = ns.subtotal + tax + service_fee %}
+    <hr>
+    <div class="item"><span>Subtotal</span><span>Rs. {{ "%.2f"|format(ns.subtotal) }}</span></div>
     <div class="item"><span>Tax (8%)</span><span>Rs. {{ "%.2f"|format(tax) }}</span></div>
     <div class="item"><span>Service Fee</span><span>Rs. {{ "%.2f"|format(service_fee) }}</span></div>
     <div class="item total"><strong>Total</strong><strong>Rs. {{ "%.2f"|format(total) }}</strong></div>
   </div>
 </div>
-
+{% block extra_js %}
+<script src="https://khalti.com/static/khalti-checkout.js"></script>
 <script>
+
+const KHALTI_PUBLIC_KEY = "test_public_key_dc74e0fd57cb46cd93832aee0a390234";
+
+document.addEventListener('DOMContentLoaded', function() {
+    const checkoutForm = document.getElementById('checkout-form');
+    const paymentRadios = document.querySelectorAll('input[name="payment"]');
+    const khaltiSection = document.getElementById('khalti-section');
+    const submitButton = document.getElementById('submit-button');
+    const totalAmount = parseFloat(document.getElementById('total_amount').value);
+    
+    // Handle payment method changes
+    paymentRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            handlePaymentMethodChange();
+        });
+    });
+    
+    function handlePaymentMethodChange() {
+        const selectedPayment = document.querySelector('input[name="payment"]:checked');
+        
+        if (selectedPayment && selectedPayment.value === 'khalti') {
+            // Validate form before showing Khalti section
+            if (validateForm(false)) {
+                khaltiSection.style.display = 'block';
+                submitButton.textContent = 'Pay with Khalti';
+            } else {
+                khaltiSection.style.display = 'none';
+                selectedPayment.checked = false;
+                submitButton.textContent = 'Place Order';
+                showValidationErrors();
+            }
+        } else {
+            khaltiSection.style.display = 'none';
+            submitButton.textContent = 'Place Order';
+        }
+    }
+    
+    function validateForm(showErrors = true) {
+        const errors = [];
+        
+        // Get form values
+        const name = document.getElementById('name').value.trim();
+        const contact = document.getElementById('contact').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const delivery = document.querySelector('input[name="delivery"]:checked');
+        const payment = document.querySelector('input[name="payment"]:checked');
+        
+        clearErrorStyling();
+        
+        if (!name) {
+            errors.push({ field: 'name', message: "Full Name is required." });
+        }
+        
+        if (!contact) {
+            errors.push({ field: 'contact', message: "Contact Number is required." });
+        } else if (!/^\+?\d{7,15}$/.test(contact)) {
+            errors.push({ field: 'contact', message: "Valid Contact Number required (7-15 digits)." });
+        }
+        
+        if (!email) {
+            errors.push({ field: 'email', message: "Email is required." });
+        } else if (!/^[\w\.-]+@[\w\.-]+\.\w+$/.test(email)) {
+            errors.push({ field: 'email', message: "Valid Email address is required." });
+        }
+        
+        if (!delivery) {
+            errors.push({ field: 'delivery', message: "Please select a delivery method." });
+        } else if (delivery.value === 'home') {
+            const building = document.getElementById('building').value.trim();
+            const floor = document.getElementById('floor').value.trim();
+            if (!building) {
+                errors.push({ field: 'building', message: "Building/Block is required for home delivery." });
+            }
+            if (!floor) {
+                errors.push({ field: 'floor', message: "Floor/Room No. is required for home delivery." });
+            }
+        }
+        
+        if (!payment) {
+            errors.push({ field: 'payment', message: "Please select a payment method." });
+        }
+        
+        if (showErrors && errors.length > 0) {
+            showFieldErrors(errors);
+        }
+        
+        return errors.length === 0;
+    }
+    
+    function clearErrorStyling() {
+        document.querySelectorAll('.input-error').forEach(el => {
+            el.classList.remove('input-error');
+        });
+        document.querySelectorAll('.field-error').forEach(el => {
+            el.remove();
+        });
+        document.querySelectorAll('.form-error').forEach(el => {
+            el.remove();
+        });
+    }
+    
+    function showFieldErrors(errors) {
+        errors.forEach(error => {
+            const field = document.getElementById(error.field);
+            if (field) {
+                field.classList.add('input-error');
+                
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'field-error';
+                errorDiv.textContent = error.message;
+                field.parentNode.insertBefore(errorDiv, field.nextSibling);
+            }
+        });
+    }
+    
+    function showValidationErrors() {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger form-error';
+        errorDiv.innerHTML = '<strong>Please fill in all required fields correctly before selecting Khalti payment.</strong>';
+        checkoutForm.insertBefore(errorDiv, checkoutForm.firstChild);
+        
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    checkoutForm.addEventListener('submit', function(e) {
+        const selectedPayment = document.querySelector('input[name="payment"]:checked');
+        
+        if (!validateForm()) {
+            e.preventDefault();
+            return false;
+        }
+        
+        if (selectedPayment && selectedPayment.value === 'khalti') {
+            e.preventDefault();
+            handleKhaltiPayment();
+            return false;
+        }
+        
+        // For cash and card payments, submit normally
+        return true;
+    });
+    
+    // STEP 2: REPLACE THE OLD handleKhaltiPayment FUNCTION WITH THIS ONE
+    function handleKhaltiPayment() {
+        const amountInPaisa = Math.round(totalAmount * 100);
+        
+        // Validate amount before proceeding
+        if (amountInPaisa < 1000) { // Rs. 10 minimum
+            alert('Minimum payment amount is Rs. 10');
+            return;
+        }
+        
+        console.log("Initializing Khalti with amount:", amountInPaisa, "paisa"); // Debug log
+        
+        const config = {
+            "publicKey": KHALTI_PUBLIC_KEY,
+            "productIdentity": "checkout_" + Date.now(),
+            "productName": "Canteen Order",
+            "productUrl": window.location.origin,
+            "paymentPreference": [
+                "KHALTI",
+                "EBANKING", 
+                "MOBILE_BANKING", 
+                "CONNECT_IPS", 
+                "SCT"
+            ],
+            "eventHandler": {
+                onSuccess(payload) {
+                    console.log("Khalti Payment Success:", payload);
+                    
+                    // Show loading state
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Verifying Payment...';
+                    
+                    // Verify payment on server
+                    fetch('/khalti-verify', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            token: payload.token,
+                            amount: totalAmount
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Add token to form and submit
+                            document.getElementById('khalti_token').value = payload.token;
+                            submitButton.textContent = 'Processing Order...';
+                            checkoutForm.submit();
+                        } else {
+                            alert('Payment verification failed: ' + (data.message || 'Unknown error'));
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'Pay with Khalti';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Verification Error:', error);
+                        alert('Payment verification failed: ' + error.message);
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Pay with Khalti';
+                    });
+                },
+                
+                
+                
+                onClose() {
+                    console.log("Khalti widget closed by user.");
+                    // Reset button state when user closes widget
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Pay with Khalti';
+                }
+            }
+        };
+        
+        try {
+            // Validate public key format before initialization
+            if (!KHALTI_PUBLIC_KEY || (!KHALTI_PUBLIC_KEY.startsWith('test_public_key_') && !KHALTI_PUBLIC_KEY.startsWith('live_public_key_'))) {
+                throw new Error('Invalid Khalti public key format');
+            }
+            
+            const checkout = new KhaltiCheckout(config);
+            checkout.show({ amount: amountInPaisa });
+        } catch (error) {
+            console.error("Khalti initialization error:", error);
+            alert("Failed to initialize payment: " + error.message + ". Please refresh the page and try again.");
+        }
+    }
+    
+    // Initialize payment method on page load
+    handlePaymentMethodChange();
+});
+
+// Address toggle function
 function toggleAddress() {
-  const delivery = document.querySelector('input[name="delivery"]:checked').value;
-  document.getElementById('addressFields').style.display = (delivery === 'home') ? 'block' : 'none';
+    const delivery = document.querySelector('input[name="delivery"]:checked');
+    const addressFields = document.getElementById('address-fields');
+    
+    if (delivery && addressFields) {
+        addressFields.style.display = delivery.value === 'home' ? 'block' : 'none';
+    }
 }
+
+// Auto-hide flash messages
+setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(msg => {
+        if (!msg.classList.contains('form-error')) {
+            msg.style.transition = 'opacity 0.5s ease';
+            msg.style.opacity = '0';
+            setTimeout(() => {
+                if (msg.parentNode) {
+                    msg.remove();
+                }
+            }, 500);
+        }
+    });
+}, 3000);
 </script>
+{% endblock %}
 {% endblock %}

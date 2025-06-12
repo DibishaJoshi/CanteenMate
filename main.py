@@ -1,23 +1,29 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from datetime import datetime,timedelta
+from datetime import datetime,timedelta,date,time
+from flask_socketio import SocketIO,join_room, leave_room
+
+
 import os
 import functools
+import re
+import requests
 
-from models import db, User, Category, Item, Attribute, AttributeValue ,Menu
+from models import db, User, Category, Item, Attribute, AttributeValue ,Menu, Order, OrderItem,Review, ReviewHelpful
 
-# Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dibisha'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///canteen.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.permanent_session_lifetime = timedelta(days=7)
-
+socketio = SocketIO(app, cors_allowed_origins="*")
+KHALTI_PUBLIC_KEY = "Key test_public_key_dc74e0fd57cb46cd93832aee0a507256"
+KHALTI_INITIATE_URL = "https://a.khalti.com/api/v2/epayment/initiate/"
+KHALTI_SECRET_KEY = "Key test_secret_key_f59e8b7d18b4499ca40f68195a846fd9"
 # Initialize database with app
 db.init_app(app)
 
-# Custom login_required decorator
 def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
@@ -27,13 +33,11 @@ def login_required(view):
         return view(**kwargs)
     return wrapped_view
 
-# Routes
 @app.route('/')
 def index():
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
-    return render_template('login_signup.html')
-
+    return render_template('login_signup.html',show_form='login')
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
@@ -43,6 +47,17 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         remember = True if request.form.get('remember') else False
+
+        # Check if email or password is missing
+        if not email or not password:
+            flash('Email and password are required.', 'warning')
+            return redirect(url_for('login'))
+        if '@' not in email or '.' not in email:
+            flash("Enter a valid Email address.",'warning')
+        
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long.', 'warning')
+            return redirect(url_for('login'))
 
         user = User.query.filter_by(email=email).first()
 
@@ -60,34 +75,43 @@ def login():
 
         flash('Logged in successfully!', 'success')
         return redirect(url_for('dashboard'))
-
-    return render_template('login_signup.html')
-
+    return render_template('login_signup.html', show_form='login')
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    if 'user_id' in session:
-        return redirect(url_for('dashboard'))
-
     if request.method == 'POST':
         fullname = request.form.get('fullname')
         email = request.form.get('email')
-        role = request.form.get('role')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
+
+        # Check required fields
+        if not fullname or not email or not password or not confirm_password:
+            flash('All fields are required.', 'warning')
+            return redirect(url_for('signup'))
+        
+        if '@' not in email or '.' not in email:
+            flash("Enter a valid Email address.",'warning')
+
+        # Password validations
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long.', 'warning')
+            return redirect(url_for('signup'))
 
         if password != confirm_password:
             flash('Passwords do not match!', 'danger')
             return redirect(url_for('signup'))
 
-        user = User.query.filter_by(email=email).first()
-        if user:
-            flash('Email address already exists', 'danger')
+        # Check if email already exists
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash('Email address already exists.', 'danger')
             return redirect(url_for('signup'))
 
+        # Always assign role = 'user'
         new_user = User(
             fullname=fullname,
             email=email,
-            role=role,
+            role='user',
             password=generate_password_hash(password, method='pbkdf2:sha256')
         )
 
@@ -97,7 +121,8 @@ def signup():
         flash('Account created successfully! You can now log in.', 'success')
         return redirect(url_for('login'))
 
-    return render_template('login_signup.html')
+    return render_template('login_signup.html', show_form='signup')
+
 
 @app.route('/logout')
 @login_required
@@ -106,16 +131,56 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
+
 @app.route('/admin/dashboard')
 @login_required
 def dashboard():
     role = session.get('user_role')
     user_id = session.get('user_id')
     if role == 'admin':
-        user = User.query.get(user_id)  # Fetch user from DB
-        return render_template('admin/admin_dashboard.html', user=user, active_page='dashboard')
+        user = User.query.get(user_id) 
+        total_items = Item.query.count()
+        total_customers = User.query.filter(User.role != 'admin').count()
+        today = date.today()
+
+        # Create datetime range for today (00:00:00 to 23:59:59.999999)
+        start_datetime = datetime.combine(today, time.min)
+        end_datetime = datetime.combine(today, time.max)
+
+        todays_orders = Order.query.filter(
+            Order.created_at >= start_datetime,
+            Order.created_at <= end_datetime
+        ).all()
+
+        todays_orders_count = len(todays_orders)  # <-- Add this line
+
+        todays_revenue = sum(order.total_amount for order in todays_orders)
+
+        recent_orders = Order.query.order_by(Order.created_at.desc()).limit(5).all()
+
+        popular_items = db.session.query(
+            OrderItem.item_id,
+            OrderItem.name,
+            db.func.count(OrderItem.item_id).label('count')
+        ).group_by(OrderItem.item_id).order_by(db.desc('count')).limit(5).all()
+
+        order_status_counts = db.session.query(
+            Order.status, db.func.count(Order.id)
+        ).group_by(Order.status).all()
+
+        return render_template('admin/admin_dashboard.html',
+                               user=user,
+                               active_page='dashboard',
+                               total_items=total_items,
+                               total_customers=total_customers,
+                               todays_orders_count=todays_orders_count,
+                               todays_revenue=todays_revenue,
+                               recent_orders=recent_orders,
+                               popular_items=popular_items,
+                               order_status_counts=dict(order_status_counts))
     else:
         return redirect(url_for('user_dashboard'))
+
 # Admin and feature pages
 @app.route('/admin')
 @login_required
@@ -686,58 +751,407 @@ def get_menu_statistics():
 @app.route('/admin/orders')
 @login_required
 def admin_orders():
-    orders = [
-        {
-            "id": 101,
-            "customer_name": "Aayush K.",
-            "item": {
-                "name": "Chicken Sandwich",
-                "category": "Lunch",
-                "attribute": "Grilled",
-                "unit": "Plate"
-            },
-            "addons": ["Cheese", "Extra Mayo"],
-            "quantity": 2,
-            "total_price": 11.98,
-            "status": "Completed"
-        },
-        {
-            "id": 102,
-            "customer_name": "Sneha T.",
-            "item": {
-                "name": "Pancakes",
-                "category": "Breakfast",
-                "attribute": "Fluffy",
-                "unit": "Stack"
-            },
-            "addons": ["Maple Syrup"],
-            "quantity": 1,
-            "total_price": 5.50,
-            "status": "Pending"
-        }
-    ]
-    user_id = session['user_id']
+    user_id = session.get('user_id')
     user = User.query.get(user_id)
-    return render_template("admin/admin_orders.html", user=user,active_page='admin_orders', orders=orders)
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+    return render_template('admin/admin_orders.html',user=user,active_page='orders', orders=orders)
     
-@app.route('/notifications')
-@login_required
-def get_notifications():
-    # Replace with DB query in real app
-    notifications = [
-        {"message": "🍔 Your Order is being prepared" ,"time": datetime.now().strftime("%I:%M %p")},
-        {"message": "⚠️ Your Order is canceled", "time": datetime.now().strftime("%I:%M %p")},
-        {"message": "✅ Your order is delivered", "time": datetime.now().strftime("%I:%M %p")},
-    ]
-    return jsonify(notifications)
-
-
-@app.route('/orders')
-@login_required
-def orders():
-    user_id = session['user_id']
+@app.route('/admin/orders/<int:order_id>')
+def admin_order_view(order_id):
+    user_id = session.get('user_id')
     user = User.query.get(user_id)
-    return render_template('orders.html' ,user=user)
+    order = Order.query.get_or_404(order_id)
+    return render_template('admin/order_view.html',user=user, order=order)
+
+# Socket.IO event handlers
+@socketio.on('connect')
+def handle_connect():
+    print(f'Client {request.sid} connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print(f'Client {request.sid} disconnected')
+
+@socketio.on('join')
+def handle_join(data):
+    room = data.get('room')
+    if room:
+        join_room(room)
+        print(f'Client {request.sid} joined room {room}')
+
+@socketio.on('leave')
+def handle_leave(data):
+    room = data.get('room')
+    if room:
+        leave_room(room)
+        print(f'Client {request.sid} left room {room}')
+
+@app.route('/admin/orders/<int:order_id>/update-status', methods=['POST'])
+@login_required
+def admin_update_order_status(order_id):
+    order = Order.query.get_or_404(order_id)
+    new_status = request.form.get('status')
+
+    status_messages = {
+        'pending': "🕒 Your order has been placed and is awaiting processing.",
+        'processing': "👨🍳 Your order is currently being prepared.",
+        'ready': "🔔 Your order is ready for pickup!",
+        'shipped': "🚚 Your order is out for delivery.",
+        'delivered': "✅ Your order has been delivered. Enjoy your meal!",
+        'cancelled': "❌ Your order was cancelled. Contact support for details."
+    }
+
+    valid_statuses = ['Pending', 'Processing', 'Ready', 'Shipped', 'Delivered', 'Cancelled']
+
+    if new_status in valid_statuses:
+        old_status = order.status
+        order.status = new_status
+        db.session.commit()
+
+        flash('Order status updated successfully.', 'status_success')
+
+        # Prepare notification message
+        # Normalize new_status to lowercase to match keys in status_messages
+        status_key = new_status.lower()
+        message = status_messages.get(status_key, f"Order #{order.id} status updated to {new_status}")
+
+        # Add review request if status is delivered
+        if status_key == 'delivered':
+            message += " Please provide us a review."
+
+        # Emit notification to user
+        try:
+            user_room = f"user_{order.user_id}"
+            notification_data = {
+                'order_id': order.id,
+                'status': new_status,
+                'message': message
+            }
+
+            print(f"Emitting notification to room {user_room}: {notification_data}")
+
+            socketio.emit(
+                'order_status_update',
+                notification_data,
+                room=user_room
+            )
+
+        except Exception as e:
+            print(f"Error emitting notification: {e}")
+    else:
+        flash('Invalid status selected.', 'status_danger')
+
+    return redirect(url_for('admin_order_view', order_id=order.id))
+
+
+
+@app.route('/orders/<int:order_id>/review')
+@login_required
+def review_order(order_id):
+    """Show review form for a delivered order"""
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    
+    # Get the order and verify it belongs to the user
+    order = Order.query.filter_by(id=order_id, user_id=user_id).first()
+    if not order:
+        flash('Order not found.', 'danger')
+        return redirect(url_for('orders'))
+    
+    # Check if order is delivered
+    if order.status.lower() != 'delivered':
+        flash('You can only review delivered orders.', 'warning')
+        return redirect(url_for('orders'))
+    existing_reviews = Review.query.filter_by(order_id=order_id, user_id=user_id).all()
+    reviews_by_item = {r.item_id: r for r in existing_reviews}
+    reviewed_item_ids = [r.item_id for r in existing_reviews]
+    
+    return render_template('review_order.html', 
+                       user=user, 
+                       order=order, 
+                       reviews_by_item=reviews_by_item,reviewed_item_ids=reviewed_item_ids,
+                       active_page='orders')
+@app.route('/orders/<int:order_id>/review', methods=['POST'])
+@login_required
+def submit_review(order_id):
+    """Process review submission"""
+    user_id = session.get('user_id')
+    
+    # Verify order belongs to user and is delivered
+    order = Order.query.filter_by(id=order_id, user_id=user_id).first()
+    if not order or order.status.lower() != 'delivered':
+        flash('Invalid order for review.', 'review_danger')
+        return redirect(url_for('orders'))
+    
+    try:
+        # Get form data
+        item_id = request.form.get('item_id')
+        rating = int(request.form.get('rating', 0))
+        comment = request.form.get('comment', '').strip()
+        service_rating = request.form.get('service_rating')
+        delivery_rating = request.form.get('delivery_rating')
+        would_recommend = request.form.get('would_recommend') == 'yes'
+        
+        # Validate required fields
+        if not item_id or rating < 1 or rating > 5:
+            flash('Please provide a valid rating (1-5 stars).', 'review_danger')
+            return redirect(url_for('review_order', order_id=order_id))
+        
+        # Verify item is in the order
+        order_item = OrderItem.query.filter_by(order_id=order_id, item_id=item_id).first()
+        if not order_item:
+            flash('Item not found in this order.', 'review_danger')
+            return redirect(url_for('review_order', order_id=order_id))
+        existing_reviews = Review.query.filter_by(order_id=order_id, user_id=user_id).all()
+        reviews_by_item = {r.item_id: r for r in existing_reviews}
+        # Check if review already exists
+        existing_review = Review.query.filter_by(
+            order_id=order_id, 
+            user_id=user_id, 
+            item_id=item_id
+        ).first()
+        
+        if existing_review:
+            flash('You have already reviewed this item.', 'review_warning')
+            return redirect(url_for('review_order', order_id=order_id))
+        
+        # Convert optional ratings
+        service_rating = int(service_rating) if service_rating and service_rating.isdigit() else None
+        delivery_rating = int(delivery_rating) if delivery_rating and delivery_rating.isdigit() else None
+        
+        # Create new review
+        new_review = Review(
+            user_id=user_id,
+            order_id=order_id,
+            item_id=item_id,
+            rating=rating,
+            comment=comment if comment else None,
+            service_rating=service_rating,
+            delivery_rating=delivery_rating,
+            would_recommend=would_recommend,
+            is_verified=True  
+        )
+        
+        db.session.add(new_review)
+        db.session.commit()
+        
+        flash('Thank you for your review!', 'success')
+        return redirect(url_for('review_order', order_id=order_id))
+        
+    except ValueError:
+        flash('Invalid rating value. Please select 1-5 stars.', 'danger')
+        return redirect(url_for('review_order', order_id=order_id))
+    except Exception as e:
+        db.session.rollback()
+        print(f"Review submission error: {e}")
+        flash('Error submitting review. Please try again.', 'danger')
+        return redirect(url_for('review_order', order_id=order_id))
+
+@app.route('/item/<int:item_id>/reviews')
+def item_reviews(item_id):
+    """Show all reviews for an item"""
+    item = Item.query.get_or_404(item_id)
+    
+    # Get pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    
+    # Get filter parameters
+    rating_filter = request.args.get('rating', type=int)
+    sort_by = request.args.get('sort', 'newest')  # newest, oldest, highest, lowest, helpful
+    
+    # Build query
+    reviews_query = Review.query.filter_by(item_id=item_id)
+    
+    # Apply rating filter
+    if rating_filter and 1 <= rating_filter <= 5:
+        reviews_query = reviews_query.filter_by(rating=rating_filter)
+    
+    # Apply sorting
+    if sort_by == 'oldest':
+        reviews_query = reviews_query.order_by(Review.created_at.asc())
+    elif sort_by == 'highest':
+        reviews_query = reviews_query.order_by(Review.rating.desc())
+    elif sort_by == 'lowest':
+        reviews_query = reviews_query.order_by(Review.rating.asc())
+    elif sort_by == 'helpful':
+        reviews_query = reviews_query.order_by(Review.helpful_count.desc())
+    else:  # newest (default)
+        reviews_query = reviews_query.order_by(Review.created_at.desc())
+    
+    # Paginate
+    reviews = reviews_query.paginate(
+        page=page, 
+        per_page=per_page, 
+        error_out=False
+    )
+    
+    # Get review statistics
+    total_reviews = Review.query.filter_by(item_id=item_id).count()
+    avg_rating = db.session.query(db.func.avg(Review.rating)).filter_by(item_id=item_id).scalar()
+    avg_rating = round(avg_rating, 1) if avg_rating else 0
+    
+    # Get rating distribution
+    rating_distribution = {}
+    for rating in range(1, 6):
+        count = Review.query.filter_by(item_id=item_id, rating=rating).count()
+        percentage = (count / total_reviews * 100) if total_reviews > 0 else 0
+        rating_distribution[rating] = {'count': count, 'percentage': round(percentage, 1)}
+    
+    user_id = session.get('user_id')
+    user = User.query.get(user_id) if user_id else None
+    
+    return render_template('item_reviews.html',
+                         item=item,
+                         reviews=reviews,
+                         total_reviews=total_reviews,
+                         avg_rating=avg_rating,
+                         rating_distribution=rating_distribution,
+                         current_rating_filter=rating_filter,
+                         current_sort=sort_by,
+                         user=user)
+
+@app.route('/review/<int:review_id>/helpful', methods=['POST'])
+@login_required
+def mark_review_helpful(review_id):
+    """Mark a review as helpful or not helpful"""
+    user_id = session.get('user_id')
+    is_helpful = request.form.get('helpful') == 'true'
+    
+    review = Review.query.get_or_404(review_id)
+    
+    # Check if user has already voted on this review
+    existing_vote = ReviewHelpful.query.filter_by(
+        review_id=review_id, 
+        user_id=user_id
+    ).first()
+    
+    try:
+        if existing_vote:
+            # Update existing vote
+            existing_vote.is_helpful = is_helpful
+        else:
+            # Create new vote
+            new_vote = ReviewHelpful(
+                review_id=review_id,
+                user_id=user_id,
+                is_helpful=is_helpful
+            )
+            db.session.add(new_vote)
+        
+        # Update helpful count on review
+        helpful_count = ReviewHelpful.query.filter_by(
+            review_id=review_id, 
+            is_helpful=True
+        ).count()
+        review.helpful_count = helpful_count
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'helpful_count': helpful_count,
+            'message': 'Thank you for your feedback!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Error processing your feedback.'
+        }), 500
+
+@app.route('/admin/reviews')
+@login_required
+def admin_reviews():
+    """Admin page to manage reviews"""
+    if session.get('user_role') != 'admin':
+        return redirect(url_for('user_dashboard'))
+    
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    
+    # Get filter parameters
+    page = request.args.get('page', 1, type=int)
+    rating_filter = request.args.get('rating', type=int)
+    item_filter = request.args.get('item', type=int)
+    per_page = 20
+    
+    # Build query
+    reviews_query = Review.query.join(User).join(Item)
+    
+    # Apply filters
+    if rating_filter and 1 <= rating_filter <= 5:
+        reviews_query = reviews_query.filter(Review.rating == rating_filter)
+    
+    if item_filter:
+        reviews_query = reviews_query.filter(Review.item_id == item_filter)
+    
+    # Order by newest first
+    reviews_query = reviews_query.order_by(Review.created_at.desc())
+    
+    # Paginate
+    reviews = reviews_query.paginate(
+        page=page, 
+        per_page=per_page, 
+        error_out=False
+    )
+    
+    # Get stats for dashboard
+    total_reviews = Review.query.count()
+    avg_rating = db.session.query(db.func.avg(Review.rating)).scalar()
+    avg_rating = round(avg_rating, 1) if avg_rating else 0
+    
+    recent_reviews = Review.query.order_by(Review.created_at.desc()).limit(5).all()
+    
+    # Get all items for filter dropdown
+    items = Item.query.order_by(Item.name).all()
+    
+    return render_template('admin/admin_reviews.html',
+                         user=user,
+                         reviews=reviews,
+                         total_reviews=total_reviews,
+                         avg_rating=avg_rating,
+                         recent_reviews=recent_reviews,
+                         items=items,
+                         current_rating_filter=rating_filter,
+                         current_item_filter=item_filter,
+                         active_page='reviews')
+
+@app.route('/admin/reviews/<int:review_id>/toggle-visibility', methods=['POST'])
+@login_required
+def toggle_review_visibility(review_id):
+    """Toggle review visibility (admin only)"""
+    if session.get('user_role') != 'admin':
+        return redirect(url_for('user_dashboard'))
+    
+    review = Review.query.get_or_404(review_id)
+    
+    try:
+        # Add a visibility field to Review model if needed
+        # For now, we'll use a simple approach
+        review.is_verified = not review.is_verified
+        db.session.commit()
+        
+        status = "visible" if review.is_verified else "hidden"
+        flash(f'Review marked as {status}.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash('Error updating review visibility.', 'danger')
+    
+    return redirect(url_for('admin_reviews'))
+# @app.route('/notifications')
+# @login_required
+# def get_notifications():
+#     # Replace with DB query in real app
+#     notifications = [
+#         {"message": "🍔 Your Order is being prepared" ,"time": datetime.now().strftime("%I:%M %p")},
+#         {"message": "⚠️ Your Order is canceled", "time": datetime.now().strftime("%I:%M %p")},
+#         {"message": "✅ Your order is delivered", "time": datetime.now().strftime("%I:%M %p")},
+#     ]
+#     return jsonify(notifications)
+
 
 @app.route('/menu')
 @login_required
@@ -768,7 +1182,6 @@ def user_menu():
                            categories=categories,
                            active_page='menu')
 
-
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     item_id = request.form.get('item_id')
@@ -778,10 +1191,16 @@ def add_to_cart():
     category = request.form.get('category')
 
     if not item_id:
-        flash('Invalid item.')
+        flash('Invalid item.', 'cart_error')
         return redirect(url_for('show_menu'))
 
-    # Get or create cart
+    today = str(date.today())
+
+    # Clear cart if it's from a previous day
+    if session.get('cart_date') != today:
+        session['cart'] = {}
+        session['cart_date'] = today
+
     cart = session.get('cart', {})
 
     if item_id in cart:
@@ -797,7 +1216,7 @@ def add_to_cart():
         }
 
     session['cart'] = cart
-    flash('Added "{}" to cart'.format(item_name), 'cart_success')
+    flash(f'Added "{item_name}" to cart', 'cart_success')
 
     return redirect(url_for('user_menu'))
 
@@ -807,18 +1226,35 @@ def add_to_cart():
 def cart():
     user_id = session['user_id']
     user = User.query.get(user_id)
-    # Ensure cart is in session
+
+    today = str(date.today())
+
+    # Clear cart if old
+    if session.get('cart_date') != today:
+        session['cart'] = {}
+        session['cart_date'] = today
+
     if 'cart' not in session:
         session['cart'] = {}
-    return render_template('cart.html', user=user,active_page='settings')
+    return render_template('cart.html', user=user, active_page='cart')
+
 
 @app.route('/update_cart_quantity', methods=['POST'])
 def update_cart_quantity():
     item_id = request.form.get('item_id')
     action = request.form.get('action')  # "increase" or "decrease"
 
+    today = str(date.today())
+
+    # Clear cart if old
+    if session.get('cart_date') != today:
+        session['cart'] = {}
+        session['cart_date'] = today
+        flash('Your cart was cleared due to a new day.', 'cart_info')
+        return redirect(url_for('cart'))
+
     if not item_id or 'cart' not in session:
-        flash('Invalid request.', 'carts_error')
+        flash('Invalid request.', 'cart_error')
         return redirect(url_for('cart'))
 
     cart = session['cart']
@@ -831,15 +1267,25 @@ def update_cart_quantity():
             if cart[item_id]['quantity'] <= 0:
                 del cart[item_id]
         session['cart'] = cart
-        flash('Cart updated.', 'carts_success')
+        flash('Cart updated.', 'cart_success')
     else:
         flash('Item not found in cart.', 'cart_error')
 
     return redirect(url_for('cart'))
 
+
 @app.route('/remove_from_cart', methods=['POST'])
 def remove_from_cart():
     item_id = request.form.get('item_id')
+    today = str(date.today())
+
+    # Clear cart if old
+    if session.get('cart_date') != today:
+        session['cart'] = {}
+        session['cart_date'] = today
+        flash('Your cart was cleared due to a new day.', 'cart_info')
+        return redirect(url_for('cart'))
+
     if not item_id or 'cart' not in session:
         flash('Invalid request.', 'items_error')
         return redirect(url_for('cart'))
@@ -853,29 +1299,250 @@ def remove_from_cart():
         flash('Item not found in cart.', 'items_error')
 
     return redirect(url_for('cart'))
+
+
+@app.route('/checkout', methods=['GET', 'POST'])
+@login_required
+def checkout():
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('login'))
+
+    if 'cart' not in session or not session['cart']:
+        flash('Your cart is empty.', 'warning')
+        return redirect(url_for('cart'))
+
+    # Calculate total for display
+    total_amount = sum(item['price'] * item['quantity'] for item in session['cart'].values())
+    # Add tax and service fee
+    tax = total_amount * 0.08
+    service_fee = 10
+    total_amount = total_amount + tax + service_fee
+
+    if request.method == 'POST':
+        # Validate form first
+        errors = validate_checkout_form(request.form)
+        form_total = float(request.form.get('total_amount', 0))
+        
+        # Check if total amount matches
+        if abs(form_total - total_amount) > 0.01:  # Allow small floating point differences
+            errors.append("Invalid total amount.")
+
+        if errors:
+            for error in errors:
+                flash(error, 'danger')
+            return render_template('checkout.html', 
+                                 user=user, 
+                                 form_data=request.form, 
+                                 cart=session['cart'], 
+                                 total=total_amount,
+                                 has_errors=True)
+
+        # Only process order if no validation errors
+        if process_order(user, session['cart'], request.form, total_amount):
+            session.pop('cart', None)
+            flash('Order placed successfully!', 'success')
+            return redirect(url_for('orders'))
+        else:
+            flash('Order failed. Please try again.', 'danger')
+            return render_template('checkout.html', 
+                                 user=user, 
+                                 form_data=request.form, 
+                                 cart=session['cart'], 
+                                 total=total_amount,
+                                 has_errors=True)
+
+    # GET request - show empty form
+    return render_template('checkout.html', 
+                         user=user, 
+                         form_data={}, 
+                         cart=session['cart'], 
+                         total=total_amount,
+                         has_errors=False)
+
+# -------------------- FORM VALIDATION --------------------
+
+def validate_checkout_form(form):
+    print("Cart contents:", session.get('cart'))
+    errors = []
+    
+    # Get and validate form fields
+    name = form.get('name', '').strip()
+    contact = form.get('contact', '').strip()
+    email = form.get('email', '').strip()
+    delivery = form.get('delivery', 'pickup').strip()
+    building = form.get('building', '').strip()
+    floor = form.get('floor', '').strip()
+    payment = form.get('payment', '').strip()
+
+    # Validate required fields
+    if not name:
+        errors.append("Full Name is required.")
+    
+    if not contact:
+        errors.append("Contact Number is required.")
+    elif not re.match(r'^\+?\d{7,15}$', contact):
+        errors.append("Valid Contact Number required (7-15 digits).")
+    
+    if not email:
+        errors.append("Email is required.")
+    elif not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+        errors.append("Valid Email address is required.")
+    
+    # Validate delivery method
+    if delivery not in ['pickup', 'home']:
+        errors.append("Please select a valid delivery method.")
+    
+    # Validate delivery address if home delivery
+    if delivery == 'home':
+        if not building:
+            errors.append("Building/Block is required for home delivery.")
+        if not floor:
+            errors.append("Floor/Room No. is required for home delivery.")
+    
+    # Validate payment method
+    if not payment:
+        errors.append("Please select a payment method.")
+    elif payment not in ['cash', 'card', 'khalti']:
+        errors.append("Please select a valid payment method.")
+    
+    return errors
+
+# -------------------- PROCESS ORDER --------------------
+
+def process_order(user, cart, form, calculated_total):
+    try:
+        khalti_token = form.get('khalti_token') if form.get('payment') == 'khalti' else None
+        
+        # For testing: Skip Khalti verification if no secret key
+        if form.get('payment') == 'khalti':
+            if not khalti_token:
+                print("Khalti payment selected but no token provided")
+                return False
+            
+            # Only verify if we have a secret key
+            if KHALTI_SECRET_KEY:
+                if not verify_khalti_payment(khalti_token, calculated_total):
+                    print("Khalti payment verification failed")
+                    return False
+            else:
+                print("TESTING MODE: Skipping Khalti verification (no secret key)")
+
+        order = Order(
+            user_id=user.id,
+            name=form['name'],
+            contact=form['contact'],
+            email=form['email'],
+            delivery=form['delivery'],
+            building=form.get('building', ''),
+            floor=form.get('floor', ''),
+            payment=form['payment'],
+            total_amount=calculated_total,
+            khalti_token=khalti_token,
+            status='pending'   # Different status for testing
+        )
+        db.session.add(order)
+        db.session.flush()
+
+        # Add order items
+        for item in cart.values():
+            order_item = OrderItem(
+                order_id=order.id,
+                item_id=item['id'],
+                name=item['name'],
+                quantity=item['quantity'],
+                price=item['price']
+            )
+            db.session.add(order_item)
+
+        db.session.commit()
+        return True
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Order processing failed: {e}")
+        return False
+
+# -------------------- KHALTI VERIFICATION (TEST MODE) --------------------
+
+def verify_khalti_payment(token, amount):
+    if not KHALTI_SECRET_KEY:
+        print("TEST MODE: Verification skipped")
+        return True
+
+    try:
+        headers = {
+            "Authorization": f"Key {KHALTI_SECRET_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "token": token,
+            "amount": int(amount * 100)
+        }
+        response = requests.post(
+            "https://khalti.com/api/v2/payment/verify/",
+            headers=headers,
+            json=payload,
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('amount') == int(amount * 100)
+        else:
+            print(f"Khalti response error: {response.text}")
+            return False
+
+    except Exception as e:
+        print(f"Khalti API error: {e}")
+        return False
+
+
+@app.route('/khalti-verify', methods=['POST'])
+def khalti_verify():
+    try:
+        data = request.get_json()
+        print("Received for Khalti verification:", data)  # DEBUG LOG
+
+        token = data.get('token')
+        amount = data.get('amount')
+
+        if not token or not amount:
+            return jsonify(success=False, message="Token and amount required"), 400
+
+        if not KHALTI_SECRET_KEY:
+            print("TEST MODE: Simulating verification")
+            return jsonify(success=True, message="Test verification success")
+
+        # Make sure amount is float
+        success = verify_khalti_payment(token, float(amount))
+        if success:
+            return jsonify(success=True, message="Payment verified")
+        else:
+            return jsonify(success=False, message="Verification failed"), 400
+
+    except Exception as e:
+        print(f"/khalti-verify error: {e}")
+        return jsonify(success=False, message="Server error"), 500
+
+    
+@app.route('/orders')
+@login_required
+def orders():
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    orders = Order.query.filter_by(user_id=user_id).order_by(Order.id.desc()).all()
+    return render_template('orders.html', user=user, orders=orders, active_page='orders')
+
 @app.route('/transation_history')
 @login_required
 def transaction():
     user_id = session['user_id']
     user = User.query.get(user_id)
     return render_template('transaction_history.html',user=user, active_page='transaction')
-@app.route('/checkout', methods=['GET', 'POST'])
-def checkout():
-    user_id = session['user_id']
-    user = User.query.get(user_id)
-    # if request.method == 'POST':
-    #     # Retrieve and process form data after user submits the checkout form
-    #     delivery_option = request.form.get('delivery_option')
-    #     payment_method = request.form.get('payment_method')
-    #     name = request.form.get('name')
-    #     address = request.form.get('address')
-    #     phone = request.form.get('phone')
-
-    #     # You can now save this to a database or session, then redirect or show confirmation
-    #     return render_template('confirmation.html', user=user)
-
-    return render_template('checkout.html',user=user)
-
 
     
 @app.route('/profile')
@@ -888,4 +1555,4 @@ def profile():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    socketio.run(app, debug=True)

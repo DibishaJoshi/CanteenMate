@@ -1,165 +1,187 @@
 {% extends "base.html" %}
+
 {% block extra_css %}
 <style>
     /* Scoped Orders Page Styles */
-#orders .order-card {
-    background-color: var(--white);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: var(--shadow);
-    margin-bottom: 20px;
-}
+    #orders .order-card {
+        background-color: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+        margin-bottom: 20px;
+    }
 
-#orders .order-header {
+    #orders .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 15px;
+    }
+
+    #orders .order-number {
+        font-weight: 600;
+        font-size: 16px;
+        color: var(--text-dark);
+    }
+
+    #orders .order-date {
+        font-size: 14px;
+        color: var(--text-light);
+    }
+
+    #orders .order-info {
+        font-size: 14px;
+        color: var(--text-dark);
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+
+    #orders .order-info span {
+        display: inline-block;
+        margin-right: 20px;
+    }
+
+    #orders .order-items {
+        margin-bottom: 15px;
+    }
+
+    #orders .order-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding: 10px 0;
+        border-bottom: 1px dashed var(--border-color);
+    }
+
+    #orders .item-name {
+        flex: 1;
+        font-size: 14px;
+        color: var(--text-dark);
+    }
+
+    #orders .item-quantity {
+        font-size: 14px;
+        color: var(--text-light);
+        margin: 0 15px;
+    }
+
+    #orders .item-price {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-dark);
+        min-width: 70px;
+        text-align: right;
+    }
+
+    #orders .order-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 15px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    #orders .order-total {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    #orders .order-actions button {
+        padding: 8px 15px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        margin-left: 10px;
+        transition: var(--transition);
+    }
+
+    #orders .track-btn {
+        background-color: rgba(66, 133, 244, 0.1);
+        color: #4285F4;
+    }
+
+    #orders .reorder-btn {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    #orders .track-btn:hover {
+        background-color: rgba(66, 133, 244, 0.2);
+    }
+
+    #orders .reorder-btn:hover {
+        background-color: #e55f1e;
+    }
+    .order-date-status {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding-bottom: 15px;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 15px;
-}
-
-#orders .order-number {
-    font-weight: 600;
-    font-size: 16px;
-    color: var(--text-dark);
-}
-
-#orders .order-date {
-    font-size: 14px;
-    color: var(--text-light);
-}
-
-#orders .order-items {
-    margin-bottom: 15px;
-}
-
-#orders .order-item {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    padding: 10px 0;
-    border-bottom: 1px dashed var(--border-color);
-}
-
-#orders .item-name {
-    flex: 1;
-    font-size: 14px;
-    color: var(--text-dark);
-}
-
-#orders .item-quantity {
-    font-size: 14px;
-    color: var(--text-light);
-    margin: 0 15px;
-}
-
-#orders .item-price {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-dark);
-    min-width: 70px;
-    text-align: right;
-}
-
-#orders .order-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 15px;
-    border-top: 1px solid var(--border-color);
-}
-
-#orders .order-total {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-#orders .order-actions button {
-    padding: 8px 15px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    margin-left: 10px;
-    transition: var(--transition);
-}
-
-#orders .track-btn {
-    background-color: rgba(66, 133, 244, 0.1);
-    color: #4285F4;
-}
-
-#orders .reorder-btn {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-#orders .track-btn:hover {
-    background-color: rgba(66, 133, 244, 0.2);
-}
-
-#orders .reorder-btn:hover {
-    background-color: #e55f1e;
+    gap: 12px;
 }
 
 </style>
 {% endblock %}
+
 {% block content %}
-<!-- My Orders Page -->
-        <div id="orders" class="page">
-            <div class="order-card">
-                <div class="order-header">
-                    <span class="order-number">#ORD-7829</span>
-                    <span class="order-date">May 18, 2025</span>
-                </div>
-                <div class="order-items">
-                    <div class="order-item">
-                        <span class="item-name">Chicken Sandwich</span>
-                        <span class="item-quantity">x1</span>
-                        <span class="item-price">$8.99</span>
-                    </div>
-                    <div class="order-item">
-                        <span class="item-name">French Fries</span>
-                        <span class="item-quantity">x1</span>
-                        <span class="item-price">$4.00</span>
-                    </div>
-                </div>
-                <div class="order-footer">
-                    <span class="order-total">Total: $12.99</span>
-                    <div class="order-actions">
-                        <button class="track-btn">Track Order</button>
-                        <button class="reorder-btn">Reorder</button>
-                    </div>
+<div id="orders" class="page">
+    {% if orders %}
+        {% for order in orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <span class="order-number">#ORD-{{ '%04d'|format(order.id) }}</span>
+                <div class="order-date-status">
+                    <span class="order-date">{{ order.created_at.strftime('%b %d, %Y') if order.created_at else 'N/A' }}</span>
+                    <span class="order-status" style="font-weight:600; color:
+                        {% if order.status == 'Pending' %}orange
+                        {% elif order.status == 'Processing' %}blue
+                        {% elif order.status == 'Shipped' %}purple
+                        {% elif order.status == 'Delivered' %}green
+                        {% elif order.status == 'Cancelled' %}red
+                        {% else %}gray{% endif %};
+                    ">
+                        {{ order.status }}
+                    </span>
                 </div>
             </div>
 
-            <div class="order-card">
-                <div class="order-header">
-                    <span class="order-number">#ORD-7818</span>
-                    <span class="order-date">May 15, 2025</span>
+
+
+            <div class="order-info">
+                <span><strong>Contact:</strong> {{ order.name }} | {{ order.contact }}</span>
+                <span><strong>Email:</strong> {{ order.email }}</span><br>
+                <span><strong>Delivery:</strong> {{ order.delivery }}</span>
+                <span><strong>Address:</strong> {{ order.delivery_address }}</span><br>
+                <span><strong>Payment:</strong> {{ order.payment }}</span>
+            </div>
+
+            <div class="order-items">
+                {% for item in order.items %}
+                <div class="order-item">
+                    <span class="item-name">{{ item.name }}</span>
+                    <span class="item-image">
+                        <img src="{{ url_for('static', filename='uploads/items/' ~ item.item.image_filename) if item.item and item.item.image_filename else url_for('static', filename='images/placeholder.png') }}" alt="{{ item.name }}" width="100">
+                    </span>
+                    <span class="item-quantity">x{{ item.quantity }}</span>
+                    <span class="item-price">Rs. {{ '%.2f'|format(item.price) }}</span>
                 </div>
-                <div class="order-items">
-                    <div class="order-item">
-                        <span class="item-name">Pasta Primavera</span>
-                        <span class="item-quantity">x1</span>
-                        <span class="item-price">$12.50</span>
-                    </div>
-                    <div class="order-item">
-                        <span class="item-name">Coke</span>
-                        <span class="item-quantity">x1</span>
-                        <span class="item-price">$3.00</span>
-                    </div>
-                </div>
-                <div class="order-footer">
-                    <span class="order-total">Total: $15.50</span>
-                    <div class="order-actions">
-                        <button class="track-btn">Track Order</button>
-                        <button class="reorder-btn">Reorder</button>
-                    </div>
+                {% endfor %}
+            </div>
+            <div class="order-footer">
+                <span class="order-total">Total: Rs. {{ '%.2f'|format(order.total_amount) }}</span>
+                <div class="order-actions">
+                    {% if order.status.lower() == 'delivered' %}
+                    <a href="{{ url_for('review_order', order_id=order.id) }}" class="btn btn-sm btn-primary">Give Review</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
+        {% endfor %}
+    {% else %}
+        <p>No past orders found.</p>
+    {% endif %}
+</div>
 {% endblock %}
