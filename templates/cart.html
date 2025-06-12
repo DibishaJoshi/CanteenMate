@@ -144,7 +144,25 @@
 <div id="cart" class="page">
     <div class="cart-container">
         <div class="cart-items">
-            <div class="section-header">
+            <div class="section-header"style="{% with messages = get_flashed_messages(with_categories=true) %}
+                                                    {% for category, message in messages %}
+                                                      {% if 'cart_' in category %}
+                                                        display: block;
+                                                      {% endif %}
+                                                    {% endfor %}
+                                                {% endwith %}">
+                                                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                  {% for category, message in messages %}
+                    {% if 'cart_' in category %}
+                      <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                        <span>{{ message }}</span>
+                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+            {% endwith %}
                 <h2 class="section-title">Your Cart ({{ session.cart | length if session.cart else 0 }})</h2>
             </div>
             
@@ -182,40 +200,43 @@
         </div>
 
         <div class="cart-summary">
-    <h2 class="section-title">Order Summary</h2>
- {% set ns = namespace(subtotal=0) %}
-{% if session.cart %}
-    {% for item in session.cart.values() %}
-        {% set ns.subtotal = ns.subtotal + (item.price | float * item.quantity | int) %}
-    {% endfor %}
-{% endif %}
+            <h2 class="section-title">Order Summary</h2>
 
-<div class="summary-line">
-    <span>Subtotal</span>
-    <span>Rs. {{ '%.2f' % ns.subtotal }}</span>
-</div>
+            {% set ns = namespace(subtotal=0) %}
+            {% if session.cart %}
+                {% for item in session.cart.values() %}
+                    {% set ns.subtotal = ns.subtotal + (item.price | float * item.quantity | int) %}
+                {% endfor %}
+            {% endif %}
 
-{% set tax = ns.subtotal * 0.08 %}
-{% set service_fee = 10 %}
-{% set total = ns.subtotal + tax + service_fee %}
-
-<div class="summary-line">
-    <span>Tax (8%)</span>
-    <span>Rs. {{ '%.2f' % tax }}</span>
-</div>
-<div class="summary-line">
-    <span>Service Fee</span>
-    <span>Rs. {{ '%.2f' % service_fee }}</span>
-</div>
-<div class="summary-line total">
-    <span>Total</span>
-    <span>Rs. {{ '%.2f' % total }}</span>
-</div>
-
-    <form action="{{ url_for('checkout')}}" method="POST">
-        <button class="checkout-btn" type="submit">Proceed to Checkout</button>
-    </form>
-</div>
+            <div class="summary-line">
+                <span>Subtotal</span>
+                <span>Rs. {{ '%.2f' % ns.subtotal }}</span>
+            </div>
+        
+            {% if ns.subtotal > 0 %}
+                {% set tax = ns.subtotal * 0.08 %}
+                {% set service_fee = 10 %}
+                {% set total = ns.subtotal + tax + service_fee %}
+        
+                <div class="summary-line">
+                    <span>Tax (8%)</span>
+                    <span>Rs. {{ '%.2f' % tax }}</span>
+                </div>
+                <div class="summary-line">
+                    <span>Service Fee</span>
+                    <span>Rs. {{ '%.2f' % service_fee }}</span>
+                </div>
+                <div class="summary-line total">
+                    <span>Total</span>
+                    <span>Rs. {{ '%.2f' % total }}</span>
+                </div>
+            
+                <form action="{{ url_for('checkout')}}" method="GET">
+                    <button class="checkout-btn" type="submit">Proceed to Checkout</button>
+                </form>
+            {% endif %}
+        </div>
 
     </div>
 </div>

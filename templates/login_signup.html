@@ -91,11 +91,11 @@
             <form action="{{ url_for('login') }}" method="POST">
                 <div class="mb-3">
                     <label for="login-email" class="form-label">Email address</label>
-                    <input type="email" class="form-control" id="login-email" name="email" required>
+                    <input type="email" class="form-control" id="login-email" name="email" >
                 </div>
                 <div class="mb-3">
                     <label for="login-password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="login-password" name="password" required>
+                    <input type="password" class="form-control" id="login-password" name="password" >
                 </div>
                 <div class="mb-3 form-check">
                     <input type="checkbox" class="form-check-input" id="remember-me" name="remember">
@@ -135,15 +135,7 @@
                     <label for="signup-email" class="form-label">Email address</label>
                     <input type="email" class="form-control" id="signup-email" name="email" required>
                 </div>
-                <div class="mb-3">
-                    <label for="role" class="form-label">Role</label>
-                    <select class="form-select" id="role" name="role" required>
-                        <option value="" selected disabled>Select your role</option>
-                        <option value="student">Student</option>
-                        <option value="staff">Staff</option>
-                        <option value="admin">Administrator</option>
-                    </select>
-                </div>
+                
                 <div class="mb-3">
                     <label for="signup-password" class="form-label">Password</label>
                     <input type="password" class="form-control" id="signup-password" name="password" required>
@@ -166,31 +158,37 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     
-    <script>
-        // Function to toggle between login and signup forms
-        function toggleForms() {
-            const loginForm = document.getElementById('login-form');
-            const signupForm = document.getElementById('signup-form');
-            
-            if (loginForm.style.display === 'none') {
-                loginForm.style.display = 'block';
-                signupForm.style.display = 'none';
-            } else {
-                loginForm.style.display = 'none';
-                signupForm.style.display = 'block';
-            }
+    <<script>
+    function toggleForms() {
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+
+        if (loginForm.style.display === 'none') {
+            loginForm.style.display = 'block';
+            signupForm.style.display = 'none';
+        } else {
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
         }
+    }
 
-  setTimeout(() => {
-    const flashMessages = document.querySelectorAll('.alert');
-    flashMessages.forEach(msg => {
-      msg.style.transition = 'opacity 0.5s ease';
-      msg.style.opacity = '0';
-      setTimeout(() => msg.remove(), 500); // Remove after fade-out
-    });
-  }, 3000); // 3 seconds
+    // Auto-toggle based on server-provided flag
+    const showForm = "{{ show_form | default('login') }}";
+    if (showForm === "signup") {
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('signup-form').style.display = 'block';
+    }
 
+    // Auto-hide flash messages after 3 seconds
+    setTimeout(() => {
+        const flashMessages = document.querySelectorAll('.alert');
+        flashMessages.forEach(msg => {
+            msg.style.transition = 'opacity 0.5s ease';
+            msg.style.opacity = '0';
+            setTimeout(() => msg.remove(), 500); // Remove after fade-out
+        });
+    }, 3000);
+</script>
 
-    </script>
 </body>
 </html>

@@ -1,0 +1,193 @@
+{% extends "admin/admin_base.html" %}
+{% block extra_css %}
+<style>
+    /* Container */
+.order-details-container {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 20px 25px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #fff;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+/* Heading */
+.container h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #007bff;
+  margin-bottom: 15px;
+}
+
+/* Paragraphs for order info */
+.container p {
+  font-size: 1rem;
+  color: #444;
+  margin: 6px 0;
+}
+
+.container p strong {
+  color: #222;
+}
+
+/* Items table */
+table.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 25px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #fefefe;
+}
+
+.table thead tr {
+  background-color: #007bff;
+  color: #fff;
+  text-align: left;
+  font-weight: 600;
+}
+
+.table thead th {
+  padding: 12px 15px;
+  border-bottom: 2px solid #0056b3;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #eaeaea;
+  transition: background-color 0.3s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f5faff;
+}
+
+.table tbody td {
+  padding: 12px 15px;
+  color: #555;
+  vertical-align: middle;
+}
+
+/* Total amount */
+h4 {
+  margin-top: 25px;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: #28a745;
+}
+
+/* Back button */
+.btn-secondary {
+  background-color: #6c757d;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 5px;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container {
+    padding: 15px 20px;
+    margin: 15px;
+  }
+  .table thead {
+    display: none;
+  }
+  .table, .table tbody, .table tr, .table td {
+    display: block;
+    width: 100%;
+  }
+  .table tr {
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ddd;
+  }
+  .table td {
+    padding-left: 50%;
+    position: relative;
+    text-align: left;
+  }
+  .table td::before {
+    position: absolute;
+    left: 15px;
+    width: 45%;
+    padding-right: 10px;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #333;
+  }
+  .table td:nth-of-type(1)::before { content: "Item Name"; }
+  .table td:nth-of-type(2)::before { content: "Quantity"; }
+  .table td:nth-of-type(3)::before { content: "Price (Unit)"; }
+  .table td:nth-of-type(4)::before { content: "Total Price"; }
+}
+
+</style>
+{% endblock %}
+{% block content %}
+<div class="order-details-container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% if 'status_' in category %}
+                        <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                            <span>{{ message }}</span>
+                            <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    <h2>Order #{{ order.id }} Details</h2>
+    <p><strong>Customer:</strong> {{ order.name }}</p>
+    <p><strong>Contact:</strong> {{ order.contact }}</p>
+    <p><strong>Email:</strong> {{ order.email }}</p>
+    <p><strong>Delivery Address:</strong> {{ order.delivery_address }}</p>
+    <p><strong>Payment Method:</strong> {{ order.payment }}</p>
+    <form method="POST" action="{{ url_for('admin_update_order_status', order_id=order.id) }}">
+  <label for="status"><strong>Status:</strong></label>
+  <select name="status" id="status" style="   border: 1px solid #ccc;padding: 4px 10px; border-radius: 8px; border: none;">
+    {% for s in ['Pending', 'Processing', 'Ready', 'Shipped', 'Delivered', 'Cancelled'] %}
+      <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn-update" style="background-color:#b4623c;color:white;border-radius: 8px;
+  padding:4px 8px 4px 8px;">Update</button>
+</form>
+    <p style="margin-top:10px;"><strong>Order Date:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+
+    <h3>Items</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Item Name</th>
+                <th>Quantity</th>
+                <th>Price (Unit)</th>
+                <th>Total Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>Rs. {{ '%.2f'|format(item.price) }}</td>
+                <td>Rs. {{ '%.2f'|format(item.quantity_price) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4>Total Amount: Rs. {{ '%.2f'|format(order.total_amount) }}</h4>
+    <a href="{{ url_for('admin_orders') }}" class="btn btn-secondary">Back to Orders</a>
+</div>
+{% endblock %}

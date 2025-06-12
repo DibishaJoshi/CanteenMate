@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1); text-align: center;">
+  <h2>🎉 Order Confirmed!</h2>
+  <p>Thank you, {{ order.name }}! Your order has been placed successfully.</p>
+
+  <div style="margin: 2rem 0;">
+    <p><strong>Order ID:</strong> {{ order.id }}</p>
+    <p><strong>Total Amount:</strong> Rs. {{ "%.2f"|format(order.total_amount) }}</p>
+    <p><strong>Payment:</strong> {{ order.payment_method|capitalize }}</p>
+    <p><strong>Delivery:</strong> {{ 'Pickup' if order.delivery_option == 'pickup' else 'Home Delivery' }}</p>
+  </div>
+
+  <a href="{{ url_for('orders') }}" class="btn btn-primary">Go to Orders</a>
+</div>
+{% endblock %}
