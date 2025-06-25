@@ -6,103 +6,207 @@
     <title>Canteen Management System</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.png') }}" type="">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    
     <style>
-        /* Notification Dropdown Styles */
-        .notifications {
-            position: relative;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 50%;
-            transition: background-color 0.3s;
-        }
-        
-        .notifications:hover {
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-        
-        .notif-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: #ff4757;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        
-        .notification-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            width: 300px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            max-height: 400px;
-            overflow-y: auto;
-            display: none;
-        }
-        
-        .notification-dropdown.show {
-            display: block;
-        }
-        
-        .notif-header {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .notif-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background-color 0.2s;
-        }
-        
-        .notif-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .notif-item:last-child {
-            border-bottom: none;
-        }
-        
-        .notif-message {
-            font-size: 14px;
-            color: #333;
-            margin-bottom: 4px;
-        }
-        
-        .notif-time {
-            font-size: 12px;
-            color: #666;
-        }
-        
-        .no-notifications {
-            padding: 20px;
-            text-align: center;
-            color: #666;
-            font-style: italic;
-        }
-        
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-    </style>
-    
+.nav-toggle {
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    font-size: 20px; /* Adjust size */
+    color: #333;     /* Adjust icon color */
+}
+
+.nav-toggle:focus {
+    outline: none;
+}
+
+</style>
+    <style>
+/* Notification Dropdown Styles */
+.notifications {
+    position: relative;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.notifications:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.notif-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(50%, -50%);
+    background-color: #ff4757;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    z-index: 10;
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: 110%;
+    right: 0;
+    width: 300px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+}
+
+.notification-dropdown.show {
+    display: block;
+}
+
+.notif-header {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    font-weight: bold;
+    color: #333;
+}
+
+.notif-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.notif-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notif-item:last-child {
+    border-bottom: none;
+}
+
+.notif-message {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.notif-time {
+    font-size: 12px;
+    color: #666;
+}
+
+.no-notifications {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Responsive Navbar Styling */
+@media (max-width: 992px) {
+    .top-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .top-nav .search-bar {
+        width: 100%;
+        display: flex;
+        gap: 5px;
+    }
+
+    .top-nav .search-bar input {
+        flex: 1;
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .top-nav .search-bar button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    .user-menu {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 5px;
+    }
+
+    .user-name,
+    .user-email {
+        font-size: 14px;
+    }
+
+    .notifications {
+        margin-right: 10px;
+    }
+
+    .notification-dropdown {
+        right: auto;
+        left: 0;
+        transform: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .user-profile .user-info {
+        display: none;
+    }
+
+    .search-bar input {
+        font-size: 13px;
+    }
+
+    .search-bar button {
+        font-size: 13px;
+    }
+
+    .notif-message {
+        font-size: 13px;
+    }
+
+    .notif-time {
+        font-size: 11px;
+    }
+
+    .notification-dropdown {
+        width: 90vw;
+        left: 5%;
+        right: auto;
+    }
+}
+</style>
+
+
     {% block extra_css %}{% endblock%}
 </head>
 <body>
@@ -154,6 +258,9 @@
         <div class="main-content">
             <!-- Top Navigation -->
             <div class="top-nav">
+                <button class="btn nav-toggle" onclick="document.querySelector('.sidebar').classList.toggle('active')">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <div class="search-bar">
                     <input type="text" placeholder="Search everything here...">
                     <button type="submit"><i class="fas fa-search"></i></button>
@@ -346,6 +453,19 @@
             console.error('Connection error:', error);
         });
     </script>
+     <script>
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.querySelector('.nav-toggle');
+
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 992) {
+            // If click is outside sidebar and toggle button
+            if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        }
+    });
+</script>
     
     {% block extra_js %}{% endblock %}
 </body>

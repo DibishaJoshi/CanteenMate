@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block extra_css %}
+    <style>
+        .review-card {
+            border: 1px solid #e3e6f0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            transition: box-shadow 0.3s;
+        }
+        
+        .review-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .star-rating {
+            display: flex;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        
+        .star {
+            font-size: 1.5rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .star.active,
+        .star:hover {
+            color: #ffc107;
+        }
+        
+        .star.active ~ .star {
+            color: #ddd;
+        }
+        
+        .review-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        .item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .reviewed-badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        
+        .review-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .review-button:hover {
+            transform: translateY(-2px);
+            color: white;
+        }
+        
+        .order-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .rating-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .recommend-options {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .recommend-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+    {% endblock %}
+</head>
+<body>
+    {% block content %}
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="order-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2><i class="fas fa-star me-2"></i>Review Your Order</h2>
+                    <p class="mb-0">Order #{{ order.id }} • Delivered on {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{{ url_for('orders') }}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' if category == 'success' else 'warning' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Order Items for Review -->
+        <div class="row">
+            {% for item in order.order_items %}
+            <div class="col-12 mb-4">
+                <div class="review-card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                {% if item.item and item.item.image_filename %}
+                                    <img src="{{ url_for('static', filename='uploads/items/' + item.item.image_filename) }}" 
+                                         alt="{{ item.name }}" class="item-image">
+                                {% else %}
+                                    <div class="item-image bg-light d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-utensils text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="mb-1">{{ item.name }}</h5>
+                                <p class="text-muted mb-1">Quantity: {{ item.quantity }}</p>
+                                <p class="text-muted mb-0">Price: Rs. {{ "%.2f"|format(item.price) }}</p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                {% if item.item_id in reviewed_item_ids %}
+                                    <span class="reviewed-badge">
+                                        <i class="fas fa-check me-1"></i>Reviewed
+                                    </span>
+                                {% else %}
+                                    <button type="button" class="btn review-button" 
+                                            onclick="showReviewForm({{ item.item_id }}, '{{ item.name }}')">
+                                        <i class="fas fa-star me-1"></i>Write Review
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Review Form (Hidden by default) -->
+                        <div id="reviewForm_{{ item.item_id }}" class="review-form" style="display: none;">
+                            <form method="POST" action="{{ url_for('submit_review', order_id=order.id) }}">
+                                <input type="hidden" name="item_id" value="{{ item.item_id }}">
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="rating-label">Food Rating *</label>
+                                            <div class="star-rating" data-rating="food_rating_{{ item.item_id }}">
+                                                <span class="star" data-value="1">★</span>
+                                                <span class="star" data-value="2">★</span>
+                                                <span class="star" data-value="3">★</span>
+                                                <span class="star" data-value="4">★</span>
+                                                <span class="star" data-value="5">★</span>
+                                            </div>
+                                            <input type="hidden" name="rating" id="food_rating_{{ item.item_id }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="rating-label">Service Rating</label>
+                                            <div class="star-rating" data-rating="service_rating_{{ item.item_id }}">
+                                                <span class="star" data-value="1">★</span>
+                                                <span class="star" data-value="2">★</span>
+                                                <span class="star" data-value="3">★</span>
+                                                <span class="star" data-value="4">★</span>
+                                                <span class="star" data-value="5">★</span>
+                                            </div>
+                                            <input type="hidden" name="service_rating" id="service_rating_{{ item.item_id }}">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="rating-label">Delivery Rating</label>
+                                            <div class="star-rating" data-rating="delivery_rating_{{ item.item_id }}">
+                                                <span class="star" data-value="1">★</span>
+                                                <span class="star" data-value="2">★</span>
+                                                <span class="star" data-value="3">★</span>
+                                                <span class="star" data-value="4">★</span>
+                                                <span class="star" data-value="5">★</span>
+                                            </div>
+                                            <input type="hidden" name="delivery_rating" id="delivery_rating_{{ item.item_id }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="comment_{{ item.item_id }}" class="rating-label">Your Review</label>
+                                    <textarea class="form-control" name="comment" id="comment_{{ item.item_id }}" 
+                                              rows="3" placeholder="Tell others about your experience with {{ item.name }}..."></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="rating-label">Would you recommend this item?</label>
+                                    <div class="recommend-options">
+                                        <div class="recommend-option">
+                                            <input type="radio" name="would_recommend" value="yes" 
+                                                   id="recommend_yes_{{ item.item_id }}" checked>
+                                            <label for="recommend_yes_{{ item.item_id }}">
+                                                <i class="fas fa-thumbs-up text-success me-1"></i>Yes
+                                            </label>
+                                        </div>
+                                        <div class="recommend-option">
+                                            <input type="radio" name="would_recommend" value="no" 
+                                                   id="recommend_no_{{ item.item_id }}">
+                                            <label for="recommend_no_{{ item.item_id }}">
+                                                <i class="fas fa-thumbs-down text-danger me-1"></i>No
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-paper-plane me-1"></i>Submit Review
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" 
+                                            onclick="hideReviewForm({{ item.item_id }})">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Order Summary -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-receipt me-2"></i>Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Delivery Address:</strong> {{ order.building }}, Floor {{ order.floor }}</p>
+                        <p><strong>Contact:</strong> {{ order.contact }}</p>
+                        <p><strong>Payment Method:</strong> {{ order.payment.title() }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Total Amount:</strong> Rs. {{ "%.2f"|format(order.total_amount) }}</p>
+                        <p><strong>Order Status:</strong> 
+                            <span class="badge bg-success">{{ order.status.title() }}</span>
+                        </p>
+                        <p><strong>Order Date:</strong> {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}

@@ -108,7 +108,19 @@
             <p><strong>Recommended:</strong> {{ 'Yes' if reviews_by_item[item.item_id].would_recommend else 'No' }}</p>
           </div>
         {% endif %}
-      
+        {% if other_reviews[item.item_id] %}
+  <div class="other-reviews mt-3 bg-white p-3 border rounded">
+    <h6 class="mb-2 text-muted"><i class="fas fa-users"></i> Reviews from other users:</h6>
+    {% for review in other_reviews[item.item_id] %}
+      <div class="mb-2 border-bottom pb-2">
+        <div><strong>Rating:</strong> {{ review.rating }} / 5</div>
+        <div><strong>Comment:</strong> {{ review.comment or 'No comment.' }}</div>
+        <div><strong>Recommended:</strong> {{ 'Yes' if review.would_recommend else 'No' }}</div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
         <div class="review-form" id="reviewForm_{{ item.item_id }}" style="display:none;">
             <form action="{{ url_for('submit_review', order_id=order.id) }}" method="POST">
                 <input type="hidden" name="item_id" value="{{ item.item_id }}">

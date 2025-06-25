@@ -1,5 +1,42 @@
 {% extends 'admin/admin_base.html' %}
+{% block extra_css %}
+<style>
+    .status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: capitalize;
+  font-size: 0.9rem;
+}
 
+.status-badge.pending {
+  background-color: orange;
+}
+
+.status-badge.processing {
+  background-color: #007bff;
+}
+
+.status-badge.shipped {
+  background-color: purple;
+}
+.status-badge.ready {
+  background-color:#0D9488;
+}
+.status-badge.delivered {
+  background-color: green;
+}
+
+.status-badge.cancelled {
+  background-color: red;
+}
+
+.status-badge.unknown {
+  background-color: gray;
+}
+</style>
+{% endblock %}
 {% block content %}
 <!-- Dashboard Content -->
 <div class="container-fluid">
@@ -83,14 +120,9 @@
                                     <td>{{ order.items|length }} item{{ 's' if order.items|length > 1 else '' }}</td>
                                     <td>Rs. {{ "%.2f"|format(order.total_amount) }}</td>
                                     <td>
-                                        {% set status_class = {
-                                            'Completed': 'bg-success',
-                                            'Processing': 'bg-warning text-dark',
-                                            'Preparing': 'bg-info',
-                                            'Pending': 'bg-secondary',
-                                            'Cancelled': 'bg-danger'
-                                        }[order.status] if order.status in ['Completed','Processing','Preparing','Pending','Cancelled'] else 'bg-secondary' %}
-                                        <span class="badge {{ status_class }}">{{ order.status }}</span>
+                                         <span class="status-badge {{ order.status|lower }}">
+                                            {{ order.status }}
+                                        </span>
                                     </td>
                                     <td>
                                         <div class="btn-group">

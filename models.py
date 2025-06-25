@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime,date
 
 db = SQLAlchemy()
 item_attribute_values = db.Table('item_attribute_values',
@@ -33,12 +33,17 @@ class Category(db.Model):
     def items_count(self):
         return len(self.items)
 
+addon_item_association = db.Table('addon_item_association',
+    db.Column('addon_id', db.Integer, db.ForeignKey('addons.id'), primary_key=True),
+    db.Column('item_id', db.Integer, db.ForeignKey('items.id'), primary_key=True)
+)
+
 class Item(db.Model):
     __tablename__ = 'items'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    price = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
 
     description = db.Column(db.Text, nullable=True)
@@ -47,12 +52,19 @@ class Item(db.Model):
 
     attribute_values = db.relationship(
         'AttributeValue',
-        secondary='item_attribute_values',
+        secondary=item_attribute_values,
         back_populates='items'
     )
-    
+
+    addons = db.relationship(
+        'Addon',
+        secondary=addon_item_association,
+        back_populates='items'
+    )
+
     def __repr__(self):
         return f"<Item {self.name}>"
+
 
 
 # Attribute model
@@ -86,6 +98,26 @@ class AttributeValue(db.Model):
     def __repr__(self):
         return f"<AttributeValue {self.value}>"
 
+
+
+class Addon(db.Model):
+    __tablename__ = 'addons'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text)
+    status = db.Column(db.Boolean, default=True)
+
+    items = db.relationship('Item', secondary='addon_item_association', back_populates='addons')
+
+    def __repr__(self):
+        return f"<Addon {self.name}>"
+
+    def applied_items_count(self):
+        return len(self.items)
+    
 class Menu(db.Model):
     __tablename__ = 'menus'
     id = db.Column(db.Integer, primary_key=True)
@@ -138,7 +170,18 @@ class OrderItem(db.Model):
     @property
     def quantity_price(self):
         return self.quantity * self.price
-    
+class CartItem(db.Model):
+    __tablename__ = 'cart_items'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'), nullable=False)
+    quantity = db.Column(db.Integer, default=1)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_date = db.Column(db.Date, default=date.today)
+
+    user = db.relationship("User", backref="cart_items")
+    item = db.relationship("Item", backref="in_carts")    
 
 class Review(db.Model):
     __tablename__ = 'reviews'

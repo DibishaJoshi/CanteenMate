@@ -10,7 +10,7 @@ import functools
 import re
 import requests
 
-from models import db, User, Category, Item, Attribute, AttributeValue ,Menu, Order, OrderItem,Review, ReviewHelpful
+from models import db, User, Category, Item, Attribute, AttributeValue ,Menu, Order, OrderItem,Review, ReviewHelpful, Addon, CartItem
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dibisha'
@@ -370,7 +370,81 @@ def units():
 def addons():
     user_id = session['user_id']
     user = User.query.get(user_id)
-    return render_template('admin/addons.html', user=user, active_page='addons')
+    addons = Addon.query.all()
+    return render_template('admin/addons.html', user=user, addons=addons, active_page='addons')
+
+
+@app.route('/admin/addons/add', methods=['POST'])
+@login_required
+def add_addon():
+    name = request.form.get('addonName')
+    price = request.form.get('addonPrice')
+    category = request.form.get('addonCategory')
+    description = request.form.get('addonDescription')
+    status = request.form.get('status', 'active') == 'active'
+
+    if not name or not price or not category:
+        flash('Please fill in all required fields.', 'danger')
+        return redirect(url_for('addons'))
+
+    new_addon = Addon(
+        name=name,
+        price=float(price),
+        category=category,
+        description=description,
+        status=status
+    )
+    db.session.add(new_addon)
+    db.session.commit()
+
+    flash('Addon added successfully!', 'success')
+    return redirect(url_for('addons'))
+
+@app.route('/admin/addons/edit/<int:addon_id>', methods=['POST'])
+@login_required
+def edit_addon(addon_id):
+    addon = Addon.query.get_or_404(addon_id)
+
+    name = request.form.get('addonName')
+    price_str = request.form.get('addonPrice')
+    category = request.form.get('addonCategory')
+    description = request.form.get('addonDescription')
+    status = request.form.get('status', 'active') == 'active'
+
+    # Basic validation
+    if not name or not price_str or not category:
+        flash('Please fill in all required fields.', 'danger')
+        return redirect(url_for('addons'))
+
+    try:
+        price = float(price_str)
+    except ValueError:
+        flash('Price must be a valid number.', 'danger')
+        return redirect(url_for('addons'))
+
+    # Update addon
+    addon.name = name
+    addon.price = price
+    addon.category = category
+    addon.description = description
+    addon.status = status
+
+    db.session.commit()
+    flash('Addon updated successfully!', 'success')
+    return redirect(url_for('addons'))
+
+
+@app.route('/admin/addons/delete/<int:addon_id>', methods=['POST'])
+@login_required
+def delete_addon(addon_id):
+    addon = Addon.query.get_or_404(addon_id)
+    db.session.delete(addon)
+    db.session.commit()
+    flash('Addon deleted successfully.', 'success')
+    return redirect(url_for('addons'))
+
+
+
 
 @app.route('/admin/items')
 @login_required
@@ -419,7 +493,7 @@ def add_item():
 
         item.name = name
         item.category_id = category.id
-        item.price = int(float(price) * 100)
+        item.price = float(price)
         item.description = description
         item.available = available
 
@@ -431,7 +505,7 @@ def add_item():
     else:  # New item
         new_item = Item(
             name=name,
-            price=int(float(price) * 100),
+            price=float(price),
             category_id=category.id,
             description=description,
             image_filename=image_filename,
@@ -848,29 +922,47 @@ def admin_update_order_status(order_id):
 @app.route('/orders/<int:order_id>/review')
 @login_required
 def review_order(order_id):
-    """Show review form for a delivered order"""
     user_id = session.get('user_id')
     user = User.query.get(user_id)
-    
-    # Get the order and verify it belongs to the user
+
     order = Order.query.filter_by(id=order_id, user_id=user_id).first()
     if not order:
         flash('Order not found.', 'danger')
         return redirect(url_for('orders'))
-    
-    # Check if order is delivered
+
     if order.status.lower() != 'delivered':
         flash('You can only review delivered orders.', 'warning')
         return redirect(url_for('orders'))
+
+    # Get user's own reviews
     existing_reviews = Review.query.filter_by(order_id=order_id, user_id=user_id).all()
     reviews_by_item = {r.item_id: r for r in existing_reviews}
     reviewed_item_ids = [r.item_id for r in existing_reviews]
-    
-    return render_template('review_order.html', 
-                       user=user, 
-                       order=order, 
-                       reviews_by_item=reviews_by_item,reviewed_item_ids=reviewed_item_ids,
-                       active_page='orders')
+
+    # Get other users' reviews for each item
+    other_reviews = {}
+    for item in order.items:
+        reviews = (
+            Review.query
+            .filter(
+                Review.item_id == item.item_id,
+                Review.user_id != user_id
+            )
+            .order_by(Review.id.desc())
+            .limit(3)  # Show latest 3 reviews per item
+            .all()
+        )
+        other_reviews[item.item_id] = reviews
+
+    return render_template(
+        'review_order.html',
+        user=user,
+        order=order,
+        reviews_by_item=reviews_by_item,
+        reviewed_item_ids=reviewed_item_ids,
+        other_reviews=other_reviews,
+        active_page='orders'
+    )
 @app.route('/orders/<int:order_id>/review', methods=['POST'])
 @login_required
 def submit_review(order_id):
@@ -887,10 +979,10 @@ def submit_review(order_id):
         # Get form data
         item_id = request.form.get('item_id')
         rating = int(request.form.get('rating', 0))
-        comment = request.form.get('comment', '').strip()
+        comment = request.form.get('review', '').strip()
         service_rating = request.form.get('service_rating')
         delivery_rating = request.form.get('delivery_rating')
-        would_recommend = request.form.get('would_recommend') == 'yes'
+        would_recommend = request.form.get('recommend') == 'yes'
         
         # Validate required fields
         if not item_id or rating < 1 or rating > 5:
@@ -1181,119 +1273,95 @@ def user_menu():
                            current_day=current_day,
                            categories=categories,
                            active_page='menu')
-
 @app.route('/add_to_cart', methods=['POST'])
+@login_required
 def add_to_cart():
+    user_id = session['user_id']
     item_id = request.form.get('item_id')
-    item_name = request.form.get('item_name')
-    item_price = request.form.get('item_price')  # as string, e.g. '120.00'
-    item_image = request.form.get('item_image')
-    category = request.form.get('category')
+    item = Item.query.get(item_id)
 
-    if not item_id:
+    if not item:
         flash('Invalid item.', 'cart_error')
-        return redirect(url_for('show_menu'))
+        return redirect(url_for('user_menu'))
 
-    today = str(date.today())
+    today = date.today()
 
-    # Clear cart if it's from a previous day
-    if session.get('cart_date') != today:
-        session['cart'] = {}
-        session['cart_date'] = today
+    # ✅ Delete all cart items older than today
+    CartItem.query.filter(CartItem.user_id == user_id, CartItem.created_date != today).delete()
+    db.session.commit()
 
-    cart = session.get('cart', {})
+    # Check if item already in cart today
+    cart_item = CartItem.query.filter_by(user_id=user_id, item_id=item.id, created_date=today).first()
 
-    if item_id in cart:
-        cart[item_id]['quantity'] += 1
+    if cart_item:
+        cart_item.quantity += 1
     else:
-        cart[item_id] = {
-            'id': item_id,
-            'name': item_name,
-            'price': float(item_price), 
-            'image': item_image,
-            'category': category,
-            'quantity': 1
-        }
+        new_item = CartItem(
+            user_id=user_id,
+            item_id=item.id,
+            quantity=1,
+            created_at=datetime.utcnow(),
+            created_date=today  # ✅ Important: Set the created_date
+        )
+        db.session.add(new_item)
 
-    session['cart'] = cart
-    flash(f'Added "{item_name}" to cart', 'cart_success')
-
+    db.session.commit()
+    flash(f'Added \"{item.name}\" to cart', 'cart_success')
     return redirect(url_for('user_menu'))
-
 
 @app.route('/cart')
 @login_required
 def cart():
     user_id = session['user_id']
     user = User.query.get(user_id)
+    today = date.today()
 
-    today = str(date.today())
+    CartItem.query.filter(CartItem.user_id == user_id, CartItem.created_date != today).delete()
+    db.session.commit()
 
-    # Clear cart if old
-    if session.get('cart_date') != today:
-        session['cart'] = {}
-        session['cart_date'] = today
+    cart_items = CartItem.query.filter_by(user_id=user_id).all()
+    total = sum(item.quantity * item.item.price for item in cart_items)
 
-    if 'cart' not in session:
-        session['cart'] = {}
-    return render_template('cart.html', user=user, active_page='cart')
+    return render_template('cart.html', user=user, cart_items=cart_items, total=total, active_page='cart')
 
 
 @app.route('/update_cart_quantity', methods=['POST'])
+@login_required
 def update_cart_quantity():
+    user_id = session['user_id']
     item_id = request.form.get('item_id')
-    action = request.form.get('action')  # "increase" or "decrease"
+    action = request.form.get('action')  # increase or decrease
 
-    today = str(date.today())
+    cart_item = CartItem.query.filter_by(user_id=user_id, item_id=item_id).first()
 
-    # Clear cart if old
-    if session.get('cart_date') != today:
-        session['cart'] = {}
-        session['cart_date'] = today
-        flash('Your cart was cleared due to a new day.', 'cart_info')
-        return redirect(url_for('cart'))
-
-    if not item_id or 'cart' not in session:
-        flash('Invalid request.', 'cart_error')
-        return redirect(url_for('cart'))
-
-    cart = session['cart']
-
-    if item_id in cart:
-        if action == 'increase':
-            cart[item_id]['quantity'] += 1
-        elif action == 'decrease':
-            cart[item_id]['quantity'] -= 1
-            if cart[item_id]['quantity'] <= 0:
-                del cart[item_id]
-        session['cart'] = cart
-        flash('Cart updated.', 'cart_success')
-    else:
+    if not cart_item:
         flash('Item not found in cart.', 'cart_error')
+        return redirect(url_for('cart'))
 
+    if action == 'increase':
+        cart_item.quantity += 1
+    elif action == 'decrease':
+        cart_item.quantity -= 1
+        if cart_item.quantity <= 0:
+            db.session.delete(cart_item)
+            db.session.commit()
+            flash('Item removed from cart.', 'cart_success')
+            return redirect(url_for('cart'))
+
+    db.session.commit()
+    flash('Cart updated.', 'cart_success')
     return redirect(url_for('cart'))
 
-
 @app.route('/remove_from_cart', methods=['POST'])
+@login_required
 def remove_from_cart():
+    user_id = session['user_id']
     item_id = request.form.get('item_id')
-    today = str(date.today())
 
-    # Clear cart if old
-    if session.get('cart_date') != today:
-        session['cart'] = {}
-        session['cart_date'] = today
-        flash('Your cart was cleared due to a new day.', 'cart_info')
-        return redirect(url_for('cart'))
-
-    if not item_id or 'cart' not in session:
-        flash('Invalid request.', 'items_error')
-        return redirect(url_for('cart'))
-
-    cart = session['cart']
-    if item_id in cart:
-        del cart[item_id]
-        session['cart'] = cart
+    cart_item = CartItem.query.filter_by(user_id=user_id, item_id=item_id).first()
+    if cart_item:
+        db.session.delete(cart_item)
+        db.session.commit()
         flash('Item removed from cart.', 'items_success')
     else:
         flash('Item not found in cart.', 'items_error')
@@ -1304,64 +1372,77 @@ def remove_from_cart():
 @app.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
-    user_id = session.get('user_id')
+    user_id = session['user_id']
     user = User.query.get(user_id)
+    today = date.today()
 
-    if not user:
-        flash('User not found.', 'danger')
-        return redirect(url_for('login'))
+    # Fetch cart items from DB for user (optionally clean old items like cart page)
+    CartItem.query.filter(CartItem.user_id == user_id, CartItem.created_date != today).delete()
+    db.session.commit()
 
-    if 'cart' not in session or not session['cart']:
+    cart_items = CartItem.query.filter_by(user_id=user_id).all()
+
+    if not cart_items:
         flash('Your cart is empty.', 'warning')
         return redirect(url_for('cart'))
 
-    # Calculate total for display
-    total_amount = sum(item['price'] * item['quantity'] for item in session['cart'].values())
-    # Add tax and service fee
-    tax = total_amount * 0.08
+    # Calculate subtotal
+    subtotal = sum(ci.quantity * ci.item.price for ci in cart_items)
+    tax = subtotal * 0.08
     service_fee = 10
-    total_amount = total_amount + tax + service_fee
+    total = subtotal + tax + service_fee
 
     if request.method == 'POST':
-        # Validate form first
         errors = validate_checkout_form(request.form)
         form_total = float(request.form.get('total_amount', 0))
-        
-        # Check if total amount matches
-        if abs(form_total - total_amount) > 0.01:  # Allow small floating point differences
+
+        if abs(form_total - total) > 0.01:
             errors.append("Invalid total amount.")
 
         if errors:
             for error in errors:
                 flash(error, 'danger')
-            return render_template('checkout.html', 
-                                 user=user, 
-                                 form_data=request.form, 
-                                 cart=session['cart'], 
-                                 total=total_amount,
-                                 has_errors=True)
+            return render_template('checkout.html',
+                                   user=user,
+                                   form_data=request.form,
+                                   cart=cart_items,
+                                   total=total,
+                                   has_errors=True)
 
-        # Only process order if no validation errors
-        if process_order(user, session['cart'], request.form, total_amount):
-            session.pop('cart', None)
+        # Prepare cart dict for process_order
+        cart_dict = {}
+        for ci in cart_items:
+            cart_dict[ci.item_id] = {
+                'id': ci.item_id,
+                'name': ci.item.name,
+                'price': ci.item.price,
+                'quantity': ci.quantity
+            }
+
+        if process_order(user, cart_dict, request.form, total):
+            # Clear cart items from DB after order
+            CartItem.query.filter_by(user_id=user_id).delete()
+            db.session.commit()
+
             flash('Order placed successfully!', 'success')
             return redirect(url_for('orders'))
         else:
             flash('Order failed. Please try again.', 'danger')
-            return render_template('checkout.html', 
-                                 user=user, 
-                                 form_data=request.form, 
-                                 cart=session['cart'], 
-                                 total=total_amount,
-                                 has_errors=True)
+            return render_template('checkout.html',
+                                   user=user,
+                                   form_data=request.form,
+                                   cart=cart_items,
+                                   total=total,
+                                   has_errors=True)
 
-    # GET request - show empty form
-    return render_template('checkout.html', 
-                         user=user, 
-                         form_data={}, 
-                         cart=session['cart'], 
-                         total=total_amount,
-                         has_errors=False)
+    # GET request: show form
+    return render_template('checkout.html',
+                           user=user,
+                           form_data={},
+                           cart=cart_items,
+                           total=total,
+                           has_errors=False)
+
 
 # -------------------- FORM VALIDATION --------------------
 
@@ -1555,4 +1636,4 @@ def profile():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    socketio.run(app, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
