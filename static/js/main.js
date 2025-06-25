@@ -3,11 +3,11 @@ function toggleDropdown() {
 }
 
 // Close dropdown when clicking outside
-document.addEventListener("click", function(e) {
-    if (!e.target.closest(".notifications")) {
-        document.getElementById("notificationDropdown").classList.remove("show");
-    }
-});
+// document.addEventListener("click", function(e) {
+//     if (!e.target.closest(".notifications")) {
+//         document.getElementById("notificationDropdown").classList.remove("show");
+//     }
+// });
 
 // Fetch notifications from Flask endpoint
 function fetchNotifications() {

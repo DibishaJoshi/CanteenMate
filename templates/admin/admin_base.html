@@ -102,9 +102,11 @@
     <div class="content-wrapper">
         <!-- Top Navbar -->
         <div class="top-navbar">
-            <button class="btn nav-toggle">
-                <i class="fas fa-bars"></i>
-            </button>
+             <!-- Sidebar Toggle Button -->
+    <button class="btn nav-toggle" onclick="document.querySelector('.sidebar').classList.toggle('active')">
+        <i class="fas fa-bars"></i>
+    </button>
+        
             
             <div class="search-bar">
                 <input type="text" class="form-control" placeholder="Search everything here...">
@@ -112,7 +114,7 @@
             
             <div class="d-flex align-items-center">    
                 <div class="user-profile">
-                    <div class="user-info d-none d-md-block">
+                    <div class="user-info">
                         <div class="user-name">{{ user.name }}</div>
                         <div class="user-email">{{ user.email }}</div>
 
@@ -139,6 +141,19 @@
         });
     }, 3000);
     </script>
+    <script>
+    const sidebar = document.querySelector('.sidebar');
+    const toggleBtn = document.querySelector('.nav-toggle');
+
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 992) {
+            // If click is outside sidebar and toggle button
+            if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        }
+    });
+</script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

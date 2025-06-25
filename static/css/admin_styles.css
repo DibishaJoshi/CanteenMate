@@ -72,12 +72,12 @@ header {
 }
 
 /* Action bar styling */
-.action-bar {
+/* .action-bar {
     padding-bottom: 20px;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-}
+} */
 
 .btn-primary {
     background-color: #b4623c;
@@ -256,8 +256,8 @@ table tbody tr:hover {
 .modal-content {
     background-color: #fff;
     margin: 10% auto;
-    width: 500px;
-    max-width: 90%;
+    width: 100%;
+    max-width: 600px;
     border-radius: 5px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     animation: modal-open 0.3s ease-out;
@@ -303,6 +303,7 @@ table tbody tr:hover {
 /* Form styling */
 .form-group {
     margin-bottom: 15px;
+    width: 100%;
 }
 
 .form-group label {
@@ -318,12 +319,23 @@ table tbody tr:hover {
 .form-group textarea,
 .form-group select {
     width: 100%;
+    max-width: 100%;
     padding: 8px 12px;
     border: 1px solid #ced4da;
     border-radius: 4px;
     box-sizing: border-box;
 }
-
+.form-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='black' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px 16px;
+    padding-right: 36px; /* To make space for the icon */
+}
 .form-group textarea {
     resize: vertical;
     min-height: 100px;
@@ -344,7 +356,25 @@ table tbody tr:hover {
 .radio-group input[type="radio"] {
     margin-right: 5px;
 }
+/* @media (max-width: 768px) {
+    .form-group,
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        max-width: 100%;
+    }
 
+    .modal-content {
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    body {
+        overflow-x: hidden;
+    }
+} */
 .form-actions {
     display: flex;
     justify-content: flex-end;
@@ -396,21 +426,13 @@ table tbody tr:hover {
     }
 }
 .attribute-content{
+    background-color: white;
     margin-bottom: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
 }
-.add-btn{
-    background-color: #b4623c;
-    color: #fff;
-    margin-bottom: 8px;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    font-weight: 500;
-    transition: all 0.3s;
-}
+
 
 
 a {
@@ -482,6 +504,14 @@ h1, h2, h3, h4 {
 }
 
 .add-btn {
+    margin-bottom: 8px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    transition: all 0.3s;
     padding: 8px 16px;
     background-color: #b4623c;
     color: white;
@@ -1192,16 +1222,7 @@ h1, h2, h3, h4 {
 }
 
 @media (max-width: 992px) {
-    .sidebar {
-        width: 60px;
-        overflow: visible;
-    }
-    
-    .sidebar .logo h2,
-    .sidebar .nav-links span:not(.icon),
-    .sidebar .nav-links .header {
-        display: none;
-    }
+   
     
     .content {
         margin-left: 60px;
@@ -1246,7 +1267,10 @@ h1, h2, h3, h4 {
         width: 95%;
         margin: 20px auto;
     }
-    
+    .add-btn {
+        width: auto;
+        align-self: flex-start; /* Keeps it to content-width */
+    }
     .data-table {
         display: block;
         overflow-x: auto;

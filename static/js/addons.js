@@ -6,13 +6,31 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.querySelector('.search-box input');
     const addonForm = document.getElementById('addonForm');
 
-    // Show modal
+    // Show modal for adding new addon
     openModalBtn.addEventListener('click', () => {
-        addonForm.reset(); // Reset all input fields
-        modal.style.display = 'block';
+        addonForm.reset();                      // Reset form fields
+        addonForm.action = '/admin/addons/add'; // Set form action to add route
+        modal.style.display = 'block';         // Show modal
     });
 
-    // Hide modal
+    // Show modal for editing existing addon
+    document.querySelectorAll('.edit-addon-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            // Populate form fields from button's data attributes
+            addonForm.elements['addonName'].value = button.dataset.name || '';
+            addonForm.elements['addonPrice'].value = button.dataset.price || '';
+            addonForm.elements['addonCategory'].value = button.dataset.category || '';
+            addonForm.elements['addonDescription'].value = button.dataset.description || '';
+
+            // Change form action to the edit URL with the addon ID
+            addonForm.action = `/admin/addons/edit/${button.dataset.id}`;
+
+            // Show modal
+            modal.style.display = 'block';
+        });
+    });
+
+    // Hide modal function
     function closeModal() {
         modal.style.display = 'none';
     }
@@ -26,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Search functionality
+    // Search functionality to filter addons list
     searchInput.addEventListener('keyup', function () {
         const term = this.value.toLowerCase();
         const rows = document.querySelectorAll('.addons-list tbody tr');
@@ -42,22 +60,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Optional: Form submission handler
-    addonForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        // Example: you can log the form data or send it to server via fetch
-        const name = document.getElementById('addonName').value;
-        const price = document.getElementById('addonPrice').value;
-        const category = document.getElementById('addonCategory').value;
-        const description = document.getElementById('addonDescription').value;
-        const image = document.getElementById('addonImage').files[0];
-        const status = addonForm.querySelector('input[name="status"]:checked').value;
-
-        console.log({ name, price, category, description, image, status });
-
-        // For now, just close the modal
-        closeModal();
-    });
-
-    console.log("✅ addons.js loaded");
+    console.log("addons.js loaded");
 });

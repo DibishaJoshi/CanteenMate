@@ -444,7 +444,7 @@
                         <div class="item-details">
                             <h4>{{ item.name }}</h4>
                             <p>{{ item.description or 'No description available' }}</p>
-                            <span class="price">Rs. {{ "%.2f"|format(item.price / 100) }}</span>
+                            <span class="price">Rs. {{ "%.2f"|format(item.price) }}</span>
                         </div>
                         <div class="item-actions">
                             <form method="POST" action="{{ url_for('remove_menu_item') }}" style="display: inline;">
@@ -493,7 +493,7 @@
                             {% for item in available_items %}
                             <div class="item-checkbox" data-category="{{ item.category.name if item.category else 'Other' }}">
                                 <input type="checkbox" id="item{{ item.id }}" name="selected_items" value="{{ item.id }}">
-                                <label for="item{{ item.id }}">{{ item.name }} - ${{ "%.2f"|format(item.price / 100) }}</label>
+                                <label for="item{{ item.id }}">{{ item.name }} - Rs.{{ "%.2f"|format(item.price) }}</label>
                             </div>
                             {% endfor %}
                         </div>

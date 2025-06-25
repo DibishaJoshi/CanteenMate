@@ -2,54 +2,51 @@
 {% block extra_css %}
 <style>
     .status-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-weight: 600;
-  color: #fff;
-  text-transform: capitalize;
-  font-size: 0.9rem;
-}
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        color: #fff;
+        text-transform: capitalize;
+        font-size: 0.9rem;
+    }
 
-.status-badge.pending {
-  background-color: orange;
-}
-
-.status-badge.processing {
-  background-color: #007bff;
-}
-
-.status-badge.shipped {
-  background-color: purple;
-}
-.status-badge.ready {
-  background-color: orange;
-}
-.status-badge.delivered {
-  background-color: green;
-}
-
-.status-badge.cancelled {
-  background-color: red;
-}
-
-.status-badge.unknown {
-  background-color: gray;
-}
+    .status-badge.pending { background-color: orange; }
+    .status-badge.processing { background-color: #007bff; }
+    .status-badge.shipped { background-color: purple; }
+    .status-badge.ready { background-color: #0D9488; }
+    .status-badge.delivered { background-color: green; }
+    .status-badge.cancelled { background-color: red; }
+    .status-badge.unknown { background-color: gray; }
 </style>
 {% endblock %}
+
 {% block content %}
-<div class="attribute-content">
-    <div class="action-bar">
-        <!-- If you want, you can add a button or search box here -->
-        <!-- Example: -->
-        <!-- <button class="add-btn"><i class="fas fa-plus"></i> Add New Order</button> -->
-        <div class="search-box">
-            <input type="text" placeholder="Search orders...">
-            <button><i class="fas fa-search"></i></button>
-        </div> 
+<div class="category-section">
+    <div class="section-header">
+        <h1 class="page-title">Orders</h1>
     </div>
 
-    <div class="attributes-list">
+    <div class="section-filters" style="margin-bottom: 1rem;">
+        <div class="search-box">
+            <input type="text" id="orderSearch" placeholder="Search orders...">
+            <button type="button" style="background-color:#b4623c;">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+        <div class="filter-dropdown">
+            <select id="statusFilter">
+                <option value="">All orders</option>
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+                <option value="Ready">Ready</option>
+                <option value="Shipped">Shipped</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="data-table">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -62,7 +59,7 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        <h2 style="padding-bottom:10px;">Orders</h2>
+
         <table>
             <thead>
                 <tr>
@@ -73,16 +70,14 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="orderTableBody">
                 {% for order in orders %}
-                <tr>
+                <tr class="order-row">
                     <td>{{ loop.index }}</td>
-                    <td>{{ order.name }}</td>
+                    <td class="order-customer">{{ order.name }}</td>
                     <td>Rs. {{ '%.2f'|format(order.total_amount) }}</td>
-                    <td>
-                        <span class="status-badge {{ order.status|lower }}">
-                            {{ order.status }}
-                        </span>
+                    <td class="order-status">
+                        <span class="status-badge {{ order.status|lower }}">{{ order.status }}</span>
                     </td>
                     <td class="actions">
                         <a href="{{ url_for('admin_order_view', order_id=order.id) }}" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i> View</a>
@@ -90,9 +85,48 @@
                     </td>
                 </tr>
                 {% endfor %}
+                <tr id="noResultsRow" style="display: none;">
+                    <td colspan="5" style="text-align:center; font-weight: bold;">No results found</td>
+                </tr>
             </tbody>
         </table>
     </div>
-
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('orderSearch');
+    const statusSelect = document.getElementById('statusFilter');
+    const orderRows = document.querySelectorAll('.order-row');
+    const noResultsRow = document.getElementById('noResultsRow');
+
+    function filterOrders() {
+        const searchQuery = searchInput.value.toLowerCase().trim();
+        const selectedStatus = statusSelect.value.toLowerCase();
+        let visibleCount = 0;
+
+        orderRows.forEach(row => {
+            const customer = row.querySelector('.order-customer').textContent.toLowerCase();
+            const status = row.querySelector('.order-status span').textContent.toLowerCase();
+
+            const matchesSearch = customer.includes(searchQuery);
+            const matchesStatus = !selectedStatus || status === selectedStatus;
+
+            if (matchesSearch && matchesStatus) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        noResultsRow.style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    searchInput.addEventListener('input', filterOrders);
+    statusSelect.addEventListener('change', filterOrders);
+});
+</script>
 {% endblock %}

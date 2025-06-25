@@ -159,6 +159,111 @@
   margin-top: 1rem;
   border: 1px solid #dee2e6;
 }
+@media (max-width: 768px) {
+  .checkout-container {
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1.5rem;
+  }
+
+  .checkout-form,
+  .order-summary {
+    width: 100%;
+    padding: 1.2rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .radio-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .order-summary .item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+
+  .checkout-form button {
+    width: 100%;
+  }
+
+  #khalti-section {
+    padding: 0.8rem;
+  }
+}
+@media (max-width: 992px) {
+    .top-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .top-nav .search-bar {
+        width: 100%;
+        display: flex;
+        gap: 5px;
+    }
+
+    .top-nav .search-bar input {
+        flex: 1;
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .top-nav .search-bar button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    .user-menu {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 5px;
+    }
+
+    .user-name,
+    .user-email {
+        font-size: 14px;
+    }
+
+    .notifications {
+        margin-right: 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    .user-profile .user-info {
+        display: none;
+    }
+
+    .search-bar input {
+        font-size: 13px;
+    }
+
+    .search-bar button {
+        font-size: 13px;
+    }
+
+    .notif-message {
+        font-size: 13px;
+    }
+
+    .notif-time {
+        font-size: 11px;
+    }
+}
 </style>
 {% endblock %}
 
@@ -166,8 +271,9 @@
 <div class="checkout-container">
 
   {% set ns = namespace(subtotal=0) %}
-  {% for item in cart.values() %}
-    {% set ns.subtotal = ns.subtotal + (item.price * item.quantity) %}
+  {% for item in cart %}
+    {% set ns.subtotal = ns.subtotal + (item.item.price * item.quantity) %}
+
   {% endfor %}
   {% set tax = ns.subtotal * 0.08 %}
   {% set service_fee = 10 %}
@@ -256,13 +362,13 @@
 
   <div class="order-summary">
     <h3>Order Summary</h3>
-    {% for item in cart.values() %}
+    {% for item in cart %}
       <div class="item">
         <div>
           <strong>{{ item.name }}</strong>
-          <div class="meta">Quantity: {{ item.quantity }} × Rs. {{ "%.2f"|format(item.price) }}</div>
+          <div class="meta">Quantity: {{ item.quantity }} × Rs. {{ "%.2f"|format(item.item.price) }}</div>
         </div>
-        <span>Rs. {{ "%.2f"|format(item.price * item.quantity) }}</span>
+        <span>Rs. {{ "%.2f"|format(item.item.price * item.quantity) }}</span>
       </div>
     {% endfor %}
     <hr>

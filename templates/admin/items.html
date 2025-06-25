@@ -1,122 +1,193 @@
-{% extends "admin/admin_base.html" %}
+ {% extends "admin/admin_base.html" %}
+ {% block extra_css %}
+ <style>
+/* Ensure modal takes full screen width but limits internal content */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow-y: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 40px auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+/* Ensure select doesn’t exceed modal width */
+.form-group select,
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    max-width: 100%;
+    padding: 8px 12px;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* Fix dropdown appearing outside viewport on small screens */
+select {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+@media (max-width: 600px) {
+    .modal-content {
+        width: 95%;
+        margin: 20px auto;
+    }
+
+    select {
+        font-size: 16px;
+        overflow-x: hidden;
+    }
+    select option{
+        overflow-x: hidden;
+        overflow-y: hidden;
+    }
+}
+</style>
+
+ {% endblock %}
 {% block content %}
- <main class="content">
-     <div class="action-bar">
-            <button class="add-btn" id="addUnitBtn">
-                <i class="fas fa-plus"></i> Add Item
-            </button>
-            <div class="search-box">
-                <input type="text" placeholder="Search Items...">
-                <button><i class="fas fa-search"></i></button>
-            </div>
+ <div class="categories-content">
+     <div class="section-header">
+        <h1 class="page-title">Items</h1>
+        <button class="add-btn" id="addUnitBtn">
+            <i class="fas fa-plus"></i> Add Item
+        </button>
+    </div>
+    <div class="section-filters">
+        <div class="search-box">
+            <input type="text" placeholder="Search Items...">
+            <button><i class="fas fa-search"></i></button>
         </div>
-        <div class="data-table-container" style="{% with messages = get_flashed_messages(with_categories=true) %}
-                                                    {% for category, message in messages %}
-                                                      {% if 'items_' in category %}
-                                                        display: block;
-                                                      {% endif %}
-                                                    {% endfor %}
-                                                {% endwith %}">
-                 {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                  {% for category, message in messages %}
-                    {% if 'items_' in category %}
-                      <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
-                        <span>{{ message }}</span>
-                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
-                      </div>
-                    {% endif %}
-                  {% endfor %}
+        <div class="filter-dropdown">
+            <select>
+                <option>All Items</option>
+                <option>Active</option>
+                <option>Inactive</option>
+            </select>
+        </div>
+    </div>
+    <div class="data-table-container" style="{% with messages = get_flashed_messages(with_categories=true) %}
+                                                {% for category, message in messages %}
+                                                  {% if 'items_' in category %}
+                                                    display: block;
+                                                  {% endif %}
+                                                {% endfor %}
+                                            {% endwith %}">
+             {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                {% if 'items_' in category %}
+                  <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                    <span>{{ message }}</span>
+                    <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
                 {% endif %}
-            {% endwith %}
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Item ID</th>
-                    <th>Name</th>
-                    <th>Image</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Available</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="item-table-body">
-                {% for item in items %}
-                <tr>
-                    <td>{{ "%03d"|format(item.id) }}</td>
-                    <td>{{ item.name }}</td>
-                    <td>
-                        {% if item.image_filename %}
-                        <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) }}" alt="Item Image" style="height: 40px;">
-                        {% else %}
-                        No image
-                        {% endif %}
-                    </td>
-                    <td>{{ item.category.name if item.category else "N/A" }}</td>
-                    <td>Rs. {{ '%.2f' % (item.price / 100) }}</td>
-                    <td>
-                        {% if item.available %}
-                        <span class="status available">Yes</span>
-                        {% else %}
-                        <span class="status not-available">No</span>
-                        {% endif %}
-                    </td>
-                    <td class="actions">
-                        <button class="btn-edit" 
-                            data-id="{{ item.id }}" 
-                            data-name="{{ item.name }}" 
-                            data-category="{{ item.category.name if item.category else '' }}" 
-                            data-price="{{ '%.2f' % (item.price / 100) }}"
-                            data-description="{{ item.description or '' }}"
-                            data-available="{{ 'true' if item.available else 'false' }}">
-                          <i class="fas fa-edit"></i>
-                        </button>
+              {% endfor %}
+            {% endif %}
+        {% endwith %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Item ID</th>
+                <th>Name</th>
+                <th>Image</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Available</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="item-table-body">
+            {% for item in items %}
+            <tr>
+                <td>{{ "%03d"|format(item.id) }}</td>
+                <td>{{ item.name }}</td>
+                <td>
+                    {% if item.image_filename %}
+                    <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) }}" alt="Item Image" style="height: 40px;">
+                    {% else %}
+                    No image
+                    {% endif %}
+                </td>
+                <td>{{ item.category.name if item.category else "N/A" }}</td>
+                <td>Rs. {{ '%.2f' % (item.price) }}</td>
+                <td>
+                    {% if item.available %}
+                    <span class="status available">Yes</span>
+                    {% else %}
+                    <span class="status not-available">No</span>
+                    {% endif %}
+                </td>
+                <td class="actions">
+                    <button class="btn-edit" 
+                        data-id="{{ item.id }}" 
+                        data-name="{{ item.name }}" 
+                        data-category="{{ item.category.name if item.category else '' }}" 
+                        data-price="{{ '%.2f' % (item.price / 100) }}"
+                        data-description="{{ item.description or '' }}"
+                        data-available="{{ 'true' if item.available else 'false' }}">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7">No items found.</td></tr>
+            {% endfor %}
+        </tbody>
+        <!--<tbody id="item-table-body">
+            <tr>
+                <td>001</td>
+                <td>Chicken Sandwich</td>
+                <td>Sandwiches</td>
+                <td>$5.99</td>
+                <td><span class="status available">Yes</span></td>
+                <td class="actions">
+                    <button class="btn-edit"><i class="fas fa-edit"></i></button>
                         <button class="btn-delete"><i class="fas fa-trash"></i></button>
-
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="7">No items found.</td></tr>
-                {% endfor %}
-            </tbody>
-
-            <!--<tbody id="item-table-body">
-                <tr>
-                    <td>001</td>
-                    <td>Chicken Sandwich</td>
-                    <td>Sandwiches</td>
-                    <td>$5.99</td>
-                    <td><span class="status available">Yes</span></td>
-                    <td class="actions">
-                        <button class="btn-edit"><i class="fas fa-edit"></i></button>
-                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>002</td>
-                    <td>Caesar Salad</td>
-                    <td>Salads</td>
-                    <td>$4.50</td>
-                    <td><span class="status available">Yes</span></td>
-                    <td class="actions">
-                        <button class="btn-edit"><i class="fas fa-edit"></i></button>
-                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>003</td>
-                    <td>Pepperoni Pizza</td>
-                    <td>Hot Meals</td>
-                    <td>$8.99</td>
-                    <td><span class="status not-available">No</span></td>
-                    <td class="actions">
-                        <button class="btn-edit"><i class="fas fa-edit"></i></button>
-                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            </tbody>-->
-        </table>
+                </td>
+            </tr>
+            <tr>
+                <td>002</td>
+                <td>Caesar Salad</td>
+                <td>Salads</td>
+                <td>$4.50</td>
+                <td><span class="status available">Yes</span></td>
+                <td class="actions">
+                    <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+            <tr>
+                <td>003</td>
+                <td>Pepperoni Pizza</td>
+                <td>Hot Meals</td>
+                <td>$8.99</td>
+                <td><span class="status not-available">No</span></td>
+                <td class="actions">
+                    <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        </tbody>-->
+    </table>
     </div>
     <div id="item-modal" class="modal">
         <div class="modal-content">
@@ -185,7 +256,7 @@
             </div>
         </div>
     </div>
-</main>
+</div>
 {% endblock%}
 {% block extra_js %}
     <script src="{{ url_for('static',filename='js/item.js') }}"></script>

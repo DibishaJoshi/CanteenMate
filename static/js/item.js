@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
     addItemBtn.addEventListener('click', () => {
         form.reset();
         modal.style.display = 'block';
-        document.getElementById('modal-header').innerText = "Add New Item";
+        document.getElementById('modal-header-title').innerText = "Add New Item";
     });
 
     // Close Modal

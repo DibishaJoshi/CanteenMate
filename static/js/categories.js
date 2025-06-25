@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Search Functionality
-    const searchInput = document.querySelector('.search-filter input');
+    const searchInput = document.querySelector('.search-box input');
     searchInput.addEventListener('keyup', function () {
         const term = this.value.toLowerCase();
         const rows = document.querySelectorAll('.data-table tbody tr');

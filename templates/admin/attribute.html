@@ -1,12 +1,15 @@
 {% extends "admin/admin_base.html" %}
 {% block content %}
     <div class="attribute-content">
-        <div class="action-bar">
+        <div class="section-header">
+            <h1 class="page-title">Attributes</h1>
             <button class="add-btn"><i class="fas fa-plus"></i> Add New Attribute</button>
-            <div class="search-box">
-                <input type="text" placeholder="Search attributes...">
-               <button><i class="fas fa-search"></i></button>
-            </div>
+        </div>
+        <div class="section-filters">
+        <div class="search-box">
+            <input type="text" placeholder="Search attributes...">
+           <button><i class="fas fa-search"></i></button>
+        </div>
         </div>
         <div class="attributes-list" style="{% with messages = get_flashed_messages(with_categories=true) %}
               {% for category, message in messages %}
@@ -27,6 +30,7 @@
                   {% endfor %}
                 {% endif %}
             {% endwith %}
+            <div class="data-table">
             <table>
                 <thead>
                     <tr>
@@ -126,6 +130,7 @@
                     </tr>-->
                 </tbody>
             </table>
+            </div>
         </div>
         <div class="pagination">
             <button class="btn-page"><i class="icon-chevron-left"></i></button>
