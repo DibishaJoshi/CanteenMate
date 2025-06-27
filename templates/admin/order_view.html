@@ -190,6 +190,10 @@ h4 {
   </div>
 
     <h4>Total Amount: Rs. {{ '%.2f'|format(order.total_amount) }}</h4>
-    <a href="{{ url_for('admin_orders') }}" class="btn btn-secondary">Back to Orders</a>
+    <a href="{{ url_for('admin_orders') }}" class="btn btn-secondary">Back to Orders</a><br>
+    <a href="{{ url_for('admin_order_invoice', order_id=order.id) }}" target="_blank" class="btn btn-outline-dark">
+    🧾 View Invoice
+</a>
+
 </div>
 {% endblock %}

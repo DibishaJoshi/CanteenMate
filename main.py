@@ -917,7 +917,14 @@ def admin_update_order_status(order_id):
 
     return redirect(url_for('admin_order_view', order_id=order.id))
 
-
+@app.route('/admin/orders/<int:order_id>/invoice')
+@login_required
+def admin_order_invoice(order_id):
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    order = Order.query.get_or_404(order_id)
+    customer = User.query.get(order.user_id)
+    return render_template('admin/order_invoice.html', user=user, order=order, customer=customer)
 
 @app.route('/orders/<int:order_id>/review')
 @login_required
