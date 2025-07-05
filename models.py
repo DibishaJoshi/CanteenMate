@@ -170,6 +170,22 @@ class OrderItem(db.Model):
     @property
     def quantity_price(self):
         return self.quantity * self.price
+    
+class OrderAddon(db.Model):
+    __tablename__ = 'order_addons'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    order_item_id = db.Column(db.Integer, db.ForeignKey('order_item.id'), nullable=False)
+    addon_id = db.Column(db.Integer, db.ForeignKey('addons.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Numeric(10, 2), nullable=False)
+    category = db.Column(db.String(100))
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    order_item = db.relationship('OrderItem', backref='order_addons')
+    addon = db.relationship('Addon', backref='order_addons')
 class CartItem(db.Model):
     __tablename__ = 'cart_items'
 

@@ -1,183 +1,205 @@
-{% extends 'base.html' %}
-
-{% block extra_css %}
+{% extends 'base.html' %} {% block extra_css %}
 <style>
-    :root {
-        --primary: #3f51b5;
-        --bg-card: #fff;
-        --bg-section: #f8f9fa;
-        --text-dark: #343a40;
-        --text-light: #6c757d;
-        --border: #dee2e6;
-        --radius: 8px;
-        --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    }
-    .content{
-        background-color:white;
-        border-radius:10px;
-    }
-    #orders-wrapper {
-        max-width: 800px;
-        padding: 15px;
-    }
+  :root {
+    --primary: #3f51b5;
+    --bg-card: #fff;
+    --bg-section: #f8f9fa;
+    --text-dark: #343a40;
+    --text-light: #6c757d;
+    --border: #dee2e6;
+    --radius: 8px;
+    --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+  .content {
+    background-color: white;
+    border-radius: 10px;
+  }
+  #orders-wrapper {
+    max-width: 800px;
+    padding: 15px;
+  }
 
-    .order-card {
-        background: var(--bg-card);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        margin-bottom: 28px;
-        overflow: hidden;
-    }
+  .order-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
 
-    .order-header {
-        background: var(--bg-section);
-        padding: 16px 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid var(--border);
-    }
+  .order-header {
+    background: var(--bg-section);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
 
-    .order-number {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--primary);
-    }
+  .order-number {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary);
+  }
 
-    .order-status {
-        padding: 6px 12px;
-        border-radius: 50px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        text-transform: uppercase;
-    }
+  .order-status {
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
 
-    .order-status.pending { background: #fff3cd; color: #856404; }
-    .order-status.Processing { background: #e2e3f3; color: #383d65; }
-    .order-status.Shipped { background: #d1ecf1; color: #0c5460; }
-    .order-status.Delivered { background: #d4edda; color: #155724; }
-    .order-status.Cancelled { background: #f8d7da; color: #721c24; }
+  .order-status.pending {
+    background: #fff3cd;
+    color: #856404;
+  }
+  .order-status.Processing {
+    background: #e2e3f3;
+    color: #383d65;
+  }
+  .order-status.Shipped {
+    background: #d1ecf1;
+    color: #0c5460;
+  }
+  .order-status.Delivered {
+    background: #d4edda;
+    color: #155724;
+  }
+  .order-status.Cancelled {
+    background: #f8d7da;
+    color: #721c24;
+  }
 
-    .order-body {
-        padding: 16px 24px;
-    }
+  .order-body {
+    padding: 16px 24px;
+  }
 
-    .order-info {
-        font-size: 0.9rem;
-        color: var(--text-dark);
-        margin-bottom: 16px;
-    }
+  .order-info {
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    margin-bottom: 16px;
+  }
 
-    .order-info span {
-        display: inline-block;
-        margin-right: 24px;
-        margin-bottom: 6px;
-    }
+  .order-info span {
+    display: inline-block;
+    margin-right: 24px;
+    margin-bottom: 6px;
+  }
 
-    .order-items {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        margin-bottom: 16px;
-    }
+  .order-items {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
 
+  .order-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    background: #fff;
+  }
+
+  .items-image img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: var(--radius);
+  }
+
+  .item-details {
+    flex-grow: 1;
+  }
+
+  .item-name {
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+  }
+
+  .item-quantity {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+  }
+
+  .item-price {
+    font-weight: 600;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+  }
+
+  .order-footer {
+    background: var(--bg-section);
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .order-total {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  .order-actions a.btn {
+    background: var(--primary);
+    color: white;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    text-decoration: none;
+    border-radius: var(--radius);
+    transition: background 0.2s;
+  }
+
+  .order-actions a.btn:hover {
+    background: #303f9f;
+  }
+
+  @media (max-width: 600px) {
     .order-item {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 10px;
-        background: #fff;
+      flex-direction: column;
+      align-items: flex-start;
     }
-
-    .items-image img {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: var(--radius);
+    .item-image img {
+      width: 100%;
+      height: auto;
     }
-
-    .item-details {
-        flex-grow: 1;
-    }
-
-    .item-name {
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 4px;
-    }
-
-    .item-quantity {
-        color: var(--text-light);
-        font-size: 0.9rem;
-        margin-bottom: 2px;
-    }
-
-    .item-price {
-        font-weight: 600;
-        color: var(--text-dark);
-        font-size: 0.95rem;
-    }
-
     .order-footer {
-        background: var(--bg-section);
-        padding: 16px 24px;
-        border-top: 1px solid var(--border);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
     }
-
-    .order-total {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--text-dark);
-    }
-
-    .order-actions a.btn {
-        background: var(--primary);
-        color: white;
-        padding: 8px 16px;
-        font-size: 0.875rem;
-        text-decoration: none;
-        border-radius: var(--radius);
-        transition: background 0.2s;
-    }
-
-    .order-actions a.btn:hover {
-        background: #303f9f;
-    }
-
-    @media (max-width: 600px) {
-        .order-item {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        .item-image img {
-            width: 100%;
-            height: auto;
-        }
-        .order-footer {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
-        }
-    }
-    .page-title {
-      font-size: 28px;
-      font-weight: 700;
-      padding:12px 0 0 14px;
-    }
+  }
+  .page-title {
+    font-size: 28px;
+    font-weight: 700;
+    padding: 12px 0 0 14px;
+  }
+  .item-addons {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: #555;
+  }
+  .item-addons ul {
+    margin: 4px 0 0;
+    padding-left: 16px;
+  }
+  .item-addons li {
+    list-style: disc;
+  }
 </style>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="content">
-    <h1 class="page-title">My orders</h1>
-<div id="orders-wrapper">
-  {% if orders %}
-    {% for order in orders %}
+  <h1 class="page-title">My orders</h1>
+  <div id="orders-wrapper">
+    {% if orders %} {% for order in orders %}
     <div class="order-card">
       <div class="order-header">
         <div class="order-number">#ORD-{{ '%04d'|format(order.id) }}</div>
@@ -186,10 +208,16 @@
 
       <div class="order-body">
         <div class="order-info">
-          <span><strong>Contact:</strong> {{ order.name }} | {{ order.contact }}</span>
-          <span><strong>Email:</strong> {{ order.email }}</span><br>
+          <span
+            ><strong>Contact:</strong> {{ order.name }} | {{ order.contact
+            }}</span
+          >
+          <span><strong>Email:</strong> {{ order.email }}</span><br />
           <span><strong>Delivery:</strong> {{ order.delivery }}</span>
-          <span><strong>Address:</strong> {{ order.delivery_address or 'N/A' }}</span><br>
+          <span
+            ><strong>Address:</strong> {{ order.delivery_address or 'N/A'
+            }}</span
+          ><br />
           <span><strong>Payment:</strong> {{ order.payment }}</span>
         </div>
 
@@ -197,12 +225,28 @@
           {% for item in order.items %}
           <div class="order-item">
             <div class="items-image">
-              <img src="{{ url_for('static', filename='uploads/items/' ~ item.item.image_filename) if item.item and item.item.image_filename else url_for('static', filename='images/placeholder.png') }}" alt="{{ item.name }}">
+              <img
+                src="{{ url_for('static', filename='uploads/items/' ~ item.item.image_filename) if item.item and item.item.image_filename else url_for('static', filename='images/placeholder.png') }}"
+                alt="{{ item.name }}"
+              />
             </div>
             <div class="item-details">
               <div class="item-name">{{ item.name }}</div>
               <div class="item-quantity">Quantity: {{ item.quantity }}</div>
               <div class="item-price">Rs. {{ '%.2f'|format(item.price) }}</div>
+
+              {% if item.order_addons %}
+              <div class="item-addons mt-2">
+                <small><strong>Add-ons:</strong></small>
+                <ul class="pl-3">
+                  {% for addon in item.order_addons %}
+                  <li>
+                    {{ addon.name }} (+Rs. {{ '%.2f'|format(addon.price) }})
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %}
             </div>
           </div>
           {% endfor %}
@@ -210,18 +254,21 @@
       </div>
 
       <div class="order-footer">
-        <div class="order-total">Total: Rs. {{ '%.2f'|format(order.total_amount) }}</div>
+        <div class="order-total">
+          Total: Rs. {{ '%.2f'|format(order.total_amount) }}
+        </div>
         <div class="order-actions">
           {% if order.status.lower() == 'delivered' %}
-          <a href="{{ url_for('review_order', order_id=order.id) }}" class="btn">Give Review</a>
+          <a href="{{ url_for('review_order', order_id=order.id) }}" class="btn"
+            >Give Review</a
+          >
           {% endif %}
         </div>
       </div>
     </div>
-    {% endfor %}
-  {% else %}
+    {% endfor %} {% else %}
     <p class="text-center">No past orders found.</p>
-  {% endif %}
-</div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

@@ -11,6 +11,7 @@ import re
 import requests
 
 from models import db, User, Category, Item, Attribute, AttributeValue ,Menu, Order, OrderItem,Review, ReviewHelpful, Addon, CartItem
+from models import addon_item_association, OrderAddon
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dibisha'
@@ -397,7 +398,7 @@ def add_addon():
     db.session.add(new_addon)
     db.session.commit()
 
-    flash('Addon added successfully!', 'success')
+    flash('Addon added successfully!', 'addon_success')
     return redirect(url_for('addons'))
 
 @app.route('/admin/addons/edit/<int:addon_id>', methods=['POST'])
@@ -413,13 +414,13 @@ def edit_addon(addon_id):
 
     # Basic validation
     if not name or not price_str or not category:
-        flash('Please fill in all required fields.', 'danger')
+        flash('Please fill in all required fields.', 'addon_danger')
         return redirect(url_for('addons'))
 
     try:
         price = float(price_str)
     except ValueError:
-        flash('Price must be a valid number.', 'danger')
+        flash('Price must be a valid number.', 'addon_danger')
         return redirect(url_for('addons'))
 
     # Update addon
@@ -430,7 +431,7 @@ def edit_addon(addon_id):
     addon.status = status
 
     db.session.commit()
-    flash('Addon updated successfully!', 'success')
+    flash('Addon updated successfully!', 'addon_success')
     return redirect(url_for('addons'))
 
 
@@ -440,7 +441,7 @@ def delete_addon(addon_id):
     addon = Addon.query.get_or_404(addon_id)
     db.session.delete(addon)
     db.session.commit()
-    flash('Addon deleted successfully.', 'success')
+    flash('Addon deleted successfully.', 'addon_success')
     return redirect(url_for('addons'))
 
 
@@ -452,18 +453,21 @@ def items():
     user_id = session['user_id']
     user = User.query.get(user_id)
     categories = Category.query.filter_by(status=True).all()
-    items = Item.query.all()  # Fetch all items from DB
-    return render_template('admin/items.html', categories=categories, user=user, items=items, active_page='items')
+    addons = Addon.query.filter_by(status=True).all()
+    items = Item.query.all() 
+    return render_template('admin/items.html', categories=categories, user=user, items=items, active_page='items',addons=addons)
 
 @app.route('/admin/add-item', methods=['POST'])
+@login_required
 def add_item():
-    item_id = request.form.get('item-id')  # <-- hidden input in form
+    item_id = request.form.get('item-id')  
     name = request.form.get('item-name')
     category_name = request.form.get('item-category')
     price = request.form.get('item-price')
     description = request.form.get('item-description')
     available = request.form.get('item-available') == 'on'
     image = request.files.get('item-image')
+    addon_ids = request.form.getlist('item-addons')
 
     if not name or not category_name or not price:
         flash("Please fill in all required fields.", "items_danger")
@@ -484,8 +488,13 @@ def add_item():
             image.save(image_path)
             image_filename = filename
 
-    # Check if this is an update or new insert
-    if item_id:  # Editing existing item
+    # Load selected Addons as objects
+    selected_addons = []
+    if addon_ids:
+        selected_addons = Addon.query.filter(Addon.id.in_(addon_ids)).all()
+
+    if item_id:
+        # Edit existing item
         item = Item.query.get(int(item_id))
         if not item:
             flash("Item not found.", "items_danger")
@@ -500,22 +509,38 @@ def add_item():
         if image_filename:
             item.image_filename = image_filename
 
+        # Update addons association
+        item.addons = selected_addons
+
         db.session.commit()
         flash("Item updated successfully!", "items_success")
-    else:  # New item
+
+    else:
+        # Add new item
         new_item = Item(
             name=name,
             price=float(price),
             category_id=category.id,
             description=description,
+            available=available,
             image_filename=image_filename,
-            available=available
+            addons=selected_addons
         )
         db.session.add(new_item)
         db.session.commit()
         flash("Item added successfully!", "items_success")
 
     return redirect(url_for('items'))
+# @app.route('/update_cart_addons', methods=['POST'])
+# @login_required
+# def update_cart_addons():
+#     cart_id = request.form.get('cart_id')
+#     selected_addon_ids = request.form.getlist('addon_ids')
+    
+#     # Update cart with selected addons
+#     # Store addon selections in session or database
+    
+#     return redirect(url_for('cart'))
 
 @app.route('/admin/menu')
 @login_required
@@ -1359,6 +1384,7 @@ def update_cart_quantity():
     flash('Cart updated.', 'cart_success')
     return redirect(url_for('cart'))
 
+
 @app.route('/remove_from_cart', methods=['POST'])
 @login_required
 def remove_from_cart():
@@ -1376,6 +1402,27 @@ def remove_from_cart():
     return redirect(url_for('cart'))
 
 
+@app.route('/update_cart_addons', methods=['POST'])
+@login_required
+def update_cart_addons():
+    user_id = session['user_id']
+    cart_id = request.form.get('cart_id')
+    addon_ids = request.form.getlist('addon_ids')
+    
+    # Convert addon_ids to integers
+    addon_ids = [int(aid) for aid in addon_ids if aid.isdigit()]
+    
+    # Store selected addons in session for this cart item
+    if 'cart_addons' not in session:
+        session['cart_addons'] = {}
+    
+    session['cart_addons'][cart_id] = addon_ids
+    session.modified = True
+    
+    flash('Add-ons updated successfully!', 'cart_success')
+    return redirect(url_for('cart'))
+
+
 @app.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
@@ -1383,8 +1430,11 @@ def checkout():
     user = User.query.get(user_id)
     today = date.today()
 
-    # Fetch cart items from DB for user (optionally clean old items like cart page)
-    CartItem.query.filter(CartItem.user_id == user_id, CartItem.created_date != today).delete()
+    # Clean up stale cart items
+    CartItem.query.filter(
+        CartItem.user_id == user_id,
+        CartItem.created_date != today
+    ).delete()
     db.session.commit()
 
     cart_items = CartItem.query.filter_by(user_id=user_id).all()
@@ -1393,11 +1443,56 @@ def checkout():
         flash('Your cart is empty.', 'warning')
         return redirect(url_for('cart'))
 
-    # Calculate subtotal
-    subtotal = sum(ci.quantity * ci.item.price for ci in cart_items)
-    tax = subtotal * 0.08
+    cart_addons = session.get('cart_addons', {})
+
+    checkout_items = []
+    for cart_item in cart_items:
+        item_data = {
+            'id': cart_item.item_id,
+            'name': cart_item.item.name,
+            'price': cart_item.item.price,
+            'quantity': cart_item.quantity,
+            'cart_id': str(cart_item.id),
+            'selected_addons': []
+        }
+
+        # ✅ THIS IS THE MISSING LINE
+        selected_addon_ids = cart_addons.get(str(cart_item.id), [])
+
+        if selected_addon_ids:
+            selected_addons = (
+                db.session.query(Addon)
+                .join(addon_item_association, Addon.id == addon_item_association.c.addon_id)
+                .filter(
+                    addon_item_association.c.item_id == cart_item.item_id,
+                    Addon.id.in_(selected_addon_ids),
+                    Addon.status == True
+                )
+                .all()
+            )
+
+            for addon in selected_addons:
+                item_data['selected_addons'].append({
+                    'id': addon.id,
+                    'name': addon.name,
+                    'price': addon.price,
+                    'description': addon.description,
+                    'category': addon.category
+                })
+
+        checkout_items.append(item_data)
+
+    subtotal = sum(item['quantity'] * item['price'] for item in checkout_items)
+    addon_total = sum(
+        addon['price'] * item['quantity']
+        for item in checkout_items
+        for addon in item['selected_addons']
+    )
+    
+    total_before_tax = subtotal + addon_total
+    tax = total_before_tax * 0.08
     service_fee = 10
-    total = subtotal + tax + service_fee
+    total = total_before_tax + tax + service_fee
 
     if request.method == 'POST':
         errors = validate_checkout_form(request.form)
@@ -1412,24 +1507,32 @@ def checkout():
             return render_template('checkout.html',
                                    user=user,
                                    form_data=request.form,
-                                   cart=cart_items,
+                                   cart=checkout_items,
+                                   subtotal=subtotal,
+                                   addon_total=addon_total,
+                                   tax=tax,
+                                   service_fee=service_fee,
                                    total=total,
                                    has_errors=True)
 
-        # Prepare cart dict for process_order
-        cart_dict = {}
-        for ci in cart_items:
-            cart_dict[ci.item_id] = {
-                'id': ci.item_id,
-                'name': ci.item.name,
-                'price': ci.item.price,
-                'quantity': ci.quantity
+        cart_dict = {
+            item['id']: {
+                'id': item['id'],
+                'name': item['name'],
+                'price': item['price'],
+                'quantity': item['quantity'],
+                'selected_addons': item['selected_addons']
             }
+            for item in checkout_items
+        }
 
         if process_order(user, cart_dict, request.form, total):
-            # Clear cart items from DB after order
             CartItem.query.filter_by(user_id=user_id).delete()
             db.session.commit()
+
+            if 'cart_addons' in session:
+                del session['cart_addons']
+                session.modified = True
 
             flash('Order placed successfully!', 'success')
             return redirect(url_for('orders'))
@@ -1438,17 +1541,25 @@ def checkout():
             return render_template('checkout.html',
                                    user=user,
                                    form_data=request.form,
-                                   cart=cart_items,
+                                   cart=checkout_items,
+                                   subtotal=subtotal,
+                                   addon_total=addon_total,
+                                   tax=tax,
+                                   service_fee=service_fee,
                                    total=total,
                                    has_errors=True)
 
-    # GET request: show form
     return render_template('checkout.html',
                            user=user,
                            form_data={},
-                           cart=cart_items,
+                           cart=checkout_items,
+                           subtotal=subtotal,
+                           addon_total=addon_total,
+                           tax=tax,
+                           service_fee=service_fee,
                            total=total,
                            has_errors=False)
+
 
 
 # -------------------- FORM VALIDATION --------------------
@@ -1500,7 +1611,6 @@ def validate_checkout_form(form):
     return errors
 
 # -------------------- PROCESS ORDER --------------------
-
 def process_order(user, cart, form, calculated_total):
     try:
         khalti_token = form.get('khalti_token') if form.get('payment') == 'khalti' else None
@@ -1535,7 +1645,7 @@ def process_order(user, cart, form, calculated_total):
         db.session.add(order)
         db.session.flush()
 
-        # Add order items
+        # Add order items with their addons
         for item in cart.values():
             order_item = OrderItem(
                 order_id=order.id,
@@ -1545,6 +1655,20 @@ def process_order(user, cart, form, calculated_total):
                 price=item['price']
             )
             db.session.add(order_item)
+            db.session.flush()  # Flush to get the order_item.id
+            
+            # Add selected addons for this order item
+            if 'selected_addons' in item and item['selected_addons']:
+                for addon_data in item['selected_addons']:
+                    order_addon = OrderAddon(
+                        order_item_id=order_item.id,
+                        addon_id=addon_data['id'],
+                        name=addon_data['name'],
+                        price=addon_data['price'],
+                        category=addon_data.get('category', ''),
+                        description=addon_data.get('description', '')
+                    )
+                    db.session.add(order_addon)
 
         db.session.commit()
         return True
@@ -1553,7 +1677,6 @@ def process_order(user, cart, form, calculated_total):
         db.session.rollback()
         print(f"Order processing failed: {e}")
         return False
-
 # -------------------- KHALTI VERIFICATION (TEST MODE) --------------------
 
 def verify_khalti_payment(token, amount):

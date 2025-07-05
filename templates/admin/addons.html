@@ -1,118 +1,250 @@
-{% extends "admin/admin_base.html" %}
+{% extends "admin/admin_base.html" %} 
 {% block content %}
 <div class="categories-content">
-    <div class="section-header">
-        <h1 class="page-title">Addons</h1>
-        <button class="add-btn" id="addAddonBtn">
-            <i class="fas fa-plus"></i> Add Addon
-        </button>
+  <div class="section-header">
+    <h1 class="page-title">Addons</h1>
+    <button class="add-btn" id="addAddonBtn">
+      <i class="fas fa-plus"></i> Add Addon
+    </button>
+  </div>
+  <div class="section-filters">
+    <div class="search-box">
+      <input type="text" placeholder="Search addons..." />
+      <button><i class="fas fa-search"></i></button>
     </div>
-    <div class="section-filters">
-        <div class="search-box">
-            <input type="text" placeholder="Search addons...">
-            <button><i class="fas fa-search"></i></button>
-        </div>
-         <div class="filter-dropdown">
-            <select>
-                <option>All Addons</option>
-                <option>Active</option>
-                <option>Inactive</option>
-            </select>
-        </div>
+    <div class="filter-dropdown">
+      <select>
+        <option>All Addons</option>
+        <option>Active</option>
+        <option>Inactive</option>
+      </select>
     </div>
-        <div class="addons-list">
-            <div class="data-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>Category</th>
-                        <th>Description</th>
-                        <th>Applied Items</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if addons %}
-                        {% for addon in addons %}
-                        <tr>
-                            <td>{{ addon.id }}</td>
-                            <td>{{ addon.name }}</td>
-                            <td>Rs. {{ '%.2f'|format(addon.price) }}</td>
-                            <td>{{ addon.category }}</td>
-                            <td>{{ addon.description or '-' }}</td>
-                            <td>{{ addon.applied_items_count() }}</td>
-                            <td><span class="status {{ 'active' if addon.status else 'inactive' }}">{{ 'Active' if addon.status else 'Inactive' }}</span></td>
-                            <td class="actions">
-                                <form method="POST" action="{{ url_for('edit_addon', addon_id=addon.id) }}" style="display:inline">
-                                    <button class="btn-edit" title="Edit"><i class="fas fa-edit"></i></button>
-                                </form>
-                                <form method="POST" action="{{ url_for('delete_addon', addon_id=addon.id) }}" style="display:inline" onsubmit="return confirm('Are you sure you want to delete this addon?');">
-                                    <button class="btn-delete" title="Delete"><i class="fas fa-trash"></i></button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr><td colspan="8" style="text-align: center; padding: 1rem;">No addons available.</td></tr>
+  </div>
+  <div class="addons-list" style="{% with messages = get_flashed_messages(with_categories=true) %}
+                                                    {% for category, message in messages %}
+                                                      {% if 'addon_' in category %}
+                                                        display: block;
+                                                      {% endif %}
+                                                    {% endfor %}
+                                                {% endwith %}">
+                  
+          {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                  {% for category, message in messages %}
+                    {% if 'addon_' in category %}
+                      <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                        <span>{{ message }}</span>
+                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
                     {% endif %}
-                </tbody>
-            </table>
+                  {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-        </div>
-        </div>
+    <div class="data-table">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Applied Items</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if addons %} {% for addon in addons %}
+          <tr>
+            <td>{{ addon.id }}</td>
+            <td>{{ addon.name }}</td>
+            <td>Rs. {{ '%.2f'|format(addon.price) }}</td>
+            <td>{{ addon.category }}</td>
+            <td>{{ addon.description or '-' }}</td>
+            <td>{{ addon.applied_items_count() }}</td>
+            <td>
+              <span
+                class="status {{ 'active' if addon.status else 'inactive' }}"
+                >{{ 'Active' if addon.status else 'Inactive' }}</span
+              >
+            </td>
+            <td class="actions">
+              <form
+                method="POST"
+                action="{{ url_for('edit_addon', addon_id=addon.id) }}"
+                style="display: inline"
+              >
+                <button
+                  class="btn-edit"
+                  data-id="{{ addon.id }}"
+                  data-name="{{ addon.name }}"
+                  data-price="{{ addon.price }}"
+                  data-category="{{ addon.category }}"
+                  data-description="{{ addon.description or '' }}"
+                  data-status="{{ 'active' if addon.status else 'inactive' }}"
+                  title="Edit"
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
+              </form>
+              <form
+                method="POST"
+                action="{{ url_for('delete_addon', addon_id=addon.id) }}"
+                style="display: inline"
+                onsubmit="return confirm('Are you sure you want to delete this addon?');"
+              >
+                <button class="btn-delete" title="Delete">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %} {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 1rem">
+              No addons available.
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
+  </div>
 </div>
 
 <div class="modal" id="addonModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Add Addon</h2>
-            <button class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form id="addonForm" method="POST" action="{{ url_for('add_addon') }}">
-                <div class="form-group">
-                    <label for="addonName">Addon Name</label>
-                    <input type="text" id="addonName" name="addonName" required>
-                </div>
-                <div class="form-group">
-                    <label for="addonPrice">Price</label>
-                    <input type="number" id="addonPrice" name="addonPrice" min="0" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="addonCategory">Category</label>
-                    <select id="addonCategory" name="addonCategory" required>
-                        <option value="">Select Category</option>
-                        <option value="Toppings">Toppings</option>
-                        <option value="Beverages">Beverages</option>
-                        <option value="Extras">Extras</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="addonDescription">Description</label>
-                    <textarea id="addonDescription" name="addonDescription"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Status</label>
-                    <div class="radio-group">
-                        <label><input type="radio" name="status" value="active" checked> Active</label>
-                        <label><input type="radio" name="status" value="inactive"> Inactive</label>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
-                    <button type="submit" class="btn-primary">Save</button>
-                </div>
-            </form>
-        </div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Add Addon</h2>
+      <button class="close-btn">&times;</button>
     </div>
+    <div class="modal-body">
+      <form id="addonForm" method="POST" action="{{ url_for('add_addon') }}">
+        <div class="form-group">
+          <label for="addonName">Addon Name</label>
+          <input type="text" id="addonName" name="addonName" required />
+        </div>
+        <div class="form-group">
+          <label for="addonPrice">Price</label>
+          <input
+            type="number"
+            id="addonPrice"
+            name="addonPrice"
+            min="0"
+            step="0.01"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="addonCategory">Category</label>
+          <select id="addonCategory" name="addonCategory" required>
+            <option value="">Select Category</option>
+            <option value="Toppings">Toppings</option>
+            <option value="Sauce">Sauce</option>
+            <option value="Filling">Filling</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="addonDescription">Description</label>
+          <textarea id="addonDescription" name="addonDescription"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <div class="radio-group">
+            <label
+              ><input type="radio" name="status" value="active" checked />
+              Active</label
+            >
+            <label
+              ><input type="radio" name="status" value="inactive" />
+              Inactive</label
+            >
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="cancelBtn">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
-{% endblock %}
-
+{% endblock %} 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/addons.js') }}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("addonModal");
+    const openModalBtn = document.getElementById("addAddonBtn");
+    const closeModalBtn = document.querySelector(".close-btn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const searchInput = document.querySelector(".search-box input");
+    const addonForm = document.getElementById("addonForm");
+
+    // Show modal for adding new addon
+    openModalBtn.addEventListener("click", () => {
+      addonForm.reset(); // Reset form fields
+      addonForm.action = "/admin/addons/add"; // Set form action to add route
+      modal.style.display = "block"; // Show modal
+    });
+
+    document.querySelectorAll(".btn-edit").forEach((button) => {
+      button.addEventListener("click", (e) => {
+        e.preventDefault();
+        addonForm.reset();
+
+        addonForm.elements["addonName"].value = button.dataset.name || "";
+        addonForm.elements["addonPrice"].value = button.dataset.price || "";
+        addonForm.elements["addonCategory"].value =
+          button.dataset.category || "";
+        addonForm.elements["addonDescription"].value =
+          button.dataset.description || "";
+
+        if (button.dataset.status) {
+          addonForm.querySelector(
+            `input[name="status"][value="${button.dataset.status}"]`
+          ).checked = true;
+        }
+
+        addonForm.action = `/admin/addons/edit/${button.dataset.id}`;
+        modal.style.display = "block";
+      });
+    });
+
+    // Hide modal function
+    function closeModal() {
+      modal.style.display = "none";
+    }
+
+    closeModalBtn.addEventListener("click", closeModal);
+    cancelBtn.addEventListener("click", closeModal);
+
+    window.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+
+    // Search functionality to filter addons list
+    searchInput.addEventListener("keyup", function () {
+      const term = this.value.toLowerCase();
+      const rows = document.querySelectorAll(".addons-list tbody tr");
+
+      rows.forEach((row) => {
+        const name = row.cells[1].textContent.toLowerCase();
+        const category = row.cells[3].textContent.toLowerCase();
+        if (name.includes(term) || category.includes(term)) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    });
+
+    console.log("addons.js loaded");
+  });
+</script>
 {% endblock %}
