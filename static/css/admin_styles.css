@@ -572,9 +572,9 @@ h1, h2, h3, h4 {
 }
 
 .data-table .actions button {
-    padding: 5px 10px;
+    padding: 10px 15px;
     border-radius: var(--border-radius);
-    font-size: 12px;
+    font-size: 16px;
     transition: all 0.3s;
 }
 
@@ -706,18 +706,70 @@ h1, h2, h3, h4 {
 .form-group.checkbox {
     display: flex;
     align-items: center;
+    cursor: pointer;
+    user-select: none;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+/* Hide native appearance */
+/* .form-group.checkbox input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+    display: inline-block;
+} */
+.form-group.checkbox [type="checkbox"] {
+  display: none;
+}
+/* Checkmark pseudo-element */
+.form-group.checkbox input[type="checkbox"]::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: translate(-50%, -50%) rotate(45deg) scale(0);
+    opacity: 0;
+    transition: all 0.2s ease-in-out;
+}
+
+/* When checked, show checkmark and change background */
+.form-group.checkbox input[type="checkbox"]:checked + .custom-checkbox{
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-group.checkbox input[type="checkbox"]:checked + .custom-checkbox::after {
+  content: "✓";
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .form-group.checkbox label {
-    display: flex;
-    align-items: center;
+    font-weight: 500;
+    font-size: 18px;
+    color: var(--text-color);
     margin: 0;
+    cursor: pointer;
 }
 
-.form-group.checkbox input {
-    width: auto;
-    margin-right: 8px;
-}
 
 .form-group.file-upload input {
     padding: 8px 0;

@@ -1,8 +1,78 @@
- {% extends "admin/admin_base.html" %}
- {% block extra_css %}
- <style>
-/* Ensure modal takes full screen width but limits internal content */
-.modal {
+{% extends "admin/admin_base.html" %} {% block extra_css %}
+<style>
+  /* Ensure modal takes full screen width but limits internal content */
+  .addon-checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .addon-card {
+    display: flex;
+    align-items: center;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    min-width: 200px;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .addon-card input[type="checkbox"] {
+    display: none;
+  }
+
+  .custom-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #aaa;
+    border-radius: 4px;
+    background: #fff;
+    display: inline-block;
+    margin-right: 12px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .addon-card input[type="checkbox"]:checked + .custom-checkbox {
+    background-color: #4a148c;
+    border-color: #4a148c;
+  }
+
+  .addon-card input[type="checkbox"]:checked + .custom-checkbox::after {
+    content: "✓";
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .addon-details {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .addon-name {
+    color: #4a148c;
+    font-weight: 600;
+  }
+
+  .addon-price {
+    color: #555;
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  #item-table-body img {
+    width: 60px;
+    height: 60px;
+  }
+  .modal {
     display: none;
     position: fixed;
     z-index: 1000;
@@ -12,9 +82,9 @@
     height: 100vh;
     overflow-y: auto;
     background-color: rgba(0, 0, 0, 0.5);
-}
+  }
 
-.modal-content {
+  .modal-content {
     background-color: #fff;
     margin: 40px auto;
     padding: 20px;
@@ -23,12 +93,12 @@
     max-width: 600px;
     box-sizing: border-box;
     overflow-x: hidden;
-}
+  }
 
-/* Ensure select doesn’t exceed modal width */
-.form-group select,
-.form-group input,
-.form-group textarea {
+  /* Ensure select doesn’t exceed modal width */
+  .form-group select,
+  .form-group input,
+  .form-group textarea {
     width: 100%;
     max-width: 100%;
     padding: 8px 12px;
@@ -36,123 +106,136 @@
     border: 1px solid #ced4da;
     border-radius: 4px;
     box-sizing: border-box;
-}
+  }
 
-/* Fix dropdown appearing outside viewport on small screens */
-select {
+  /* Fix dropdown appearing outside viewport on small screens */
+  select {
     max-width: 100%;
     overflow-x: auto;
-}
+  }
 
-@media (max-width: 600px) {
+  @media (max-width: 600px) {
     .modal-content {
-        width: 95%;
-        margin: 20px auto;
+      width: 95%;
+      margin: 20px auto;
     }
 
     select {
-        font-size: 16px;
-        overflow-x: hidden;
+      font-size: 16px;
+      overflow-x: hidden;
     }
-    select option{
-        overflow-x: hidden;
-        overflow-y: hidden;
+    select option {
+      overflow-x: hidden;
+      overflow-y: hidden;
     }
-}
+  }
 </style>
 
- {% endblock %}
-{% block content %}
- <div class="categories-content">
-     <div class="section-header">
-        <h1 class="page-title">Items</h1>
-        <button class="add-btn" id="addUnitBtn">
-            <i class="fas fa-plus"></i> Add Item
-        </button>
+{% endblock %} {% block content %}
+<div class="categories-content">
+  <div class="section-header">
+    <h1 class="page-title">Items</h1>
+    <button class="add-btn" id="addUnitBtn">
+      <i class="fas fa-plus"></i> Add Item
+    </button>
+  </div>
+  <div class="section-filters">
+    <div class="search-box">
+      <input type="text" placeholder="Search Items..." />
+      <button><i class="fas fa-search"></i></button>
     </div>
-    <div class="section-filters">
-        <div class="search-box">
-            <input type="text" placeholder="Search Items...">
-            <button><i class="fas fa-search"></i></button>
-        </div>
-        <div class="filter-dropdown">
-            <select>
-                <option>All Items</option>
-                <option>Active</option>
-                <option>Inactive</option>
-            </select>
-        </div>
+    <div class="filter-dropdown">
+      <select>
+        <option>All Items</option>
+        <option>Active</option>
+        <option>Inactive</option>
+      </select>
     </div>
-    <div class="data-table-container" style="{% with messages = get_flashed_messages(with_categories=true) %}
+  </div>
+  <div
+    class="data-table-container"
+    style="{% with messages = get_flashed_messages(with_categories=true) %}
                                                 {% for category, message in messages %}
                                                   {% if 'items_' in category %}
                                                     display: block;
                                                   {% endif %}
                                                 {% endfor %}
-                                            {% endwith %}">
-             {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-              {% for category, message in messages %}
-                {% if 'items_' in category %}
-                  <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
-                    <span>{{ message }}</span>
-                    <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
-                  </div>
-                {% endif %}
-              {% endfor %}
-            {% endif %}
-        {% endwith %}
+                                            {% endwith %}"
+  >
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %} {% if 'items_' in
+    category %}
+    <div
+      class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center"
+      role="alert"
+    >
+      <span>{{ message }}</span>
+      <button
+        type="button"
+        class="btn-close ms-3"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+      ></button>
+    </div>
+    {% endif %} {% endfor %} {% endif %} {% endwith %}
     <table class="data-table">
-        <thead>
-            <tr>
-                <th>Item ID</th>
-                <th>Name</th>
-                <th>Image</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Available</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="item-table-body">
-            {% for item in items %}
-            <tr>
-                <td>{{ "%03d"|format(item.id) }}</td>
-                <td>{{ item.name }}</td>
-                <td>
-                    {% if item.image_filename %}
-                    <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) }}" alt="Item Image" style="height: 40px;">
-                    {% else %}
-                    No image
-                    {% endif %}
-                </td>
-                <td>{{ item.category.name if item.category else "N/A" }}</td>
-                <td>Rs. {{ '%.2f' % (item.price) }}</td>
-                <td>
-                    {% if item.available %}
-                    <span class="status available">Yes</span>
-                    {% else %}
-                    <span class="status not-available">No</span>
-                    {% endif %}
-                </td>
-                <td class="actions">
-                    <button class="btn-edit" 
-                        data-id="{{ item.id }}" 
-                        data-name="{{ item.name }}" 
-                        data-category="{{ item.category.name if item.category else '' }}" 
-                        data-price="{{ '%.2f' % (item.price / 100) }}"
-                        data-description="{{ item.description or '' }}"
-                        data-available="{{ 'true' if item.available else 'false' }}">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-delete"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
+      <thead>
+        <tr>
+          <th>Item ID</th>
+          <th>Name</th>
+          <th>Image</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Available</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="item-table-body">
+        {% for item in items %}
+        <tr>
+          <td>{{ "%03d"|format(item.id) }}</td>
+          <td>{{ item.name }}</td>
+          <td>
+            {% if item.image_filename %}
+            <img
+              src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) }}"
+              alt="Item Image"
+              style="height: 40px"
+            />
+            {% else %} No image {% endif %}
+          </td>
+          <td>{{ item.category.name if item.category else "N/A" }}</td>
+          <td>Rs. {{ '%.2f' % (item.price) }}</td>
+          <td>
+            {% if item.available %}
+            <span class="status available">Yes</span>
             {% else %}
-            <tr><td colspan="7">No items found.</td></tr>
-            {% endfor %}
-        </tbody>
-        <!--<tbody id="item-table-body">
+            <span class="status not-available">No</span>
+            {% endif %}
+          </td>
+          <td class="actions">
+            <button
+              class="btn-edit"
+              data-id="{{ item.id }}"
+              data-name="{{ item.name }}"
+              data-category="{{ item.category.name if item.category else '' }}"
+              data-price="{{ '%.2f' % (item.price) }}"
+              data-description="{{ item.description or '' }}"
+              data-available="{{ 'true' if item.available else 'false' }}"
+              data-addons="{{ item.addons | map(attribute='id') | join(',') }}"
+            >
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7">No items found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <!--<tbody id="item-table-body">
             <tr>
                 <td>001</td>
                 <td>Chicken Sandwich</td>
@@ -188,87 +271,150 @@ select {
             </tr>
         </tbody>-->
     </table>
-    </div>
-    <div id="item-modal" class="modal">
-        <div class="modal-content">
-             <div class="modal-header">
-                <h2 id="modal-header-title">Add Item</h2>
-                <button class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body"style="{% with messages = get_flashed_messages(with_categories=true) %}
+  </div>
+  <div id="item-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-header-title">Add Item</h2>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div
+        class="modal-body"
+        style="{% with messages = get_flashed_messages(with_categories=true) %}
                         {% for category, message in messages %}
                           {% if 'items_' in category %}
                             display: block;
                           {% endif %}
                         {% endfor %}
-                    {% endwith %}" >
-                 {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                  {% for category, message in messages %}
-                    {% if category=='items_danger' %}
-                      <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
-                        <span>{{ message }}</span>
-                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
-                      </div>
-                    {% endif %}
-                  {% endfor %}
-                {% endif %}
-            {% endwith %}
-                <form id="item-form" method="POST" action="{{ url_for('add_item')}}" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <label for="item-name">Item Name</label>
-                        <input type="hidden" name="item-id" id="item-id">
-
-                        <input type="text" name="item-name" id="item-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="item-category">Category</label>
-                        <select id="item-category" name="item-category" required>
-                            <option value="">Select Category</option>
-                            {% for category in categories %}
-                                <option value="{{ category.name }}">{{ category.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="item-price">Price ($)</label>
-                        <input type="number" name="item-price" id="item-price" step="0.01" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="item-description">Description</label>
-                        <textarea id="item-description" name="item-description" rows="3"></textarea>
-                    </div>
-                    <div class="form-group checkbox">
-                        <label for="item-available">
-                            <input type="checkbox" name="item-available" id="item-available" checked>
-                            Available
-                        </label>
-                    </div>
-                    <div class="form-group file-upload">
-                        <label for="item-image">Image</label>
-                        <input type="file" name="item-image" id="item-image" accept="image/*">
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
-                        <button type="submit" class="btn-primary">Save Item</button>
-                    </div>
-                </form>
-            </div>
+                    {% endwith %}"
+      >
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %} {% for category, message in messages %} {% if
+        category=='items_danger' %}
+        <div
+          class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center"
+          role="alert"
+        >
+          <span>{{ message }}</span>
+          <button
+            type="button"
+            class="btn-close ms-3"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+          ></button>
         </div>
+        {% endif %} {% endfor %} {% endif %} {% endwith %}
+
+        <form
+          id="item-form"
+          method="POST"
+          action="{{ url_for('add_item')}}"
+          enctype="multipart/form-data"
+        >
+          <div class="form-group">
+            <label for="item-name">Item Name</label>
+            <input type="hidden" name="item-id" id="item-id" />
+
+            <input type="text" name="item-name" id="item-name" required />
+          </div>
+          <div class="form-group">
+            <label for="item-category">Category</label>
+            <select id="item-category" name="item-category" required>
+              <option value="">Select Category</option>
+              {% for category in categories %}
+              <option value="{{ category.name }}">{{ category.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="item-price">Price (Rs.)</label>
+            <input
+              type="number"
+              name="item-price"
+              id="item-price"
+              step="0.1"
+              min="0"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="item-description">Description</label>
+            <textarea
+              id="item-description"
+              name="item-description"
+              rows="3"
+            ></textarea>
+          </div>
+          <div class="form-group checkbox">
+            <label for="item-available">
+              <input
+                type="checkbox"
+                name="item-available"
+                id="item-available"
+              />
+              <span class="custom-checkbox"></span>
+              Available</label
+            >
+          </div>
+          <div class="addon-checkbox-group">
+            {% for addon in addons %}
+            <label class="addon-card">
+              <input
+                type="checkbox"
+                name="item-addons"
+                value="{{ addon.id }}"
+                {%
+                if
+                addon.id
+                in
+                selected_addons
+                %}checked{%
+                endif
+                %}
+              />
+              <span class="custom-checkbox"></span>
+              <span class="addon-details">
+                <span class="addon-name">{{ addon.name }}</span>
+                <span class="addon-price"
+                  >Rs. {{ "%.2f"|format(addon.price) }}</span
+                >
+              </span>
+            </label>
+            {% endfor %}
+          </div>
+
+          <div class="form-group file-upload">
+            <label for="item-image">Image</label>
+            <input
+              type="file"
+              name="item-image"
+              id="item-image"
+              accept="image/*"
+            />
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" id="cancelBtn">
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">Save Item</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
-{% endblock%}
-{% block extra_js %}
-    <script src="{{ url_for('static',filename='js/item.js') }}"></script>
-    <script>
+{% endblock%} {% block extra_js %}
+<script src="{{ url_for('static',filename='js/item.js') }}"></script>
+<script>
   setTimeout(() => {
-    const flashMessages = document.querySelectorAll('.alert');
-    flashMessages.forEach(msg => {
-      msg.style.transition = 'opacity 0.5s ease';
-      msg.style.opacity = '0';
-      setTimeout(() => msg.remove(), 500); // Remove after fade-out
+    const flashMessages = document.querySelectorAll(".alert");
+    flashMessages.forEach((msg) => {
+      msg.style.transition = "opacity 0.5s ease";
+      msg.style.opacity = "0";
+      setTimeout(() => msg.remove(), 500);
     });
-  }, 3000); // 3 seconds
+  }, 3000);
+
 </script>
 
 {% endblock %}

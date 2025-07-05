@@ -1,246 +1,477 @@
 {% extends "admin/admin_base.html" %}
-  <title>Invoice #{{ order.id }}</title>
-  {% block extra_css %}
-  <style>
+<title>Invoice #{{ order.id }}</title>
+{% block extra_css %}
+<style>
+  .invoice-container {
+    max-width: 800px;
+    margin: auto;
+    background: #fff;
+    padding: 40px 50px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+  }
 
-    .invoice-container {
-      max-width: 800px;
-      margin: auto;
-      background: #fff;
-      padding: 40px 50px;
-      border-radius: 12px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+  .logo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .logo img {
+    height: 80px;
+  }
+
+  .company-info {
+    text-align: right;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .invoice-title {
+    font-size: 28px;
+    color: #b4623c;
+    font-weight: bold;
+    margin: 20px 0;
+    border-bottom: 2px solid #b4623c;
+    padding-bottom: 10px;
+  }
+
+  .section {
+    margin-top: 30px;
+    page-break-inside: avoid;
+  }
+
+  .section h3 {
+    color: #444;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 6px;
+    margin-bottom: 15px;
+    font-size: 16px;
+  }
+
+  .info p {
+    margin: 6px 0;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+  }
+
+  .paid {
+    background: #28a745;
+    color: #fff;
+  }
+
+  .unpaid {
+    background: #dc3545;
+    color: #fff;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    page-break-inside: avoid;
+  }
+
+  table th,
+  table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  table th {
+    background-color: #b4623c;
+    color: white;
+    font-weight: bold;
+  }
+
+  table td:nth-child(2),
+  table td:nth-child(3),
+  table td:nth-child(4) {
+    text-align: right;
+  }
+
+  tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  .total-section {
+    margin-top: 30px;
+    text-align: right;
+    page-break-inside: avoid;
+  }
+
+  .total-line {
+    display: flex;
+    justify-content: flex-end;
+    margin: 8px 0;
+    font-size: 16px;
+  }
+
+  .total-line.final {
+    border-top: 2px solid #b4623c;
+    padding-top: 10px;
+    font-weight: bold;
+    font-size: 18px;
+    color: #28a745;
+  }
+
+  .total-label {
+    margin-right: 30px;
+    min-width: 120px;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 50px;
+    color: #666;
+    font-size: 13px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+  }
+
+  .print-btn {
+    display: block;
+    margin: 20px auto;
+    padding: 12px 24px;
+    background-color: #b4623c;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .print-btn:hover {
+    background-color: #8b4a2f;
+  }
+
+  .btn-secondary {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-top: 20px;
+  }
+
+  /* Print Styles */
+  @media print {
+    @page {
+      margin: 1in;
+      size: A4;
     }
 
+    * {
+      -webkit-print-color-adjust: exact !important;
+      color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      background: white !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      font-size: 12pt !important;
+      line-height: 1.4 !important;
+    }
+
+    .invoice-container {
+      max-width: none !important;
+      width: 100% !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* Hide non-printable elements */
+    .print-btn,
+    .btn-secondary,
+    header,
+    .header,
+    .top-navbar,
+    .admin-header,
+    nav,
+    .navigation {
+      display: none !important;
+    }
+
+    /* Optimize logo section for print */
     .logo {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      margin-bottom: 30px !important;
     }
 
     .logo img {
-      height: 80px;
+      height: 60px !important;
     }
 
+    .company-info {
+      font-size: 11pt !important;
+    }
+
+    /* Invoice title */
     .invoice-title {
-      font-size: 28px;
-      color:#b4623c;
-      font-weight: bold;
-      margin-top: 20px;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 10px;
+      font-size: 24pt !important;
+      margin: 20px 0 !important;
+      color: #000 !important;
+      border-bottom: 2px solid #000 !important;
     }
 
+    /* Sections */
     .section {
-      margin-top: 30px;
+      margin-top: 25px !important;
+      page-break-inside: avoid !important;
     }
 
     .section h3 {
-      color: #444;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 6px;
-      margin-bottom: 10px;
+      font-size: 14pt !important;
+      color: #000 !important;
+      border-bottom: 1px solid #000 !important;
+      margin-bottom: 12px !important;
     }
 
     .info p {
-      margin: 4px 0;
-      font-size: 15px;
+      font-size: 11pt !important;
+      margin: 4px 0 !important;
     }
 
+    /* Status badges - make them print-friendly */
     .status-badge {
-      display: inline-block;
-      padding: 5px 12px;
-      border-radius: 5px;
-      font-size: 13px;
-      font-weight: bold;
-      margin-left: 8px;
+      border: 1px solid #000 !important;
+      padding: 2px 6px !important;
+      font-size: 10pt !important;
+      border-radius: 0 !important;
     }
 
     .paid {
-      background: #28a745;
-      color: #fff;
+      background: #ddd !important;
+      color: #000 !important;
     }
 
     .unpaid {
-      background: #dc3545;
-      color: #fff;
+      background: #fff !important;
+      color: #000 !important;
+      border-style: dashed !important;
     }
 
+    /* Table styles for print */
     table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+      margin-top: 15px !important;
+      page-break-inside: avoid !important;
     }
 
-    table th, table td {
-      border: 1px solid #ccc;
-      padding: 10px 12px;
-      font-size: 14px;
+    table th,
+    table td {
+      border: 1px solid #000 !important;
+      padding: 8px !important;
+      font-size: 11pt !important;
     }
 
     table th {
-      background-color:#b4623c;
-      color: white;
+      background-color: #ddd !important;
+      color: #000 !important;
+      font-weight: bold !important;
     }
 
     tr:nth-child(even) {
-      background-color: #f8f8f8;
+      background-color: #f5f5f5 !important;
     }
 
-    .total {
-      text-align: right;
-      font-weight: bold;
-      font-size: 16px;
-      margin-top: 20px;
-      color: #28a745;
+    /* Total section */
+    .total-section {
+      margin-top: 25px !important;
+      page-break-inside: avoid !important;
     }
 
+    .total-line {
+      font-size: 12pt !important;
+      margin: 6px 0 !important;
+    }
+
+    .total-line.final {
+      border-top: 2px solid #000 !important;
+      font-size: 14pt !important;
+      color: #000 !important;
+      font-weight: bold !important;
+    }
+
+    /* Footer */
     .footer {
-      text-align: center;
-      margin-top: 50px;
-      color: #aaa;
-      font-size: 13px;
+      margin-top: 40px !important;
+      font-size: 10pt !important;
+      color: #666 !important;
+      border-top: 1px solid #ccc !important;
+      padding-top: 15px !important;
+      page-break-inside: avoid !important;
     }
 
-    .print-btn {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      background-color:#b4623c;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 15px;
-      cursor: pointer;
+    /* Ensure page breaks work properly */
+    .page-break-before {
+      page-break-before: always !important;
     }
 
-    .print-btn:hover {
-      background-color:rgb(123, 80, 10);
+    .no-page-break {
+      page-break-inside: avoid !important;
     }
-
-    @media print {
-      .print-btn {
-        display: none;
-      }
-
-      body {
-        background: white;
-        padding: 0;
-      }
-
-      .invoice-container {
-        box-shadow: none;
-        border-radius: 0;
-      }
-    }
-    @media print {
-  .print-btn {
-    display: none;
   }
-  .btn-secondary{
-    display:none;
-  }
+</style>
+{% endblock %} {% block content %}
+<div class="invoice-container">
+  <button class="print-btn" onclick="window.print()">🖨️ Print Invoice</button>
 
-  body {
-    background: white;
-    padding: 0;
-  }
-
-  .invoice-container {
-    box-shadow: none;
-    border-radius: 0;
-  }
-
-  header, .header, .top-navbar, .admin-header {
-    display: none !important;
-  }
-}
-  </style>
-  {% endblock %}
-{% block content %}
-
-  <div class="invoice-container">
-
-    <button class="print-btn" onclick="window.print()">🖨️ Print</button>
-
-    <div class="logo">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Company Logo">
-      <div style="text-align: right;">
-        <strong>Order #{{ order.id }}</strong><br>
-        {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
-      </div>
+  <div class="logo">
+    <img
+      src="{{ url_for('static', filename='img/logo.png') }}"
+      alt="Company Logo"
+    />
+    <div class="company-info">
+      <strong>Invoice #{{ order.id }}</strong><br />
+      <strong>Date:</strong> {{ order.created_at.strftime('%B %d, %Y') }}<br />
+      <strong>Time:</strong> {{ order.created_at.strftime('%H:%M:%S') }}
     </div>
-
-    <div class="invoice-title">Invoice</div>
-
-    <div class="section">
-      <h3>Customer Details</h3>
-      <div class="info">
-        <p><strong>Name:</strong> {{ customer.fullname }}</p>
-        <p><strong>Email:</strong> {{ order.email }}</p>
-        <p><strong>Contact:</strong> {{ order.contact }}</p>
-        {% if order.delivery == 'home' %}
-        <p><strong>Address:</strong> {{ order.building }}, Floor {{ order.floor }}</p>
-        {% else %}
-        <p><strong>Delivery:</strong> Pickup</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="section">
-      <h3>Payment Information</h3>
-      <div class="info">
-        <p>
-          <strong>Method:</strong>
-          {% if order.payment == 'cash' %}
-            Cash on Delivery <span class="status-badge unpaid">Unpaid</span>
-          {% elif order.payment == 'khalti' %}
-            Khalti
-            {% if order.khalti_token %}
-              <span class="status-badge paid">Paid</span>
-            {% else %}
-              <span class="status-badge unpaid">Unpaid</span>
-            {% endif %}
-          {% elif order.payment == 'card' %}
-            Card <span class="status-badge paid">Paid</span>
-          {% else %}
-            Unknown
-          {% endif %}
-        </p>
-        
-      </div>
-    </div>
-
-    <div class="section">
-      <h3>Order Items</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Qty</th>
-            <th>Unit Price</th>
-            <th>Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in order.items %}
-          <tr>
-            <td>{{ item.name }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>Rs. {{ '%.2f'|format(item.price) }}</td>
-            <td>Rs. {{ '%.2f'|format(item.quantity * item.price) }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <div class="total">Total Amount: Rs. {{ '%.2f'|format(order.total_amount) }}</div>
-    </div>
-
-    <div class="footer">
-      <p>Thank you for your order! Please contact us if you have any questions.</p>
-    </div>
-
-    <a href="{{ url_for('admin_order_view', order_id=order.id) }}" style="width:135px" class="btn-secondary">Back to Orders</a><br>
   </div>
+
+  <div class="invoice-title">INVOICE</div>
+
+  <div class="section no-page-break">
+    <h3>Customer Information</h3>
+    <div class="info">
+      <p><strong>Customer Name:</strong> {{ customer.fullname }}</p>
+      <p><strong>Email Address:</strong> {{ order.email }}</p>
+      <p><strong>Contact Number:</strong> {{ order.contact }}</p>
+      {% if order.delivery == 'home' %}
+      <p>
+        <strong>Delivery Address:</strong> {{ order.building }}, Floor {{
+        order.floor }}
+      </p>
+      {% else %}
+      <p><strong>Delivery Method:</strong> Pickup</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="section no-page-break">
+    <h3>Payment Information</h3>
+    <div class="info">
+      <p>
+        <strong>Payment Method:</strong>
+        {% if order.payment == 'cash' %} Cash on Delivery
+        <span class="status-badge unpaid">UNPAID</span>
+        {% elif order.payment == 'khalti' %} Khalti Digital Wallet {% if
+        order.khalti_token %}
+        <span class="status-badge paid">PAID</span>
+        {% else %}
+        <span class="status-badge unpaid">UNPAID</span>
+        {% endif %} {% elif order.payment == 'card' %} Credit/Debit Card
+        <span class="status-badge paid">PAID</span>
+        {% else %} Other Payment Method {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Order Details</h3>
+    <table>
+      <thead>
+        <tr>
+          <th style="text-align: left">Item Description</th>
+          <th style="text-align: right">Qty</th>
+          <th style="text-align: right">Unit Price</th>
+          <th style="text-align: right">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in order.items %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>Rs. {{ '%.2f'|format(item.price) }}</td>
+          <td>Rs. {{ '%.2f'|format(item.quantity * item.price) }}</td>
+        </tr>
+
+        {% if item.order_addons %} {% for addon in item.order_addons %}
+        <tr>
+          <td style="padding-left: 30px; font-style: italic; color: #444">
+            ➔ {{ addon.name }}
+          </td>
+          <td>–</td>
+          <td>+ Rs. {{ '%.2f'|format(addon.price) }}</td>
+          <td>+ Rs. {{ '%.2f'|format(addon.price * item.quantity) }}</td>
+        </tr>
+        {% endfor %} {% endif %} {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="total-section">
+     {% set ns = namespace(subtotal=0) %}
+  {% for item in order.items %}
+    {% set nsp = namespace(addons_price = 0) %}
+    {% if item.order_addons and item.order_addons|length > 0 %}
+      {% for addon in item.order_addons %}
+        {% set nsp.addons_price = nsp.addons_price + (addon.price|float) %}
+      {% endfor %}
+    {% endif %}
+    {% set item_unit_price = (item.price|float) + nsp.addons_price %}
+    {% set item_total = item_unit_price * (item.quantity|int) %}
+    {% set ns.subtotal = ns.subtotal + item_total %}
+  {% endfor %}
+
+{% set tax = ns.subtotal * 0.08 %}
+    {% set service_charge = 10 %}
+    {% set total = ns.subtotal + tax + service_charge %}
+
+      <div class="total-line">
+        <span class="total-label">Subtotal:</span>
+        <span>Rs. {{'%.2f'|format(ns.subtotal) }}</span>
+      </div>
+
+      {% if order.delivery == 'home' %}
+      <div class="total-line">
+        <span class="total-label">Delivery Fee:</span>
+        <span>Rs. 0.00</span>
+      </div>
+      {% endif %}
+
+      <div class="total-line">
+        <span class="total-label">Tax (8%):</span>
+        <span>Rs. {{ '%.2f'|format(tax) }}</span>
+      </div>
+
+      <div class="total-line">
+        <span class="total-label">Service Charge:</span>
+        <span>Rs. {{ '%.2f'|format(service_charge) }}</span>
+      </div>
+
+      <div class="total-line final">
+        <span class="total-label">Total Amount:</span>
+        <span>Rs. {{ '%.2f'|format(total) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer no-page-break">
+    <p><strong>Thank you for your order! Enjoy your meal!😋</strong></p>
+    <p>If you have any questions about this invoice, please contact us.</p>
+  </div>
+
+  <a
+    href="{{ url_for('admin_order_view', order_id=order.id) }}"
+    class="btn-secondary"
+    >← Back to Orders</a
+  >
+</div>
 {% endblock %}
