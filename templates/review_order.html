@@ -1,163 +1,692 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
+/* Enhanced Review Container Styles */
+.review-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
 .review-container .review-card {
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    padding: 20px;
     background-color: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    transition: all 0.3s ease;
+}
+
+.review-container .review-card:hover {
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
 }
 
 .review-container .review-header {
-    font-weight: bold;
-    font-size: 1.25rem;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 8px;
+    font-weight: 600;
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 12px;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    color: #333;
 }
 
 .review-container .review-form {
-    margin-top: 15px;
-    border-top: 1px solid #ddd;
-    padding-top: 15px;
+    margin-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
 }
 
 .review-container textarea {
     width: 100%;
-    height: 90px;
-    padding: 8px;
+    min-height: 100px;
+    padding: 12px;
     resize: vertical;
     font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: inherit;
+    transition: border-color 0.3s ease;
+}
+
+.review-container textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
 }
 
 .review-container .recommend-options {
     display: flex;
-    gap: 15px;
-    margin-top: 6px;
+    gap: 20px;
+    margin-top: 10px;
 }
 
 .review-container .star-rating {
-    display: inline-block;
-    font-size: 1.2rem;
-    color: #ccc;
+    display: inline-flex;
+    font-size: 1.5rem;
+    gap: 5px;
     cursor: pointer;
     user-select: none;
+    margin-bottom: 10px;
 }
 
 .review-container .star-rating .star {
-    padding: 0 3px;
-    color: #ccc;
-    transition: color 0.2s;
+    color: #ddd;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.review-container .star-rating .star:hover {
+    color: #ffc107;
+    transform: scale(1.1);
 }
 
 .review-container .star-rating .star.active {
     color: #ffc107;
 }
 
+.review-container .star-rating .star.active:hover {
+    color: #ffb300;
+}
+
+/* Enhanced Alert Styles */
 .alert {
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 5px;
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 8px;
+    border: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
+
 .alert-success {
-    background-color: #d4edda;
-    color: #155724;
-    border-color: #c3e6cb;
+    background-color: #d1edcc;
+    color: #0f5132;
+    border-left: 4px solid #198754;
 }
+
 .alert-danger {
     background-color: #f8d7da;
     color: #721c24;
-    border-color: #f5c6cb;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #055160;
+    border-left: 4px solid #0dcaf0;
+}
+
+/* Enhanced Button Styles */
+.btn-enhanced {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-enhanced:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.btn-success-enhanced {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.btn-primary-enhanced {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+.btn-secondary-enhanced {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+}
+
+.btn-outline-enhanced {
+    background: white;
+    border: 2px solid #007bff;
+    color: #007bff;
+}
+
+.btn-outline-enhanced:hover {
+    background: #007bff;
+    color: white;
+}
+
+/* Review Badge Styles */
+.review-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.review-badge.verified {
+    background-color: #e7f3ff;
+    color: #0066cc;
+    border: 1px solid #b3d9ff;
+}
+
+.review-badge.pending {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* Existing Review Display */
+.existing-review {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.existing-review::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    border-radius: 12px 12px 0 0;
+}
+
+.rating-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 2px;
+}
+
+.rating-stars .star {
+    color: #ffc107;
+    font-size: 1.2rem;
+}
+
+.rating-stars .star.empty {
+    color: #ddd;
+}
+
+.rating-value {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+/* Other Reviews Section */
+.other-reviews {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.other-reviews h6 {
+    color: #666;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.review-item {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background: #fafafa;
+}
+
+.review-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.review-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.review-date {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Form Enhancements */
+.form-group-enhanced {
+    margin-bottom: 20px;
+}
+
+.form-label-enhanced {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.form-control-enhanced {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control-enhanced:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+/* Order Summary Card */
+.order-summary-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 25px;
+    margin-top: 30px;
+}
+
+.order-summary-card .review-header {
+    color: white;
+    border-bottom: 2px solid rgba(255,255,255,0.3);
+    font-size: 1.5rem;
+}
+
+.order-summary-card .card-body {
+    padding: 0;
+    margin-top: 15px;
+}
+
+.order-summary-card p {
+    margin-bottom: 10px;
+    font-size: 1.05rem;
+}
+
+.order-summary-card .badge {
+    font-size: 0.9rem;
+    padding: 6px 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .review-container {
+        padding: 15px;
+    }
+    
+    .review-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .review-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .btn-enhanced {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .recommend-options {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+/* Loading Animation */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.9);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Review Statistics */
+.review-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #007bff;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: 500;
 }
 </style>
 
 <div class="review-container">
-     {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    {% if 'review_' in category %}
-                        <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
-                            <span>{{ message }}</span>
-                            <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+    
+    <!-- Alert Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if 'review_' in category %}
+                    <div class="alert alert-{{ category.split('_')[1] }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'check-circle' if category.split('_')[1] == 'success' else 'exclamation-triangle' }}"></i>
+                        <span>{{ message }}</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Review Statistics -->
+    {% if order.items|length > 0 %}
+    <div class="review-stats">
+        <div class="stat-card">
+            <div class="stat-value">{{ order.items|length }}</div>
+            <div class="stat-label">Total Items</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ reviewed_item_ids|length if reviewed_item_ids else 0 }}</div>
+            <div class="stat-label">Items Reviewed</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ ((reviewed_item_ids|length / order.items|length) * 100)|round|int if reviewed_item_ids else 0 }}%</div>
+            <div class="stat-label">Completion Rate</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Item Reviews -->
     {% for item in order.items %}
-    <div class="card review-card">
-       <div class="review-header">
-          {{ item.name }}
-          {% if item.item_id in reviewed_item_ids %}
-            <span class="badge bg-info text-white ms-2" style="color:blue;">✅ Reviewed</span>
-          {% else %}
-            <button class="btn btn-success btn-sm float-end" onclick="showReviewForm({{ item.item_id }}, '{{ item.name }}')">
-              <i class="fas fa-star"></i> Add Review
-            </button>
-          {% endif %}
+    <div class="card review-card" id="item_{{ item.item_id }}">
+        <div class="review-header">
+            <div>
+                <i class="fas fa-utensils"></i> {{ item.name }}
+                {% if item.item_id in reviewed_item_ids %}
+                    <span class="review-badge verified">
+                        <i class="fas fa-check-circle"></i> Reviewed
+                    </span>
+                {% else %}
+                    <span class="review-badge pending">
+                        <i class="fas fa-clock"></i> Pending Review
+                    </span>
+                {% endif %}
+            </div>
+            {% if item.item_id not in reviewed_item_ids %}
+                <button class="btn-enhanced btn-success-enhanced" onclick="showReviewForm({{ item.item_id }}, '{{ item.name }}')">
+                    <i class="fas fa-star"></i> Add Review
+                </button>
+            {% endif %}
         </div>
 
-        {% if item.item_id in reviewed_item_ids %}
-          <div class="existing-review p-3 bg-light rounded mb-3">
-            <p><strong>Your Rating:</strong> {{ reviews_by_item[item.item_id].rating }} / 5</p>
-            <p><strong>Your Review:</strong> {{ reviews_by_item[item.item_id].comment or 'No comment provided.' }}</p>
-            <p><strong>Recommended:</strong> {{ 'Yes' if reviews_by_item[item.item_id].would_recommend else 'No' }}</p>
-          </div>
+        <!-- Existing Review Display -->
+        {% if reviewed_item_ids and item.item_id in reviewed_item_ids %}
+            {% set review = reviews_by_item[item.item_id] %}
+            <div class="existing-review">
+                <h6><i class="fas fa-user-check"></i> Your Review</h6>
+                
+                <div class="rating-display">
+                    <strong>Item Rating:</strong>
+                    <div class="rating-stars">
+                        {% for i in range(1, 6) %}
+                            <span class="star {{ 'active' if i <= review.rating else 'empty' }}">★</span>
+                        {% endfor %}
+                    </div>
+                    <span class="rating-value">{{ review.rating }}/5</span>
+                </div>
+                
+                {% if review.service_rating %}
+                    <div class="rating-display">
+                        <strong>Service Rating:</strong>
+                        <div class="rating-stars">
+                            {% for i in range(1, 6) %}
+                                <span class="star {{ 'active' if i <= review.service_rating else 'empty' }}">★</span>
+                            {% endfor %}
+                        </div>
+                        <span class="rating-value">{{ review.service_rating }}/5</span>
+                    </div>
+                {% endif %}
+                
+                {% if review.delivery_rating %}
+                    <div class="rating-display">
+                        <strong>Delivery Rating:</strong>
+                        <div class="rating-stars">
+                            {% for i in range(1, 6) %}
+                                <span class="star {{ 'active' if i <= review.delivery_rating else 'empty' }}">★</span>
+                            {% endfor %}
+                        </div>
+                        <span class="rating-value">{{ review.delivery_rating }}/5</span>
+                    </div>
+                {% endif %}
+                
+                <div style="margin-top: 15px;">
+                    <strong>Your Review:</strong>
+                    <p style="margin-top: 8px; font-style: italic; color: #555;">
+                        "{{ review.comment or 'No comment provided.' }}"
+                    </p>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <strong>Recommended:</strong>
+                    <span class="badge {{ 'bg-success' if review.would_recommend else 'bg-warning' }}">
+                        {{ 'Yes' if review.would_recommend else 'No' }}
+                    </span>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <button class="btn-enhanced btn-outline-enhanced" onclick="editReview({{ item.item_id }})">
+                        <i class="fas fa-edit"></i> Edit Review
+                    </button>
+                    <a href="{{ url_for('item_reviews', item_id=item.item_id) }}" class="btn-enhanced btn-primary-enhanced">
+                        <i class="fas fa-eye"></i> View All Reviews
+                    </a>
+                </div>
+            </div>
         {% endif %}
-        {% if other_reviews[item.item_id] %}
-  <div class="other-reviews mt-3 bg-white p-3 border rounded">
-    <h6 class="mb-2 text-muted"><i class="fas fa-users"></i> Reviews from other users:</h6>
-    {% for review in other_reviews[item.item_id] %}
-      <div class="mb-2 border-bottom pb-2">
-        <div><strong>Rating:</strong> {{ review.rating }} / 5</div>
-        <div><strong>Comment:</strong> {{ review.comment or 'No comment.' }}</div>
-        <div><strong>Recommended:</strong> {{ 'Yes' if review.would_recommend else 'No' }}</div>
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
 
+        <!-- Other Reviews Section -->
+        {% if other_reviews[item.item_id] %}
+            <div class="other-reviews">
+                <h6><i class="fas fa-users"></i> Reviews from other customers ({{ other_reviews[item.item_id]|length }})</h6>
+                {% for review in other_reviews[item.item_id][:3] %}
+                    <div class="review-item">
+                        <div class="review-meta">
+                            <div class="rating-display">
+                                <div class="rating-stars">
+                                    {% for i in range(1, 6) %}
+                                        <span class="star {{ 'active' if i <= review.rating else 'empty' }}">★</span>
+                                    {% endfor %}
+                                </div>
+                                <span class="rating-value">{{ review.rating }}/5</span>
+                            </div>
+                            <div class="review-date">
+                                {{ review.created_at.strftime('%b %d, %Y') if review.created_at else 'Recently' }}
+                            </div>
+                        </div>
+                        <div><strong>Review:</strong> {{ review.comment or 'No comment provided.' }}</div>
+                        <div><strong>Recommended:</strong> 
+                            <span class="badge {{ 'bg-success' if review.would_recommend else 'bg-warning' }}">
+                                {{ 'Yes' if review.would_recommend else 'No' }}
+                            </span>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-sm btn-outline-primary helpful-btn" 
+                                    onclick="markHelpful({{ review.id }}, true)" 
+                                    data-review-id="{{ review.id }}">
+                                <i class="fas fa-thumbs-up"></i> Helpful ({{ review.helpful_count or 0 }})
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if other_reviews[item.item_id]|length > 3 %}
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="{{ url_for('item_reviews', item_id=item.item_id) }}" class="btn-enhanced btn-primary-enhanced">
+                            <i class="fas fa-eye"></i> View All {{ other_reviews[item.item_id]|length }} Reviews
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- Review Form -->
         <div class="review-form" id="reviewForm_{{ item.item_id }}" style="display:none;">
-            <form action="{{ url_for('submit_review', order_id=order.id) }}" method="POST">
+            <h6><i class="fas fa-star"></i> Write Your Review for {{ item.name }}</h6>
+            <form action="{{ url_for('submit_review', order_id=order.id) }}" method="POST" onsubmit="showLoading()">
                 <input type="hidden" name="item_id" value="{{ item.item_id }}">
-                <div class="mb-3">
-                    <label class="form-label">Rating:</label>
+
+                <!-- Item Rating -->
+                <div class="form-group-enhanced">
+                    <label class="form-label-enhanced">
+                        <i class="fas fa-utensils"></i> Item Rating: <span class="text-danger">*</span>
+                    </label>
                     <input type="hidden" name="rating" id="rating_{{ item.item_id }}" required>
                     <div class="star-rating" data-rating="rating_{{ item.item_id }}">
                         {% for i in range(1,6) %}
-                        <span class="star" data-value="{{ i }}">&#9733;</span>
+                        <span class="star" data-value="{{ i }}">★</span>
                         {% endfor %}
                     </div>
+                    <small class="text-muted">Rate the quality and taste of this item</small>
                 </div>
 
-                <div class="mb-3">
-                    <label for="review_{{ item.item_id }}" class="form-label">Your Review:</label>
-                    <textarea name="review" id="review_{{ item.item_id }}" class="form-control" required></textarea>
+                <!-- Service Rating -->
+                <div class="form-group-enhanced">
+                    <label class="form-label-enhanced">
+                        <i class="fas fa-concierge-bell"></i> Service Rating:
+                    </label>
+                    <input type="hidden" name="service_rating" id="service_rating_{{ item.item_id }}">
+                    <div class="star-rating" data-rating="service_rating_{{ item.item_id }}">
+                        {% for i in range(1,6) %}
+                        <span class="star" data-value="{{ i }}">★</span>
+                        {% endfor %}
+                    </div>
+                    <small class="text-muted">Rate the customer service experience</small>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Would you recommend this item?</label>
+                <!-- Delivery Rating -->
+                <div class="form-group-enhanced">
+                    <label class="form-label-enhanced">
+                        <i class="fas fa-truck"></i> Delivery Rating:
+                    </label>
+                    <input type="hidden" name="delivery_rating" id="delivery_rating_{{ item.item_id }}">
+                    <div class="star-rating" data-rating="delivery_rating_{{ item.item_id }}">
+                        {% for i in range(1,6) %}
+                        <span class="star" data-value="{{ i }}">★</span>
+                        {% endfor %}
+                    </div>
+                    <small class="text-muted">Rate the delivery speed and packaging</small>
+                </div>
+
+                <!-- Review Comment -->
+                <div class="form-group-enhanced">
+                    <label for="review_{{ item.item_id }}" class="form-label-enhanced">
+                        <i class="fas fa-comment"></i> Your Review: <span class="text-danger">*</span>
+                    </label>
+                    <textarea name="review" id="review_{{ item.item_id }}" class="form-control-enhanced" 
+                              placeholder="Share your experience with this item..." required maxlength="1000"></textarea>
+                    <small class="text-muted">Maximum 1000 characters</small>
+                </div>
+
+                <!-- Recommendation -->
+                <div class="form-group-enhanced">
+                    <label class="form-label-enhanced">
+                        <i class="fas fa-thumbs-up"></i> Would you recommend this item? <span class="text-danger">*</span>
+                    </label>
                     <div class="recommend-options">
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="recommend" value="yes" required>
-                            <label class="form-check-label">Yes</label>
+                            <label class="form-check-label">
+                                <i class="fas fa-thumbs-up text-success"></i> Yes, I recommend it
+                            </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="recommend" value="no" >
-                            <label class="form-check-label">No</label>
+                            <input class="form-check-input" type="radio" name="recommend" value="no">
+                            <label class="form-check-label">
+                                <i class="fas fa-thumbs-down text-danger"></i> No, I don't recommend it
+                            </label>
                         </div>
                     </div>
                 </div>
 
-                <div class="d-flex gap-2 mt-3">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-check"></i> Submit
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn-enhanced btn-success-enhanced">
+                        <i class="fas fa-paper-plane"></i> Submit Review
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="hideReviewForm({{ item.item_id }})">
+                    <button type="button" class="btn-enhanced btn-secondary-enhanced" onclick="hideReviewForm({{ item.item_id }})">
                         <i class="fas fa-times"></i> Cancel
                     </button>
                 </div>
@@ -166,43 +695,58 @@
     </div>
     {% endfor %}
 
-    <div class="card review-card">
+    <!-- Order Summary Card -->
+    <div class="card review-card order-summary-card">
         <div class="review-header">
-            <i class="fas fa-shopping-cart"></i> Order Summary
+            <i class="fas fa-receipt"></i> Order Summary
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <p><strong>Order ID:</strong> {{ order.id }}</p>
-                    <p><strong>Date:</strong> {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
-                    <p><strong>Status:</strong>
-                        <span class="badge bg-success">{{ order.status }}</span>
+                    <p><strong><i class="fas fa-hashtag"></i> Order ID:</strong> #{{ order.id }}</p>
+                    <p><strong><i class="fas fa-calendar"></i> Date:</strong> {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    <p><strong><i class="fas fa-info-circle"></i> Status:</strong>
+                        <span class="badge bg-light text-dark">{{ order.status|title }}</span>
                     </p>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <p><strong>Total Price:</strong> Rs. {{ order.total_price }}</p>
-                    <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
-                    <p><strong>Delivery Address:</strong> {{ order.delivery_address }}</p>
+                    <p><strong><i class="fas fa-rupee-sign"></i> Total Price:</strong> Rs. {{ order.total_price }}</p>
+                    <p><strong><i class="fas fa-credit-card"></i> Payment Method:</strong> {{ order.payment_method|title }}</p>
+                    <p><strong><i class="fas fa-map-marker-alt"></i> Delivery Address:</strong> {{ order.delivery_address }}</p>
                 </div>
-                <div class="mb-3">
-  <a href="{{ url_for('orders') }}" class="btn btn-secondary">
-    <i class="fas fa-arrow-left"></i> Back to Orders
-  </a>
-</div>
+            </div>
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ url_for('orders') }}" class="btn-enhanced btn-outline-enhanced">
+                    <i class="fas fa-arrow-left"></i> Back to Orders
+                </a>
+                <a href="{{ url_for('reorder', order_id=order.id) }}" class="btn-enhanced btn-primary-enhanced">
+                    <i class="fas fa-redo"></i> Reorder
+                </a>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+// Enhanced JavaScript functionality
 function showReviewForm(itemId, itemName) {
     const formDiv = document.getElementById('reviewForm_' + itemId);
     if (formDiv) {
         formDiv.style.display = 'block';
-        window.scrollTo({
-            top: formDiv.offsetTop - 50,
-            behavior: 'smooth'
-        });
+        
+        // Smooth scroll to form
+        setTimeout(() => {
+            formDiv.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+        }, 100);
+        
+        // Focus on first input
+        const firstInput = formDiv.querySelector('textarea');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 500);
+        }
     }
 }
 
@@ -210,36 +754,307 @@ function hideReviewForm(itemId) {
     const formDiv = document.getElementById('reviewForm_' + itemId);
     if (formDiv) {
         formDiv.style.display = 'none';
+        
+        // Scroll back to item header
+        const itemCard = document.getElementById('item_' + itemId);
+        if (itemCard) {
+            itemCard.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
     }
 }
 
+function editReview(itemId) {
+    // Hide existing review and show form
+    const existingReview = document.querySelector(`#item_${itemId} .existing-review`);
+    const reviewForm = document.getElementById(`reviewForm_${itemId}`);
+    
+    if (existingReview && reviewForm) {
+        existingReview.style.display = 'none';
+        reviewForm.style.display = 'block';
+        
+        // Populate form with existing data (you'll need to pass this data)
+        reviewForm.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+        });
+    }
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+// Enhanced star rating functionality
 document.querySelectorAll('.star-rating').forEach(ratingDiv => {
     const stars = ratingDiv.querySelectorAll('.star');
     const inputId = ratingDiv.getAttribute('data-rating');
     const input = document.getElementById(inputId);
 
-    stars.forEach(star => {
+    stars.forEach((star, index) => {
         star.addEventListener('click', () => {
             const val = star.getAttribute('data-value');
             input.value = val;
-            stars.forEach(s => {
-                s.classList.toggle('active', s.getAttribute('data-value') <= val);
-            });
+            updateStars(stars, val);
+            
+            // Add haptic feedback (if supported)
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
         });
 
         star.addEventListener('mouseover', () => {
-            stars.forEach(s => {
-                s.classList.toggle('active', s.getAttribute('data-value') <= star.getAttribute('data-value'));
-            });
+            const val = star.getAttribute('data-value');
+            updateStars(stars, val);
         });
 
         star.addEventListener('mouseout', () => {
             const val = input.value || 0;
-            stars.forEach(s => {
-                s.classList.toggle('active', s.getAttribute('data-value') <= val);
-            });
+            updateStars(stars, val);
         });
     });
+});
+
+function updateStars(stars, rating) {
+    stars.forEach((star, index) => {
+        const starValue = parseInt(star.getAttribute('data-value'));
+        star.classList.toggle('active', starValue <= rating);
+    });
+}
+
+// Helpful button functionality
+async function markHelpful(reviewId, isHelpful) {
+    try {
+        const response = await fetch(`/review/${reviewId}/helpful`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `helpful=${isHelpful}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update button text
+            const button = document.querySelector(`[data-review-id="${reviewId}"]`);
+            if (button) {
+                button.innerHTML = `<i class="fas fa-thumbs-up"></i> Helpful (${data.helpful_count})`;
+                button.classList.add('btn-success');
+                button.disabled = true;
+            }
+            
+            // Show success message
+            showToast('Thank you for your feedback!', 'success');
+        } else {
+            showToast('Error processing your feedback.', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error processing your feedback.', 'error');
+    }
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+            <span>${message}</span>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    // Add toast styles if not already present
+    if (!document.querySelector('#toast-styles')) {
+        const style = document.createElement('style');
+        style.id = 'toast-styles';
+        style.textContent = `
+            .toast-notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                padding: 15px;
+                z-index: 10000;
+                max-width: 300px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                animation: slideIn 0.3s ease;
+            }
+            
+            .toast-success {
+                border-left: 4px solid #28a745;
+            }
+            
+            .toast-error {
+                border-left: 4px solid #dc3545;
+            }
+            
+            .toast-content {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex: 1;
+            }
+            
+            .toast-close {
+                background: none;
+                border: none;
+                font-size: 18px;
+                cursor: pointer;
+                padding: 0;
+                margin-left: 10px;
+            }
+            
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+// Character counter for textarea
+document.querySelectorAll('textarea[maxlength]').forEach(textarea => {
+    const maxLength = textarea.getAttribute('maxlength');
+    const counter = document.createElement('small');
+    counter.className = 'text-muted character-counter';
+    counter.style.float = 'right';
+    counter.style.marginTop = '5px';
+    
+    textarea.parentElement.appendChild(counter);
+    
+    function updateCounter() {
+        const remaining = maxLength - textarea.value.length;
+        counter.textContent = `${remaining} characters remaining`;
+        counter.style.color = remaining < 50 ? '#dc3545' : '#6c757d';
+    }
+    
+    textarea.addEventListener('input', updateCounter);
+    updateCounter();
+});
+
+// Form validation
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const requiredRating = form.querySelector('input[name="rating"]');
+        const requiredReview = form.querySelector('textarea[name="review"]');
+        const requiredRecommend = form.querySelector('input[name="recommend"]:checked');
+        
+        if (!requiredRating.value) {
+            e.preventDefault();
+            showToast('Please provide an item rating.', 'error');
+            return;
+        }
+        
+        if (!requiredReview.value.trim()) {
+            e.preventDefault();
+            showToast('Please write a review.', 'error');
+            return;
+        }
+        
+        if (!requiredRecommend) {
+            e.preventDefault();
+            showToast('Please select whether you recommend this item.', 'error');
+            return;
+        }
+    });
+});
+
+// Auto-save draft functionality
+let autoSaveTimeout;
+function autoSaveDraft(itemId) {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+        const form = document.getElementById(`reviewForm_${itemId}`);
+        if (form) {
+            const formData = new FormData(form);
+            const draftData = {};
+            for (let [key, value] of formData.entries()) {
+                draftData[key] = value;
+            }
+            localStorage.setItem(`review_draft_${itemId}`, JSON.stringify(draftData));
+        }
+    }, 1000);
+}
+
+// Load draft on form show
+function loadDraft(itemId) {
+    const draftData = localStorage.getItem(`review_draft_${itemId}`);
+    if (draftData) {
+        const data = JSON.parse(draftData);
+        const form = document.getElementById(`reviewForm_${itemId}`);
+        if (form) {
+            Object.keys(data).forEach(key => {
+                const input = form.querySelector(`[name="${key}"]`);
+                if (input) {
+                    if (input.type === 'radio') {
+                        const radio = form.querySelector(`[name="${key}"][value="${data[key]}"]`);
+                        if (radio) radio.checked = true;
+                    } else {
+                        input.value = data[key];
+                        if (key.includes('rating')) {
+                            // Update star display
+                            const stars = form.querySelectorAll(`[data-rating="${key}"] .star`);
+                            updateStars(stars, data[key]);
+                        }
+                    }
+                }
+            });
+        }
+    }
+}
+
+// Clear draft on successful submit
+function clearDraft(itemId) {
+    localStorage.removeItem(`review_draft_${itemId}`);
+}
+
+// Add event listeners for auto-save
+document.querySelectorAll('textarea, input[type="radio"]').forEach(input => {
+    input.addEventListener('input', function() {
+        const itemId = this.closest('.review-form').id.split('_')[1];
+        if (itemId) {
+            autoSaveDraft(itemId);
+        }
+    });
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Hide loading overlay
+    hideLoading();
+    
+    // Initialize any other components
+    console.log('Review page initialized');
 });
 </script>
 {% endblock %}

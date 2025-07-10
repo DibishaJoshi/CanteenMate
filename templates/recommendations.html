@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Recommendations</title>
+</head>
+<body>
+    <h1>Recommended Items for You</h1>
+
+    {% if items %}
+    <ul>
+        {% for item in items %}
+            <li>{{ item.name }} — Rs. {{ "%.2f"|format(item.price) }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No recommendations available.</p>
+    {% endif %}
+
+    <a href="{{ url_for('index') }}">Back to Home</a>
+</body>
+</html>

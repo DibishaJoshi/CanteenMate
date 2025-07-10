@@ -395,6 +395,7 @@ body {
 .filter-btn.active, .filter-btn:hover {
     background-color: var(--active-color);
     color: white;
+    margin-bottom: 20px;
 }
 
  /* Menu grid styles */

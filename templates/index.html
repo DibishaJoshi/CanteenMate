@@ -1,36 +1,218 @@
 {% extends "base.html" %}
+{% block extra_css %}
+
+<style>
+/* Recommendation Context Styles */
+.recommendation-context {
+    margin-bottom: 30px;
+}
+
+.context-card {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.context-icon {
+    font-size: 2rem;
+    margin-right: 20px;
+    opacity: 0.9;
+}
+
+.context-text h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.2rem;
+}
+
+.context-text p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* Recommended Item Styles */
+.recommended-item {
+    border: 2px solid #667eea;
+    position: relative;
+    overflow: visible;
+}
+
+.recommendation-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #667eea;
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    z-index: 10;
+}
+
+.recommendation-explanation {
+    margin-top: 10px;
+    position: relative;
+}
+
+.explanation-text {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #666;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+.explanation-text i {
+    margin-right: 5px;
+    color: #667eea;
+}
+
+.similar-users-tooltip {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #2c3e50;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.recommended-item:hover .similar-users-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.similar-users-tooltip ul {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0 0 0;
+}
+
+.similar-users-tooltip li {
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.similar-users-tooltip li:last-child {
+    border-bottom: none;
+}
+
+/* Animation for recommended items */
+@keyframes recommendationPulse {
+    0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+}
+
+.recommended-item {
+    animation: recommendationPulse 2s infinite;
+}
+</style>
+{% endblock %}
 {% block content %}
 <div class="main-dashboard-wrapper">
 <div class="dashboard-container">
     <h1 class="page-title">Special Menu For You</h1>
     
-    <!-- Menu Categories -->
-    <div class="category-filter">
-        <div class="filter-title">Categories</div>
-        <div class="filter-options">
-            <button class="filter-btn active">All</button>
-            <button class="filter-btn">Breakfast</button>
-            <button class="filter-btn">Lunch</button>
-            <button class="filter-btn">Snacks</button>
-            <button class="filter-btn">Dinner</button>
-            <button class="filter-btn">Drinks</button>
+    <!-- Recommendation Context -->
+    <div class="recommendation-context">
+        <div class="context-card">
+            <div class="context-icon">
+                {% if recommendation_type == 'personalized' %}
+                    <i class="fas fa-user-friends"></i>
+                {% else %}
+                    <i class="fas fa-star"></i>
+                {% endif %}
+            </div>
+            <div class="context-text">
+                <h3>Why these recommendations?</h3>
+                <p>{{ recommendation_context }}</p>
+            </div>
         </div>
     </div>
     
+    <!-- Menu Categories -->
+     <div class="category-filter">
+        <div class="filter-title">Categories</div>
+        <button class="filter-btn active" data-category="all">All</button>
+        {% for category in categories %}
+            <button class="filter-btn" data-category="{{ category.name }}">{{ category.name }}</button>
+        {% endfor %}
+    </div>
+
+
+    
     <!-- Menu Items Grid -->
     <div class="menu-grid">
-        {% for item in menu_items %}
-        <div class="menu-item" style="background:white;"data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}" data-image="{{ url_for('static', filename='images/items/' + item.image) }}"data-category="{{ item.category }}">
+        {% for recommendation in menu_recommendations %}
+        {% set item = recommendation.item %}
+        <div class="menu-item recommended-item" 
+             style="background:white;" 
+             data-id="{{ item.id }}" 
+             data-name="{{ item.name }}" 
+             data-price="{{ item.price }}" 
+             data-image="{{ url_for('static', filename='uploads/items/' + item.image_filename) }}" 
+             data-category="{{ item.category.name }}">
+            
             <div class="item-image">
-                <img src="{{ url_for('static', filename='images/items/' + item.image) }}" alt="{{ item.name }}">
-                <div class="item-badge">{{ item.category }}</div>
-                {% if item.is_popular %}
-                <div class="popular-tag"><i class="fas fa-star"></i></div>
-                {% endif %}
+                <img src="{{ url_for('static', filename='uploads/items/' + item.image_filename) }}" alt="{{ item.name }}">
+                <div class="item-badge">{{ item.category.name }}</div>
+                
+                <!-- Recommendation badge -->
+                <div class="recommendation-badge">
+                    {% if recommendation.explanation_type == 'collaborative' %}
+                        <i class="fas fa-users"></i>
+                    {% elif recommendation.explanation_type == 'popular' %}
+                        <i class="fas fa-fire"></i>
+                    {% else %}
+                        <i class="fas fa-star"></i>
+                    {% endif %}
+                </div>
             </div>
+            
             <div class="item-details">
                 <h3 class="item-name">{{ item.name }}</h3>
                 <div class="item-price">Rs. {{ "%.2f"|format(item.price) }}</div>
+                
+                <!-- Recommendation explanation -->
+                <div class="recommendation-explanation">
+                    <div class="explanation-text">
+                        <i class="fas fa-info-circle"></i>
+                        <span>{{ recommendation.explanation }}</span>
+                    </div>
+                    
+                    <!-- Show additional details for collaborative filtering -->
+                    {% if recommendation.explanation_type == 'collaborative' and recommendation.similar_users %}
+                    <div class="similar-users-tooltip">
+                        <div class="tooltip-content">
+                            <strong>Similar customers who ordered this:</strong>
+                            <ul>
+                                {% for user in recommendation.similar_users %}
+                                <li>{{ user.name }} ({{ user.quantity }} time{{ 's' if user.quantity > 1 else '' }})</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -38,7 +220,7 @@
 </div>
 
 <!-- Current Order Panel -->
-<div class="order-panel"style="display:none;">
+<div class="order-panel" style="display:none;">
     <h2 class="panel-title">Current Order</h2>
     
     <!-- Customer Selection -->
@@ -65,7 +247,7 @@
         {% for item in cart_items %}
         <div class="cart-item">
             <div class="item-image">
-                <img src="{{ url_for('static', filename='images/items/' + item.image) }}" alt="{{ item.name }}">
+                <img src="{{ url_for('static', filename='uploads/items/' + item.image_filename) }}" alt="{{ item.name }}">
             </div>
             <div class="item-info">
                 <div class="item-name">{{ item.name }}</div>
@@ -129,7 +311,33 @@
     <div class="order-actions">
         <button class="clear-cart-btn">Clear Cart</button>
         <button class="place-order-btn">Place Order</button>
-    </div>-->
+    </div>
 </div>
 </div>
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const filterButtons = document.querySelectorAll(".filter-btn");
+    const items = document.querySelectorAll(".menu-item");
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            filterButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            const category = btn.dataset.category;
+
+            items.forEach(item => {
+                if (category === "all" || item.dataset.category === category) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+
 {% endblock %}
