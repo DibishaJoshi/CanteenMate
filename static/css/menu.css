@@ -93,12 +93,13 @@
 
 /* Add to Cart button */
 #menu .add-to-cart {
-  background-color: #007bff;
+  background-color: #85564f;
   color: white;
   border: none;
   padding: 8px 14px;
   border-radius: 5px;
   cursor: pointer;
+      margin-top: 10px;
   font-weight: 600;
   transition: background-color 0.3s ease;
 }

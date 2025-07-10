@@ -296,6 +296,7 @@
   <p><strong>Email:</strong> {{ order.email }}</p>
   <p><strong>Delivery Address:</strong> {{ order.delivery_address }}</p>
   <p><strong>Payment Method:</strong> {{ order.payment }}</p>
+  <p><strong>Delivery Method:</strong> {{ order.delivery }}</p>
 
   <form method="POST" action="{{ url_for('admin_update_order_status', order_id=order.id) }}">
     <label for="status"><strong>Status:</strong></label>

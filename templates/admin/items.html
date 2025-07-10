@@ -129,6 +129,14 @@
       overflow-y: hidden;
     }
   }
+  td ul {
+  list-style-type: disc;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
 </style>
 
 {% endblock %} {% block content %}
@@ -180,61 +188,72 @@
     {% endif %} {% endfor %} {% endif %} {% endwith %}
     <table class="data-table">
       <thead>
-        <tr>
-          <th>Item ID</th>
-          <th>Name</th>
-          <th>Image</th>
-          <th>Category</th>
-          <th>Price</th>
-          <th>Available</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="item-table-body">
-        {% for item in items %}
-        <tr>
-          <td>{{ "%03d"|format(item.id) }}</td>
-          <td>{{ item.name }}</td>
-          <td>
-            {% if item.image_filename %}
-            <img
-              src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) }}"
-              alt="Item Image"
-              style="height: 40px"
-            />
-            {% else %} No image {% endif %}
-          </td>
-          <td>{{ item.category.name if item.category else "N/A" }}</td>
-          <td>Rs. {{ '%.2f' % (item.price) }}</td>
-          <td>
-            {% if item.available %}
-            <span class="status available">Yes</span>
-            {% else %}
-            <span class="status not-available">No</span>
-            {% endif %}
-          </td>
-          <td class="actions">
-            <button
-              class="btn-edit"
-              data-id="{{ item.id }}"
-              data-name="{{ item.name }}"
-              data-category="{{ item.category.name if item.category else '' }}"
-              data-price="{{ '%.2f' % (item.price) }}"
-              data-description="{{ item.description or '' }}"
-              data-available="{{ 'true' if item.available else 'false' }}"
-              data-addons="{{ item.addons | map(attribute='id') | join(',') }}"
-            >
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn-delete"><i class="fas fa-trash"></i></button>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="7">No items found.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
+  <tr>
+    <th>Item ID</th>
+    <th>Name</th>
+    <th>Image</th>
+    <th>Category</th>
+    <th>Price</th>
+    <th>Available</th>
+    <th>Addons</th>  <!-- new column -->
+    <th>Actions</th>
+  </tr>
+</thead>
+<tbody id="item-table-body">
+  {% for item in items %}
+  <tr>
+    <td>{{ "%03d"|format(item.id) }}</td>
+    <td>{{ item.name }}</td>
+    <td>
+      {% if item.image_filename %}
+      <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) }}" alt="Item Image" style="height: 40px" />
+      {% else %} No image {% endif %}
+    </td>
+    <td>{{ item.category.name if item.category else "N/A" }}</td>
+    <td>Rs. {{ '%.2f' % (item.price) }}</td>
+    <td>
+      {% if item.available %}
+      <span class="status available">Yes</span>
+      {% else %}
+      <span class="status not-available">No</span>
+      {% endif %}
+    </td>
+
+    <td>
+      {% if item.addons|length > 0 %}
+        <ul style="padding-left: 18px; margin: 0;">
+          {% for addon in item.addons %}
+          <li>{{ addon.name }} (Rs. {{ "%.2f"|format(addon.price) }})</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <em>No addons</em>
+      {% endif %}
+    </td>
+
+    <td class="actions">
+      <button
+        class="btn-edit"
+        data-id="{{ item.id }}"
+        data-name="{{ item.name }}"
+        data-category="{{ item.category.name if item.category else '' }}"
+        data-price="{{ '%.2f' % (item.price) }}"
+        data-description="{{ item.description or '' }}"
+        data-available="{{ 'true' if item.available else 'false' }}"
+        data-addons="{{ item.addons | map(attribute='id') | join(',') }}"
+      >
+        <i class="fas fa-edit"></i>
+      </button>
+      <button class="btn-delete"><i class="fas fa-trash"></i></button>
+    </td>
+  </tr>
+  {% else %}
+  <tr>
+    <td colspan="8">No items found.</td>
+  </tr>
+  {% endfor %}
+</tbody>
+
       <!--<tbody id="item-table-body">
             <tr>
                 <td>001</td>

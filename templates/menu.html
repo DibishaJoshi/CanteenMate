@@ -23,6 +23,14 @@
                   {% endfor %}
                 {% endif %}
             {% endwith %}
+            <div class="category-filter">
+        <div class="filter-title">Categories</div>
+        <button class="filter-btn active" data-category="all">All</button>
+{% for category in categories %}
+    <button class="filter-btn" data-category="{{ category.name }}">{{ category.name }}</button>
+{% endfor %}
+
+    </div>
 
     {% for category_name, items in menu_items.items() %}
         {% if items %}
@@ -54,13 +62,13 @@
                         
                         <span style="padding-top:4px;" class="item-price">Rs. {{ '%.2f' % (item.price) }}</span><br>
                         <form method="POST" action="{{ url_for('add_to_cart') }}">
-    <input type="hidden" name="item_id" value="{{ item.id }}">
-    <input type="hidden" name="item_name" value="{{ item.name }}">
-    <input type="hidden" name="item_price" value="{{ '%.2f' % (item.price) }}">
-    <input type="hidden" name="item_image" value="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/250/160' }}">
-    <input type="hidden" name="category" value="{{ category_name }}">
-    <button type="submit" class="add-to-cart">Add to Cart</button>
-</form>
+                          <input type="hidden" name="item_id" value="{{ item.id }}">
+                          <input type="hidden" name="item_name" value="{{ item.name }}">
+                          <input type="hidden" name="item_price" value="{{ '%.2f' % (item.price) }}">
+                          <input type="hidden" name="item_image" value="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/250/160' }}">
+                          <input type="hidden" name="category" value="{{ category_name }}">
+                          <button type="submit" class="add-to-cart"><i class="fas fa-shopping-cart" style="padding-right:4px;"></i>Add to Cart</button>
+                      </form>
 
                     </div>
 
@@ -93,5 +101,30 @@
   }, 3000); // 3 seconds
 </script>
 
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const filterButtons = document.querySelectorAll(".filter-btn");
+    const items = document.querySelectorAll(".menu-item");
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            filterButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            const category = btn.dataset.category;
+
+            items.forEach(item => {
+                if (category === "all" || item.dataset.category === category) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock %}
+
 {% endblock %}

@@ -3,6 +3,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime,timedelta,date,time
 from flask_socketio import SocketIO,join_room, leave_room
+from sqlalchemy import func, desc, asc
+import recommendation
 
 
 import os
@@ -33,6 +35,20 @@ def login_required(view):
             return redirect(url_for('login'))
         return view(**kwargs)
     return wrapped_view
+
+@app.route('/recommendations')
+@login_required
+def recommendations_page():
+    user = User.query.get(session['user_id'])
+
+    user_item_matrix, _ = recommendation.build_user_item_matrix()
+    if user_item_matrix is None:
+        return "<h3>No order data available for recommendations.</h3>"
+
+    model, k = recommendation.train_knn(user_item_matrix)
+    items = recommendation.recommend_items_for_user(user, user_item_matrix, model, n_neighbors=k)
+
+    return render_template('recommendations.html', items=items)
 
 @app.route('/')
 def index():
@@ -187,52 +203,68 @@ def dashboard():
 @login_required
 def admin():
     return redirect(url_for('dashboard'))
+# Updated dashboard route in your Flask app
 
 @app.route('/dashboard')
 @login_required
 def user_dashboard():
-    menu_items = [
-        {
-            "name": "Chicken Mo:Mo",
-            "price": 150.00,
-            "image": "static/img/chicken_momo.jpeg",
-            "category": "momo",
-            "is_popular": True,
-            "category":"Dinner"
-        },
-        {
-            "name": "Veg Chowmein",
-            "price": 120.00,
-            "image": "veg_chowmein.jpg",
-            "category": "noodles",
-            "is_popular": False,
-            "category":"Dinner"
-        },
-        {
-            "name": "Buff Burger",
-            "price": 180.00,
-            "image": "buff_burger.jpg",
-            "category": "burger",
-            "is_popular": True
-        },
-        {
-            "name": "French Fries",
-            "price": 100.00,
-            "image": "french_fries.jpg",
-            "category": "snacks",
-            "is_popular": False
-        },
-        {
-            "name": "Masala Tea",
-            "price": 40.00,
-            "image": "masala_tea.jpg",
-            "category": "beverages",
-            "is_popular": True
-        }
-    ]
-    user_id = session.get('user_id')
-    user= User.query.get(user_id)
-    return render_template('index.html',user=user,active_page='dashboard',menu_items=menu_items)
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    
+    if not user:
+        return redirect(url_for('login'))
+    
+    # Build user-item matrix from order history
+    user_item_matrix, df = recommendation.build_user_item_matrix()
+    
+    # Get explanation for overall recommendation approach
+    recommendation_context = recommendation.get_user_order_history_explanation(user_id)
+    
+    if user_item_matrix is None or user_item_matrix.empty:
+        # No order history available, show fallback recommendations
+        menu_recommendations = recommendation.get_fallback_recommendations_with_explanations()
+        recommendation_type = "popular"
+    else:
+        # Train model and get neighbor count
+        model, k = recommendation.train_knn(user_item_matrix)
+        
+        if model is None or k == 0:
+            # Not enough data for recommendations
+            menu_recommendations = recommendation.get_fallback_recommendations_with_explanations()
+            recommendation_type = "popular"
+        else:
+            # Get recommended items for this user with explanations
+            menu_recommendations = recommendation.recommend_items_for_user_with_explanations(
+                user_id, 
+                user_item_matrix, 
+                model, 
+                n_neighbors=k,
+                top_n=5
+            )
+            
+            # If no personalized recommendations, fall back to popular items
+            if not menu_recommendations:
+                menu_recommendations = recommendation.get_fallback_recommendations_with_explanations()
+                recommendation_type = "popular"
+            else:
+                recommendation_type = "personalized"
+    
+    # Extract just the items for the template (maintaining backward compatibility)
+    menu_items = [rec['item'] for rec in menu_recommendations]
+    
+    # Get additional data that might be needed for the template
+    customers = []  # Add logic to get customers if needed
+    cart_items = []  # Add logic to get cart items if needed
+    categories = Category.query.all()
+    return render_template('index.html', 
+                         menu_items=menu_items,
+                         menu_recommendations=menu_recommendations,  # Full recommendation data with explanations
+                         recommendation_context=recommendation_context,
+                         recommendation_type=recommendation_type,
+                         user=user,
+                         customers=customers,
+                         cart_items=cart_items,
+                         active_page="dashboard", categories=categories)
 
 @app.route('/admin/categories')
 @login_required
@@ -951,129 +983,127 @@ def admin_order_invoice(order_id):
     customer = User.query.get(order.user_id)
     return render_template('admin/order_invoice.html', user=user, order=order, customer=customer)
 
-@app.route('/orders/<int:order_id>/review')
+@app.route('/order/<int:order_id>/review')
 @login_required
 def review_order(order_id):
+    """Display review page for an order"""
     user_id = session.get('user_id')
-    user = User.query.get(user_id)
-
-    order = Order.query.filter_by(id=order_id, user_id=user_id).first()
-    if not order:
-        flash('Order not found.', 'danger')
-        return redirect(url_for('orders'))
-
-    if order.status.lower() != 'delivered':
-        flash('You can only review delivered orders.', 'warning')
-        return redirect(url_for('orders'))
-
-    # Get user's own reviews
-    existing_reviews = Review.query.filter_by(order_id=order_id, user_id=user_id).all()
-    reviews_by_item = {r.item_id: r for r in existing_reviews}
-    reviewed_item_ids = [r.item_id for r in existing_reviews]
-
-    # Get other users' reviews for each item
+    order = Order.query.filter_by(id=order_id, user_id=user_id).first_or_404()
+    
+    # Get items that have been reviewed
+    reviewed_items = db.session.query(Review.item_id).filter_by(
+        order_id=order_id, 
+        user_id=user_id
+    ).all()
+    reviewed_item_ids = [item.item_id for item in reviewed_items]
+    
+    # Get user's reviews for this order
+    user_reviews = Review.query.filter_by(
+        order_id=order_id, 
+        user_id=user_id
+    ).all()
+    reviews_by_item = {review.item_id: review for review in user_reviews}
+    
+    # Get other users' reviews for items in this order
     other_reviews = {}
     for item in order.items:
-        reviews = (
-            Review.query
-            .filter(
-                Review.item_id == item.item_id,
-                Review.user_id != user_id
-            )
-            .order_by(Review.id.desc())
-            .limit(3)  # Show latest 3 reviews per item
-            .all()
-        )
-        other_reviews[item.item_id] = reviews
+        other_user_reviews = Review.query.filter(
+            Review.item_id == item.item_id,
+            Review.user_id != user_id,
+            Review.is_verified == True
+        ).order_by(Review.created_at.desc()).limit(5).all()
+        other_reviews[item.item_id] = other_user_reviews
+    
+    user = User.query.get(user_id)
+    
+    return render_template('review_order.html',
+                         order=order,
+                         reviewed_item_ids=reviewed_item_ids,
+                         reviews_by_item=reviews_by_item,
+                         other_reviews=other_reviews,
+                         user=user)
 
-    return render_template(
-        'review_order.html',
-        user=user,
-        order=order,
-        reviews_by_item=reviews_by_item,
-        reviewed_item_ids=reviewed_item_ids,
-        other_reviews=other_reviews,
-        active_page='orders'
-    )
-@app.route('/orders/<int:order_id>/review', methods=['POST'])
+@app.route('/order/<int:order_id>/submit_review', methods=['POST'])
 @login_required
 def submit_review(order_id):
-    """Process review submission"""
+    """Submit a review for an item"""
     user_id = session.get('user_id')
     
-    # Verify order belongs to user and is delivered
-    order = Order.query.filter_by(id=order_id, user_id=user_id).first()
-    if not order or order.status.lower() != 'delivered':
-        flash('Invalid order for review.', 'review_danger')
-        return redirect(url_for('orders'))
+    # Verify order belongs to user
+    order = Order.query.filter_by(id=order_id, user_id=user_id).first_or_404()
     
     try:
-        # Get form data
-        item_id = request.form.get('item_id')
-        rating = int(request.form.get('rating', 0))
-        comment = request.form.get('review', '').strip()
+        item_id = int(request.form.get('item_id'))
+        rating = int(request.form.get('rating'))
         service_rating = request.form.get('service_rating')
         delivery_rating = request.form.get('delivery_rating')
+        comment = request.form.get('review', '').strip()
         would_recommend = request.form.get('recommend') == 'yes'
         
         # Validate required fields
-        if not item_id or rating < 1 or rating > 5:
-            flash('Please provide a valid rating (1-5 stars).', 'review_danger')
+        if not rating or rating < 1 or rating > 5:
+            flash('Please provide a valid item rating (1-5 stars).', 'review_danger')
             return redirect(url_for('review_order', order_id=order_id))
         
-        # Verify item is in the order
-        order_item = OrderItem.query.filter_by(order_id=order_id, item_id=item_id).first()
-        if not order_item:
-            flash('Item not found in this order.', 'review_danger')
+        if not comment:
+            flash('Please provide a review comment.', 'review_danger')
             return redirect(url_for('review_order', order_id=order_id))
-        existing_reviews = Review.query.filter_by(order_id=order_id, user_id=user_id).all()
-        reviews_by_item = {r.item_id: r for r in existing_reviews}
+        
+        # Validate item belongs to order
+        order_item = OrderItem.query.filter_by(
+            order_id=order_id, 
+            item_id=item_id
+        ).first()
+        if not order_item:
+            flash('Invalid item for this order.', 'review_danger')
+            return redirect(url_for('review_order', order_id=order_id))
+        
         # Check if review already exists
         existing_review = Review.query.filter_by(
-            order_id=order_id, 
-            user_id=user_id, 
-            item_id=item_id
+            user_id=user_id,
+            item_id=item_id,
+            order_id=order_id
         ).first()
         
         if existing_review:
-            flash('You have already reviewed this item.', 'review_warning')
-            return redirect(url_for('review_order', order_id=order_id))
+            # Update existing review
+            existing_review.rating = rating
+            existing_review.service_rating = int(service_rating) if service_rating else None
+            existing_review.delivery_rating = int(delivery_rating) if delivery_rating else None
+            existing_review.comment = comment
+            existing_review.would_recommend = would_recommend
+            existing_review.updated_at = datetime.utcnow()
+            
+            flash('Your review has been updated successfully!', 'review_success')
+        else:
+            # Create new review
+            new_review = Review(
+                user_id=user_id,
+                item_id=item_id,
+                order_id=order_id,
+                rating=rating,
+                service_rating=int(service_rating) if service_rating else None,
+                delivery_rating=int(delivery_rating) if delivery_rating else None,
+                comment=comment,
+                would_recommend=would_recommend
+            )
+            db.session.add(new_review)
+            
+            flash('Thank you for your review!', 'review_success')
         
-        # Convert optional ratings
-        service_rating = int(service_rating) if service_rating and service_rating.isdigit() else None
-        delivery_rating = int(delivery_rating) if delivery_rating and delivery_rating.isdigit() else None
-        
-        # Create new review
-        new_review = Review(
-            user_id=user_id,
-            order_id=order_id,
-            item_id=item_id,
-            rating=rating,
-            comment=comment if comment else None,
-            service_rating=service_rating,
-            delivery_rating=delivery_rating,
-            would_recommend=would_recommend,
-            is_verified=True  
-        )
-        
-        db.session.add(new_review)
         db.session.commit()
         
-        flash('Thank you for your review!', 'success')
-        return redirect(url_for('review_order', order_id=order_id))
-        
-    except ValueError:
-        flash('Invalid rating value. Please select 1-5 stars.', 'danger')
-        return redirect(url_for('review_order', order_id=order_id))
+    except ValueError as e:
+        flash('Invalid rating values provided.', 'review_danger')
     except Exception as e:
         db.session.rollback()
-        print(f"Review submission error: {e}")
-        flash('Error submitting review. Please try again.', 'danger')
-        return redirect(url_for('review_order', order_id=order_id))
+        flash('An error occurred while submitting your review. Please try again.', 'review_danger')
+    
+    return redirect(url_for('review_order', order_id=order_id))
 
 @app.route('/item/<int:item_id>/reviews')
 def item_reviews(item_id):
-    """Show all reviews for an item"""
+    """Show all reviews for an item with filtering and pagination"""
     item = Item.query.get_or_404(item_id)
     
     # Get pagination parameters
@@ -1082,10 +1112,10 @@ def item_reviews(item_id):
     
     # Get filter parameters
     rating_filter = request.args.get('rating', type=int)
-    sort_by = request.args.get('sort', 'newest')  # newest, oldest, highest, lowest, helpful
+    sort_by = request.args.get('sort', 'newest')
     
     # Build query
-    reviews_query = Review.query.filter_by(item_id=item_id)
+    reviews_query = Review.query.filter_by(item_id=item_id, is_verified=True)
     
     # Apply rating filter
     if rating_filter and 1 <= rating_filter <= 5:
@@ -1111,16 +1141,44 @@ def item_reviews(item_id):
     )
     
     # Get review statistics
-    total_reviews = Review.query.filter_by(item_id=item_id).count()
-    avg_rating = db.session.query(db.func.avg(Review.rating)).filter_by(item_id=item_id).scalar()
+    total_reviews = Review.query.filter_by(item_id=item_id, is_verified=True).count()
+    avg_rating = db.session.query(func.avg(Review.rating)).filter_by(
+        item_id=item_id, is_verified=True
+    ).scalar()
     avg_rating = round(avg_rating, 1) if avg_rating else 0
     
     # Get rating distribution
     rating_distribution = {}
     for rating in range(1, 6):
-        count = Review.query.filter_by(item_id=item_id, rating=rating).count()
+        count = Review.query.filter_by(
+            item_id=item_id, 
+            rating=rating, 
+            is_verified=True
+        ).count()
         percentage = (count / total_reviews * 100) if total_reviews > 0 else 0
-        rating_distribution[rating] = {'count': count, 'percentage': round(percentage, 1)}
+        rating_distribution[rating] = {
+            'count': count, 
+            'percentage': round(percentage, 1)
+        }
+    
+    # Get average ratings for other aspects
+    avg_service_rating = db.session.query(func.avg(Review.service_rating)).filter_by(
+        item_id=item_id, is_verified=True
+    ).scalar()
+    avg_delivery_rating = db.session.query(func.avg(Review.delivery_rating)).filter_by(
+        item_id=item_id, is_verified=True
+    ).scalar()
+    
+    avg_service_rating = round(avg_service_rating, 1) if avg_service_rating else 0
+    avg_delivery_rating = round(avg_delivery_rating, 1) if avg_delivery_rating else 0
+    
+    # Get recommendation percentage
+    recommend_count = Review.query.filter_by(
+        item_id=item_id, 
+        would_recommend=True, 
+        is_verified=True
+    ).count()
+    recommend_percentage = (recommend_count / total_reviews * 100) if total_reviews > 0 else 0
     
     user_id = session.get('user_id')
     user = User.query.get(user_id) if user_id else None
@@ -1130,6 +1188,9 @@ def item_reviews(item_id):
                          reviews=reviews,
                          total_reviews=total_reviews,
                          avg_rating=avg_rating,
+                         avg_service_rating=avg_service_rating,
+                         avg_delivery_rating=avg_delivery_rating,
+                         recommend_percentage=round(recommend_percentage, 1),
                          rating_distribution=rating_distribution,
                          current_rating_filter=rating_filter,
                          current_sort=sort_by,
@@ -1144,13 +1205,20 @@ def mark_review_helpful(review_id):
     
     review = Review.query.get_or_404(review_id)
     
-    # Check if user has already voted on this review
-    existing_vote = ReviewHelpful.query.filter_by(
-        review_id=review_id, 
-        user_id=user_id
-    ).first()
+    # Users can't vote on their own reviews
+    if review.user_id == user_id:
+        return jsonify({
+            'success': False,
+            'message': 'You cannot vote on your own review.'
+        }), 400
     
     try:
+        # Check if user has already voted on this review
+        existing_vote = ReviewHelpful.query.filter_by(
+            review_id=review_id, 
+            user_id=user_id
+        ).first()
+        
         if existing_vote:
             # Update existing vote
             existing_vote.is_helpful = is_helpful
@@ -1185,6 +1253,20 @@ def mark_review_helpful(review_id):
             'message': 'Error processing your feedback.'
         }), 500
 
+@app.route('/reorder/<int:order_id>')
+@login_required
+def reorder(order_id):
+    """Reorder items from a previous order"""
+    user_id = session.get('user_id')
+    order = Order.query.filter_by(id=order_id, user_id=user_id).first_or_404()
+    
+    # Add items to cart (implement your cart logic here)
+    # For now, redirect to menu or cart page
+    flash('Items have been added to your cart!', 'success')
+    return redirect(url_for('menu'))
+
+# ===================== ADMIN ROUTES =====================
+
 @app.route('/admin/reviews')
 @login_required
 def admin_reviews():
@@ -1199,6 +1281,7 @@ def admin_reviews():
     page = request.args.get('page', 1, type=int)
     rating_filter = request.args.get('rating', type=int)
     item_filter = request.args.get('item', type=int)
+    verification_filter = request.args.get('verified')
     per_page = 20
     
     # Build query
@@ -1210,6 +1293,11 @@ def admin_reviews():
     
     if item_filter:
         reviews_query = reviews_query.filter(Review.item_id == item_filter)
+        
+    if verification_filter == 'verified':
+        reviews_query = reviews_query.filter(Review.is_verified == True)
+    elif verification_filter == 'unverified':
+        reviews_query = reviews_query.filter(Review.is_verified == False)
     
     # Order by newest first
     reviews_query = reviews_query.order_by(Review.created_at.desc())
@@ -1223,10 +1311,14 @@ def admin_reviews():
     
     # Get stats for dashboard
     total_reviews = Review.query.count()
-    avg_rating = db.session.query(db.func.avg(Review.rating)).scalar()
+    avg_rating = db.session.query(func.avg(Review.rating)).scalar()
     avg_rating = round(avg_rating, 1) if avg_rating else 0
     
+    # Get recent reviews
     recent_reviews = Review.query.order_by(Review.created_at.desc()).limit(5).all()
+    
+    # Get unverified reviews count
+    unverified_count = Review.query.filter_by(is_verified=False).count()
     
     # Get all items for filter dropdown
     items = Item.query.order_by(Item.name).all()
@@ -1237,9 +1329,11 @@ def admin_reviews():
                          total_reviews=total_reviews,
                          avg_rating=avg_rating,
                          recent_reviews=recent_reviews,
+                         unverified_count=unverified_count,
                          items=items,
                          current_rating_filter=rating_filter,
                          current_item_filter=item_filter,
+                         current_verification_filter=verification_filter,
                          active_page='reviews')
 
 @app.route('/admin/reviews/<int:review_id>/toggle-visibility', methods=['POST'])
@@ -1252,19 +1346,63 @@ def toggle_review_visibility(review_id):
     review = Review.query.get_or_404(review_id)
     
     try:
-        # Add a visibility field to Review model if needed
-        # For now, we'll use a simple approach
         review.is_verified = not review.is_verified
         db.session.commit()
         
-        status = "visible" if review.is_verified else "hidden"
-        flash(f'Review marked as {status}.', 'success')
+        status = "verified" if review.is_verified else "hidden"
+        flash(f'Review has been {status}.', 'success')
         
     except Exception as e:
         db.session.rollback()
         flash('Error updating review visibility.', 'danger')
     
     return redirect(url_for('admin_reviews'))
+
+@app.route('/admin/reviews/<int:review_id>/delete', methods=['POST'])
+@login_required
+def delete_review(review_id):
+    """Delete a review (admin only)"""
+    if session.get('user_role') != 'admin':
+        return redirect(url_for('user_dashboard'))
+    
+    review = Review.query.get_or_404(review_id)
+    
+    try:
+        # Delete associated helpful votes first
+        ReviewHelpful.query.filter_by(review_id=review_id).delete()
+        
+        # Delete the review
+        db.session.delete(review)
+        db.session.commit()
+        
+        flash('Review has been deleted successfully.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash('Error deleting review.', 'danger')
+    
+    return redirect(url_for('admin_reviews'))
+
+# ===================== HELPER FUNCTIONS =====================
+
+def get_item_average_rating(item_id):
+    """Get average rating for an item"""
+    avg_rating = db.session.query(func.avg(Review.rating)).filter_by(
+        item_id=item_id, is_verified=True
+    ).scalar()
+    return round(avg_rating, 1) if avg_rating else 0
+
+def get_item_review_count(item_id):
+    """Get total review count for an item"""
+    return Review.query.filter_by(item_id=item_id, is_verified=True).count()
+
+def get_user_review_for_item(user_id, item_id):
+    """Check if user has already reviewed an item"""
+    return Review.query.filter_by(
+        user_id=user_id, 
+        item_id=item_id
+    ).first()
+
 # @app.route('/notifications')
 # @login_required
 # def get_notifications():
