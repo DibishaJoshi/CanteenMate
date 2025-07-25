@@ -1,129 +1,29 @@
 {% extends "base.html" %}
 {% block extra_css %}
-
 <style>
-/* Recommendation Context Styles */
-.recommendation-context {
-    margin-bottom: 30px;
-}
 
-.context-card {
+.alert {
+    padding: 16px 20px;
+    margin: 20px 0;
+    border-radius: 12px;
     display: flex;
     align-items: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    justify-content: space-between;
+    font-weight: 500;
+    box-shadow: var(--shadow-md);
+    animation: slideInDown 0.5s ease-out;
 }
 
-.context-icon {
-    font-size: 2rem;
-    margin-right: 20px;
-    opacity: 0.9;
+.alert-success {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    border-left: 4px solid var(--accent-color);
 }
 
-.context-text h3 {
-    margin: 0 0 5px 0;
-    font-size: 1.2rem;
-}
-
-.context-text p {
-    margin: 0;
-    opacity: 0.9;
-}
-
-/* Recommended Item Styles */
-.recommended-item {
-    border: 2px solid #667eea;
-    position: relative;
-    overflow: visible;
-}
-
-.recommendation-badge {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    background: #667eea;
-    color: white;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    z-index: 10;
-}
-
-.recommendation-explanation {
-    margin-top: 10px;
-    position: relative;
-}
-
-.explanation-text {
-    display: flex;
-    align-items: center;
-    font-size: 0.85rem;
-    color: #666;
-    padding: 8px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 3px solid #667eea;
-}
-
-.explanation-text i {
-    margin-right: 5px;
-    color: #667eea;
-}
-
-.similar-users-tooltip {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: #2c3e50;
-    color: white;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.3s ease;
-    z-index: 1000;
-}
-
-.recommended-item:hover .similar-users-tooltip {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-.similar-users-tooltip ul {
-    list-style: none;
-    padding: 0;
-    margin: 5px 0 0 0;
-}
-
-.similar-users-tooltip li {
-    padding: 2px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-}
-
-.similar-users-tooltip li:last-child {
-    border-bottom: none;
-}
-
-/* Animation for recommended items */
-@keyframes recommendationPulse {
-    0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
-}
-
-.recommended-item {
-    animation: recommendationPulse 2s infinite;
+.alert-danger {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+    border-left: 4px solid var(--danger-color);
 }
 </style>
 {% endblock %}
@@ -131,23 +31,24 @@
 <div class="main-dashboard-wrapper">
 <div class="dashboard-container">
     <h1 class="page-title">Special Menu For You</h1>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if 'cart_' in category %}
+                    <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                        <span><i class="fas fa-{% if category.split('_')[1] == 'success' %}check-circle{% else %}exclamation-triangle{% endif %}"></i> {{ message }}</span>
+                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
     
     <!-- Recommendation Context -->
-    <div class="recommendation-context">
-        <div class="context-card">
-            <div class="context-icon">
-                {% if recommendation_type == 'personalized' %}
-                    <i class="fas fa-user-friends"></i>
-                {% else %}
-                    <i class="fas fa-star"></i>
-                {% endif %}
-            </div>
-            <div class="context-text">
-                <h3>Why these recommendations?</h3>
-                <p>{{ recommendation_context }}</p>
-            </div>
-        </div>
-    </div>
+    
     
     <!-- Menu Categories -->
      <div class="category-filter">
@@ -157,6 +58,9 @@
             <button class="filter-btn" data-category="{{ category.name }}">{{ category.name }}</button>
         {% endfor %}
     </div>
+<p id="no-items-message" style="display: none; text-align: center; margin-top: 20px; font-weight: bold;">
+    No items available.
+</p>
 
 
     
@@ -190,7 +94,9 @@
             
             <div class="item-details">
                 <h3 class="item-name">{{ item.name }}</h3>
+
                 <div class="item-price">Rs. {{ "%.2f"|format(item.price) }}</div>
+                <div class="item-description">{{ (item.description) }}</div>
                 
                 <!-- Recommendation explanation -->
                 <div class="recommendation-explanation">
@@ -199,7 +105,7 @@
                         <span>{{ recommendation.explanation }}</span>
                     </div>
                     
-                    <!-- Show additional details for collaborative filtering -->
+                    <!-- Show additional details for collaborative filtering 
                     {% if recommendation.explanation_type == 'collaborative' and recommendation.similar_users %}
                     <div class="similar-users-tooltip">
                         <div class="tooltip-content">
@@ -211,114 +117,33 @@
                             </ul>
                         </div>
                     </div>
-                    {% endif %}
+                    {% endif %}-->
                 </div>
+                <form method="POST" action="{{ url_for('add_to_cart') }}">
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                            <input type="hidden" name="item_name" value="{{ item.name }}">
+                            <input type="hidden" name="item_price" value="{{ '%.2f' % (item.price) }}">
+                            <input type="hidden" name="item_image" value="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/320/220' }}">
+                            <input type="hidden" name="category" value="{{ category_name }}">
+                            <input type="hidden" name="source" value="dashboard">
+                            <button type="submit" class="add-to-cart">
+                                <i class="fas fa-shopping-cart"></i>
+                                Add to Cart
+                            </button>
+                </form>
             </div>
         </div>
         {% endfor %}
     </div>
 </div>
 
-<!-- Current Order Panel -->
-<div class="order-panel" style="display:none;">
-    <h2 class="panel-title">Current Order</h2>
-    
-    <!-- Customer Selection -->
-    <div class="customer-selector">
-        <select>
-            <option>Walk-In Customer</option>
-            {% for customer in customers %}
-            <option value="{{ customer.id }}">{{ customer.name }}</option>
-            {% endfor %}
-        </select>
-        <button class="add-customer-btn"><i class="fas fa-plus"></i></button>
-    </div>
-    
-    <!-- Delivery Information -->
-    <div class="delivery-info">
-        <div class="section-header">
-            <h3>Delivery Information</h3>
-            <button class="edit-btn"><i class="fas fa-pencil-alt"></i></button>
-        </div>
-    </div>
-    
-    <!-- Order Items -->
-    <div class="order-items">
-        {% for item in cart_items %}
-        <div class="cart-item">
-            <div class="item-image">
-                <img src="{{ url_for('static', filename='uploads/items/' + item.image_filename) }}" alt="{{ item.name }}">
-            </div>
-            <div class="item-info">
-                <div class="item-name">{{ item.name }}</div>
-                <div class="item-quantity">
-                    <div class="qty-label">QTY:</div>
-                    <button class="qty-btn minus"><i class="fas fa-minus"></i></button>
-                    <input type="text" value="{{ item.quantity }}" class="qty-input">
-                    <button class="qty-btn plus"><i class="fas fa-plus"></i></button>
-                </div>
-                <div class="item-price">Price: <span>Rs. {{ "%.2f"|format(item.price * item.quantity) }}</span></div>
-            </div>
-            <button class="remove-item-btn"><i class="fas fa-trash"></i></button>
-        </div>
-        {% endfor %}
-    </div>
-    
-    <!-- Order Summary -->
-    <div class="order-summary">
-        <div class="summary-item">
-            <div class="label">Addon</div>
-            <div class="value">Rs. 1000</div>
-        </div>
-        <div class="summary-item">
-            <div class="label">Subtotal</div>
-            <div class="value">Rs. 2000</div>
-        </div>
-        <div class="summary-item">
-            <div class="label">Discount</div>
-            <div class="value">Rs. 12</div>
-        </div>
-        <div class="summary-item">
-            <div class="label">Tax</div>
-            <div class="value">Rs.32</div>
-        </div>
-        <div class="summary-item total">
-            <div class="label">Total</div>
-            <div class="value">Rs. 1900</div>
-        </div>
-    </div>
-    
-    <!-- Payment Method -->
-    <div class="payment-method">
-        <h3>Payment Method</h3>
-        <div class="payment-options">
-            <label class="payment-option">
-                <input type="checkbox" name="payment" value="cash" checked>
-                <span>Cash</span>
-            </label>
-            <label class="payment-option">
-                <input type="checkbox" name="payment" value="e-wallet">
-                <span>E-Wallet</span>
-            </label>
-            <label class="payment-option">
-                <input type="checkbox" name="payment" value="credit">
-                <span>Credit</span>
-            </label>
-        </div>
-    </div>
-    
-    <!-- Order Actions -->
-    <div class="order-actions">
-        <button class="clear-cart-btn">Clear Cart</button>
-        <button class="place-order-btn">Place Order</button>
-    </div>
-</div>
 </div>
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const filterButtons = document.querySelectorAll(".filter-btn");
     const items = document.querySelectorAll(".menu-item");
+    const noItemsMessage = document.getElementById("no-items-message");
 
     filterButtons.forEach(btn => {
         btn.addEventListener("click", () => {
@@ -326,18 +151,28 @@ document.addEventListener("DOMContentLoaded", function() {
             btn.classList.add("active");
 
             const category = btn.dataset.category;
+            let visibleCount = 0;
 
             items.forEach(item => {
                 if (category === "all" || item.dataset.category === category) {
                     item.style.display = "block";
+                    visibleCount++;
                 } else {
                     item.style.display = "none";
                 }
             });
+
+            // Toggle "No items available" message
+            if (visibleCount === 0) {
+                noItemsMessage.style.display = "block";
+            } else {
+                noItemsMessage.style.display = "none";
+            }
         });
     });
 });
 </script>
+
 {% endblock %}
 
 {% endblock %}
