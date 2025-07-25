@@ -1,6 +1,475 @@
 {% extends "base.html" %}
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/menu.css') }}">
+<style>
+:root {
+    --primary-color: #2563eb;
+    --secondary-color: #f59e0b;
+    --accent-color: #10b981;
+    --danger-color: #ef4444;
+    --dark-color: #1f2937;
+    --light-color: #f8fafc;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --gradient-primary: linear-gradient(135deg, #cd916e 0%, #776351 100%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+
+
+#menu {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-xl);
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px 20px;
+    background: var(--gradient-primary);
+    border-radius: 16px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.page-header h1 {
+    font-size: 2.1rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.page-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+    font-weight: 300;
+}
+
+.alert {
+    padding: 16px 20px;
+    margin: 20px 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 500;
+    box-shadow: var(--shadow-md);
+    animation: slideInDown 0.5s ease-out;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    border-left: 4px solid var(--accent-color);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+    border-left: 4px solid var(--danger-color);
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    padding: 5px;
+    border-radius: 50%;
+}
+
+.btn-close:hover {
+    opacity: 1;
+    background: rgba(0,0,0,0.1);
+}
+
+.category-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 40px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-md);
+    align-items: center;
+}
+
+.filter-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--dark-color);
+    margin-right: 15px;
+    position: relative;
+}
+
+.filter-title::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 20px;
+    background: var(--border-color);
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    border: none;
+    font-size:1.2rem;
+    border-radius: 25px;
+    background: white;
+    color: var(--dark-color);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: var(--gradient-primary);
+    transition: left 0.3s ease;
+    z-index: 0;
+}
+
+.filter-btn span {
+    position: relative;
+    z-index: 1;
+}
+
+.filter-btn:hover::before {
+    left: 0;
+}
+
+.filter-btn:hover {
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.filter-btn.active {
+    background: var(--gradient-primary);
+    color: white;
+    box-shadow: var(--shadow-lg);
+}
+
+.category-section {
+    margin-bottom: 50px;
+}
+
+.section-header {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.section-title {
+    font-size: 2rem;
+    font-weight: 800;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: var(--gradient-secondary);
+    border-radius: 2px;
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+    padding: 20px 0;
+}
+
+.menu-item {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.menu-item:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: var(--shadow-xl);
+    z-index: 10;
+}
+
+.item-image {
+    height: 220px;
+    position: relative;
+    overflow: hidden;
+    background: var(--gradient-accent);
+}
+
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.menu-item:hover .item-image img {
+    transform: scale(1.1);
+}
+
+.item-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: var(--gradient-secondary);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: var(--shadow-md);
+    z-index: 2;
+}
+
+.popular-tag {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: var(--gradient-accent);
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 2;
+    animation: pulse 2s infinite;
+}
+
+.item-details {
+    padding: 25px;
+}
+
+.item-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--dark-color);
+    line-height: 1.3;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.item-description {
+    color: #6b7280;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    padding-top: 5px;
+}
+
+.item-price {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--danger-color);
+    display: block;
+    padding-top: 4px;
+}
+
+.add-to-cart {
+    width: 100%;
+    padding: 12px 20px;
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.add-to-cart::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+.add-to-cart:hover::before {
+    left: 100%;
+}
+
+.add-to-cart:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    background-color: #0056b3;
+}
+
+.add-to-cart:active {
+    transform: translateY(0);
+}
+
+.no-items-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+    font-size: 1.1rem;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translate3d(0, -100%, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 30px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.menu-item:nth-child(1) { animation-delay: 0.1s; }
+.menu-item:nth-child(2) { animation-delay: 0.2s; }
+.menu-item:nth-child(3) { animation-delay: 0.3s; }
+.menu-item:nth-child(4) { animation-delay: 0.4s; }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    #menu {
+        margin: 10px;
+        padding: 15px;
+        border-radius: 15px;
+    }
+
+    .page-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .page-header p {
+        font-size: 1rem;
+    }
+
+    .menu-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .category-filter {
+        padding: 15px;
+        justify-content: center;
+    }
+
+    .filter-btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+
+    .section-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header {
+        padding: 20px 15px;
+    }
+
+    .page-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .item-details {
+        padding: 20px;
+    }
+
+    .item-name {
+        font-size: 1.2rem;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -11,27 +480,43 @@
                                                       {% endif %}
                                                     {% endfor %}
                                                 {% endwith %}">
-                 {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                  {% for category, message in messages %}
-                    {% if 'cart_' in category %}
-                      <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
-                        <span>{{ message }}</span>
-                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
-                      </div>
-                    {% endif %}
-                  {% endfor %}
-                {% endif %}
-            {% endwith %}
-            <div class="category-filter">
-        <div class="filter-title">Categories</div>
-        <button class="filter-btn active" data-category="all">All</button>
-{% for category in categories %}
-    <button class="filter-btn" data-category="{{ category.name }}">{{ category.name }}</button>
-{% endfor %}
 
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i class="fas fa-utensils"></i> Our Menu</h1>
+        <p>Discover our delicious selection of carefully crafted dishes</p>
     </div>
 
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if 'cart_' in category %}
+                    <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                        <span><i class="fas fa-{% if category.split('_')[1] == 'success' %}check-circle{% else %}exclamation-triangle{% endif %}"></i> {{ message }}</span>
+                        <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Category Filter -->
+    <div class="category-filter">
+        <div class="filter-title"><i class="fas fa-filter"></i> Categories</div>
+        <button class="filter-btn active" data-category="all">
+            <span><i class="fas fa-th-large"></i> All</span>
+        </button>
+        {% for category in categories %}
+            <button class="filter-btn" data-category="{{ category.name }}">
+                <span>{{ category.name }}</span>
+            </button>
+        {% endfor %}
+    </div>
+
+    <!-- Menu Items by Category -->
     {% for category_name, items in menu_items.items() %}
         {% if items %}
         <div class="category-section">
@@ -44,12 +529,12 @@
                 <div class="menu-item"
                      data-id="{{ item.id }}"
                      data-name="{{ item.name }}"
-                     data-price="{{  item.price  }}"
-                     data-image="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/250/160' }}"
+                     data-price="{{ item.price }}"
+                     data-image="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/320/220' }}"
                      data-category="{{ category_name }}">
 
                     <div class="item-image">
-                        <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/250/160' }}" alt="{{ item.name }}">
+                        <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/320/220' }}" alt="{{ item.name }}">
                         <div class="item-badge">{{ category_name }}</div>
                         {% if item.is_popular %}
                         <div class="popular-tag"><i class="fas fa-star"></i></div>
@@ -57,73 +542,93 @@
                     </div>
 
                     <div class="item-details">
-                        <h3 style="font-size:20px;font-weight:bolder;" class="item-name">{{ item.name }}</h3>
+                        <h3 class="item-name">{{ item.name }}</h3>
                         <p class="item-description">{{ item.description or 'No description available.' }}</p>
                         
-                        <span style="padding-top:4px;" class="item-price">Rs. {{ '%.2f' % (item.price) }}</span><br>
+                        <span class="item-price">Rs. {{ '%.2f' % (item.price) }}</span>
+                        
                         <form method="POST" action="{{ url_for('add_to_cart') }}">
-                          <input type="hidden" name="item_id" value="{{ item.id }}">
-                          <input type="hidden" name="item_name" value="{{ item.name }}">
-                          <input type="hidden" name="item_price" value="{{ '%.2f' % (item.price) }}">
-                          <input type="hidden" name="item_image" value="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/250/160' }}">
-                          <input type="hidden" name="category" value="{{ category_name }}">
-                          <button type="submit" class="add-to-cart"><i class="fas fa-shopping-cart" style="padding-right:4px;"></i>Add to Cart</button>
-                      </form>
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                            <input type="hidden" name="item_name" value="{{ item.name }}">
+                            <input type="hidden" name="item_price" value="{{ '%.2f' % (item.price) }}">
+                            <input type="hidden" name="item_image" value="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/320/220' }}">
+                            <input type="hidden" name="category" value="{{ category_name }}">
+                            <input type="hidden" name="source" value="user_menu">
 
+                            <button type="submit" class="add-to-cart">
+                                <i class="fas fa-shopping-cart"></i>
+                                Add to Cart
+                            </button>
+                        </form>
                     </div>
-
                 </div>
                 {% endfor %}
             </div>
-
         </div>
         {% else %}
         <div class="category-section">
             <div class="section-header">
                 <h2 class="section-title">{{ category_name }}</h2>
             </div>
-            <p>No items for {{ current_day }}.</p>
+            <div class="no-items-message">
+                <p>No items available for {{ current_day }}.</p>
+            </div>
         </div>
         {% endif %}
     {% endfor %}
-
-
 </div>
+
 {% block extra_js %}
 <script>
+    // Auto-dismiss flash messages
     setTimeout(() => {
-    const flashMessages = document.querySelectorAll('.alert');
-    flashMessages.forEach(msg => {
-      msg.style.transition = 'opacity 0.5s ease';
-      msg.style.opacity = '0';
-      setTimeout(() => msg.remove(), 500); // Remove after fade-out
-    });
-  }, 3000); // 3 seconds
-</script>
+        const flashMessages = document.querySelectorAll('.alert');
+        flashMessages.forEach(msg => {
+            msg.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            msg.style.opacity = '0';
+            msg.style.transform = 'translateY(-20px)';
+            setTimeout(() => msg.remove(), 500);
+        });
+    }, 3000);
 
+    // Category filtering with enhanced animations
+    document.addEventListener("DOMContentLoaded", function() {
+        const filterButtons = document.querySelectorAll(".filter-btn");
+        const items = document.querySelectorAll(".menu-item");
 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const filterButtons = document.querySelectorAll(".filter-btn");
-    const items = document.querySelectorAll(".menu-item");
+        filterButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                // Remove active class from all buttons
+                filterButtons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
 
-    filterButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            filterButtons.forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
+                const category = btn.dataset.category;
 
-            const category = btn.dataset.category;
+                // Filter items with staggered animation
+                items.forEach((item, index) => {
+                    if (category === "all" || item.dataset.category === category) {
+                        item.style.display = "block";
+                        item.style.animation = `fadeInUp 0.6s ease-out ${index * 0.1}s both`;
+                    } else {
+                        item.style.display = "none";
+                    }
+                });
+            });
+        });
 
-            items.forEach(item => {
-                if (category === "all" || item.dataset.category === category) {
-                    item.style.display = "block";
-                } else {
-                    item.style.display = "none";
-                }
+        
+        // Add enhanced hover effects
+        const menuItems = document.querySelectorAll('.menu-item');
+        menuItems.forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.zIndex = '10';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.zIndex = '1';
             });
         });
     });
-});
 </script>
 {% endblock %}
 

@@ -1448,11 +1448,12 @@ def user_menu():
 def add_to_cart():
     user_id = session['user_id']
     item_id = request.form.get('item_id')
+    source = request.form.get('source')  # Get source page info
     item = Item.query.get(item_id)
 
     if not item:
         flash('Invalid item.', 'cart_error')
-        return redirect(url_for('user_menu'))
+        return redirect(url_for(source))  # fallback redirect to source
 
     today = date.today()
 
@@ -1471,13 +1472,18 @@ def add_to_cart():
             item_id=item.id,
             quantity=1,
             created_at=datetime.utcnow(),
-            created_date=today  # ✅ Important: Set the created_date
+            created_date=today
         )
         db.session.add(new_item)
 
     db.session.commit()
-    flash(f'Added \"{item.name}\" to cart', 'cart_success')
+    flash(f'Added "{item.name}" to cart', 'cart_success')
+
+    # ✅ Redirect back to the page where the request came from
+    if source == 'dashboard':
+        return redirect(url_for('dashboard'))
     return redirect(url_for('user_menu'))
+
 
 @app.route('/cart')
 @login_required
@@ -1696,7 +1702,7 @@ def checkout():
                            tax=tax,
                            service_fee=service_fee,
                            total=total,
-                           has_errors=False)
+                           has_errors=False,active_page="cart")
 
 
 
