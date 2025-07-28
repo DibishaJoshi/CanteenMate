@@ -65,7 +65,7 @@
         }
         
         .stat-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #eaa1f3ff 0%, #ce5b6aff 100%);
             color: white;
             padding: 20px;
             border-radius: 12px;
@@ -74,15 +74,15 @@
         }
         
         .stat-card.secondary {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: linear-gradient(135deg, #79a1c4ff 0%, #00f2fe 100%);
         }
         
         .stat-card.success {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            background: linear-gradient(135deg, #44845aff 0%, #38f9d7 100%);
         }
         
         .stat-card.warning {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            background: linear-gradient(135deg, #dc94a9ff 0%, #c8b962ff 100%);
         }
         
         .stat-card i {
@@ -93,10 +93,13 @@
         .stat-card h3 {
             font-size: 2em;
             margin-bottom: 5px;
+            padding-left:8px;
         }
         
         .stat-card small {
             opacity: 0.9;
+            padding: 10px;
+            font-size:18px;
         }
         
         .alert {
@@ -250,6 +253,7 @@
         .reviews-count {
             color: #666;
             font-size: 14px;
+            padding-left:10px;
         }
         
         .review-card {
@@ -509,8 +513,7 @@
                             <div class="review-card">
                                 <div class="review-header">
                                     <div class="review-meta">
-                                        <span class="username">{{ review.user.username }}</span>
-                                        <span>reviewed</span>
+                                        <span class="username">{{ review.user.fullname }}</span>
                                         <span class="item-name">{{ review.item.name }}</span>
                                         <div class="rating-stars">
                                             {% for i in range(1, 6) %}
@@ -526,7 +529,7 @@
                                 </div>
                                 
                                 <div class="review-content">
-                                    {{ review.content }}
+                                    {{ review.comment }}
                                 </div>
                                 
                                 <div class="review-date">
@@ -559,7 +562,7 @@
                         <div class="pagination">
                             {% if reviews.has_prev %}
                                 <a href="{{ url_for('admin_reviews', page=reviews.prev_num, rating=current_rating_filter, item=current_item_filter, verified=current_verification_filter) }}">
-                                    <i class="fas fa-chevron-left"></i> Previous
+                                    <i class="fas fa-angles-left"></i>  Previous
                                 </a>
                             {% endif %}
                             
@@ -579,7 +582,7 @@
                             
                             {% if reviews.has_next %}
                                 <a href="{{ url_for('admin_reviews', page=reviews.next_num, rating=current_rating_filter, item=current_item_filter, verified=current_verification_filter) }}">
-                                    Next <i class="fas fa-chevron-right"></i>
+                                    Next <i class="fas fa-angles-right"></i>
                                 </a>
                             {% endif %}
                         </div>
@@ -595,13 +598,13 @@
                 
                 <!-- Recent Reviews Sidebar -->
                 <div class="recent-reviews">
-                    <h3><i class="fas fa-clock"></i> Recent Reviews</h3>
+                    <h4><i class="fas fa-clock"></i> Recent Reviews</h4>
                     {% if recent_reviews %}
                         {% for review in recent_reviews %}
                             <div class="recent-review-item">
                                 <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 5px;">
-                                    <strong>{{ review.user.username }}</strong>
-                                    <div class="rating-stars">
+                                    <strong>{{ review.user.fullname }}</strong>
+                                    <div class="rating-stars" style="padding-left:10px;">
                                         {% for i in range(1, 6) %}
                                             <i class="fas fa-star{% if i > review.rating %} text-muted{% endif %}"></i>
                                         {% endfor %}

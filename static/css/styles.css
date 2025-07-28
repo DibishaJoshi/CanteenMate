@@ -33,9 +33,44 @@ body {
     overflow: hidden;
 }
 
+/* Alert Styles */
+
+.alert {
+    padding: 16px 20px;
+    margin: 20px 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 500;
+    box-shadow: var(--shadow-md);
+    animation: slideInDown 0.5s ease-out;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    border-left: 4px solid var(--accent-color);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+    border-left: 4px solid var(--danger-color);
+}
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    padding: 5px;
+    border-radius: 50%;
+}
 /* Sidebar Styles */
 .sidebar {
-    width: 250px;
+    width: 300px;
     background-color: var(--sidebar-bg);
     height: 100%;
     overflow-y: auto;
@@ -83,8 +118,8 @@ body {
 }
 
 .menu-icon {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -99,7 +134,7 @@ body {
 }
 
 .menu-text {
-    font-size: 14px;
+    font-size: 18px;
 }
 
 /* Main Content Styles */
@@ -336,7 +371,7 @@ body {
 /* Page Content */
 .page-content {
     flex: 1;
-    /* padding: 20px; */
+     padding: 20px 0px  20px 0px; 
     overflow-y: auto;
     
 }
@@ -369,7 +404,7 @@ body {
     max-width: 1600px;
     margin: 0 auto;
     gap: 20px;
-    padding: 20px;
+    padding: 0px;
     min-height: 100vh;
 }
 
@@ -517,7 +552,7 @@ body {
     box-shadow: var(--shadow-sm);
     position: relative;
     overflow: hidden;
-    font-size: 1.2rem;
+    font-size: 1rem;
 }
 
 .filter-btn::before {
@@ -537,9 +572,7 @@ body {
     z-index: 1;
 }
 
-.filter-btn:hover::before {
-    left: 0;
-}
+
 
 .filter-btn:hover {
     color: white;
@@ -606,6 +639,7 @@ body {
     height: 240px;
     position: relative;
     overflow: hidden;
+    margin: 10px;
     background: var(--gradient-accent);
     border-radius: 15px;
 }
@@ -615,6 +649,9 @@ body {
     height: 240px;
     object-fit: cover;
     transition: transform 0.5s ease;
+        
+        background-color: white;
+        border-radius: 10px;
 }
 
 
