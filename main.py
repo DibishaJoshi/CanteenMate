@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime,timedelta,date,time
 from flask_socketio import SocketIO,join_room, leave_room
-from sqlalchemy import func, desc, asc
+from sqlalchemy import func, desc, asc,and_
 import recommendation
 
 
@@ -1263,7 +1263,7 @@ def reorder(order_id):
     # Add items to cart (implement your cart logic here)
     # For now, redirect to menu or cart page
     flash('Items have been added to your cart!', 'success')
-    return redirect(url_for('menu'))
+    return redirect(url_for('user_menu'))
 
 # ===================== ADMIN ROUTES =====================
 
@@ -1282,7 +1282,7 @@ def admin_reviews():
     rating_filter = request.args.get('rating', type=int)
     item_filter = request.args.get('item', type=int)
     verification_filter = request.args.get('verified')
-    per_page = 20
+    per_page = 10
     
     # Build query
     reviews_query = Review.query.join(User).join(Item)
@@ -1900,12 +1900,114 @@ def transaction():
     return render_template('transaction_history.html',user=user, active_page='transaction')
 
     
-@app.route('/profile')
+
+@app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    user_id = session['user_id']
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        fullname = request.form.get('fullname')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+
+        # Validate email uniqueness
+        email_exists = User.query.filter(and_(User.email == email, User.id != user.id)).first()
+        if email_exists:
+            flash('Email is already used by another user.', 'profile_danger')
+            return redirect(url_for('profile'))
+
+        # Validate phone uniqueness (if phone provided)
+        if phone:
+            phone_exists = User.query.filter(and_(User.phone == phone, User.id != user.id)).first()
+            if phone_exists:
+                flash('Phone number is already used by another user.', 'profile_danger')
+                return redirect(url_for('profile'))
+
+        # Update user info
+        user.fullname = fullname
+        user.email = email
+        user.phone = phone
+
+        try:
+            db.session.commit()
+            flash('Profile updated successfully!', 'profile_success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Something went wrong while saving changes.', 'profile_danger')
+
+        return redirect(url_for('profile'))
+
+    # Calculate total orders count
+    total_orders = Order.query.filter_by(user_id=user.id).count()
+
+   
+    total_points = db.session.query(
+        db.func.coalesce(db.func.sum(Order.total_amount), 0)
+    ).filter(Order.user_id == user.id).scalar()
+    points = int(total_points // 100)
+
+
+    # Calculate months since user joined
+    months_since_joined = (datetime.utcnow().year - user.created_at.year) * 12 + (datetime.utcnow().month - user.created_at.month)
+    if months_since_joined < 0:
+        months_since_joined = 0
+
+    return render_template(
+        'profile.html', 
+        user=user, 
+        total_orders=total_orders,
+        total_points=points,
+        months_since_joined=months_since_joined,
+        active_page='profile'
+    )
+
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        if user:
+            session['reset_user_id'] = user.id
+            flash("Email found. Please reset your password.", "success")
+            return redirect(url_for('reset_password'))
+        else:
+            flash("Email not found!", "danger")
+    return render_template('forgot_password.html')
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    user_id = session.get('reset_user_id')
+    if not user_id:
+        flash("Session expired. Please try again.", "warning")
+        return redirect(url_for('forgot_password'))
+
     user = User.query.get(user_id)
-    return render_template('profile.html', user=user,active_page='profile')
+    if not user:
+        flash("Invalid user!", "danger")
+        return redirect(url_for('forgot_password'))
+
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if new_password != confirm_password:
+            flash("Passwords do not match!", "danger")
+        else:
+            user.password = generate_password_hash(new_password)
+            db.session.commit()
+            session.pop('reset_user_id', None)
+            flash("Password reset successful! Please log in.", "success")
+            return redirect(url_for('login'))
+
+    return render_template('reset_password.html')
 
 if __name__ == '__main__':
     with app.app_context():

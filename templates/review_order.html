@@ -1,9 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
+    :root {
+    --primary-color: #2563eb;
+    --secondary-color: #f59e0b;
+    --accent-color: #10b981;
+    --danger-color: #ef4444;
+    --dark-color: #1f2937;
+    --light-color: #f8fafc;
+    --border-color: #e2e8f0;
+    --recommendation-color: #667eea;
+    --collaborative-color: #8b5cf6;
+    --popular-color: #f59e0b;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --gradient-primary: linear-gradient(135deg, #cd916e 0%, #776351 100%);
+    --gradient-stat: linear-gradient(135deg, #cda791ff 0%, #776351 100%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --gradient-collaborative: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+    --gradient-popular: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+}
+small{
+    font-size:16px;
+}
+.form-check-label{
+    font-size:18px;
+}
+
 /* Enhanced Review Container Styles */
 .review-container {
-    max-width: 1200px;
+    /*max-width: 1200px;*/
+    background:white;
+    border-radius:10px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -13,7 +44,7 @@
     border-radius: 12px;
     margin-bottom: 25px;
     padding: 20px;
-    background-color: #fff;
+    background: white;
     box-shadow: 0 4px 6px rgba(0,0,0,0.07);
     transition: all 0.3s ease;
 }
@@ -147,26 +178,31 @@
 .btn-success-enhanced {
     background: linear-gradient(135deg, #28a745, #20c997);
     color: white;
+    font-size:18px;
 }
 
 .btn-primary-enhanced {
-    background: linear-gradient(135deg, #007bff, #0056b3);
+    background: var(--gradient-primary);
     color: white;
+    font-size:18px;
 }
 
 .btn-secondary-enhanced {
     background: linear-gradient(135deg, #6c757d, #5a6268);
     color: white;
+    font-size:18px;
 }
 
 .btn-outline-enhanced {
-    background: white;
-    border: 2px solid #007bff;
-    color: #007bff;
+    
+    border: 2px solid #43351cff;
+    color: var(--gradient-primary);
+    font-size:18px;
+    padding-right:10px;
 }
 
 .btn-outline-enhanced:hover {
-    background: #007bff;
+    background:var(--gradient-collaborative);
     color: white;
 }
 
@@ -185,12 +221,15 @@
     background-color: #e7f3ff;
     color: #0066cc;
     border: 1px solid #b3d9ff;
+    font-size:20px;
 }
 
 .review-badge.pending {
     background-color: #fff3cd;
     color: #856404;
+    font-size:18px;
     border: 1px solid #ffeaa7;
+    margin-right:10px;
 }
 
 /* Existing Review Display */
@@ -213,12 +252,18 @@
     background: linear-gradient(90deg, #28a745, #20c997);
     border-radius: 12px 12px 0 0;
 }
-
+.rating-display strong{
+    font-size:19px;
+}
+strong{
+    font-size:19px;
+}
 .rating-display {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
+    
 }
 
 .rating-stars {
@@ -228,7 +273,7 @@
 
 .rating-stars .star {
     color: #ffc107;
-    font-size: 1.2rem;
+    font-size: 1.8rem;
 }
 
 .rating-stars .star.empty {
@@ -257,6 +302,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size:16px;
 }
 
 .review-item {
@@ -294,6 +340,7 @@
     color: #333;
     margin-bottom: 8px;
     display: block;
+    font-size:22px;
 }
 
 .form-control-enhanced {
@@ -322,7 +369,7 @@
 }
 
 .order-summary-card .review-header {
-    color: white;
+    color: black;
     border-bottom: 2px solid rgba(255,255,255,0.3);
     font-size: 1.5rem;
 }
@@ -330,6 +377,7 @@
 .order-summary-card .card-body {
     padding: 0;
     margin-top: 15px;
+    color:black;
 }
 
 .order-summary-card p {
@@ -338,7 +386,7 @@
 }
 
 .order-summary-card .badge {
-    font-size: 0.9rem;
+    font-size: 1.2rem;
     padding: 6px 12px;
 }
 
@@ -413,7 +461,7 @@
 .stat-card {
     text-align: center;
     padding: 15px;
-    background: white;
+    background: var(--gradient-primary);
     border-radius: 8px;
     border: 1px solid #e0e0e0;
 }
@@ -421,12 +469,12 @@
 .stat-value {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #007bff;
+    color: #fdfdfdff;
     margin-bottom: 5px;
 }
 
 .stat-label {
-    color: #666;
+    color: white;
     font-size: 0.9rem;
     font-weight: 500;
 }
@@ -498,7 +546,7 @@
         {% if reviewed_item_ids and item.item_id in reviewed_item_ids %}
             {% set review = reviews_by_item[item.item_id] %}
             <div class="existing-review">
-                <h6><i class="fas fa-user-check"></i> Your Review</h6>
+                <h2 style="padding-bottom:8px;"><i class="fas fa-user-check"></i> Your Review</h2>
                 
                 <div class="rating-display">
                     <strong>Item Rating:</strong>
@@ -536,14 +584,14 @@
                 
                 <div style="margin-top: 15px;">
                     <strong>Your Review:</strong>
-                    <p style="margin-top: 8px; font-style: italic; color: #555;">
+                    <p style="margin-top: 8px; font-size:20px;font-style: italic; color: #555;">
                         "{{ review.comment or 'No comment provided.' }}"
                     </p>
                 </div>
                 
                 <div style="margin-top: 15px;">
                     <strong>Recommended:</strong>
-                    <span class="badge {{ 'bg-success' if review.would_recommend else 'bg-warning' }}">
+                    <span style="font-size:20px;" class="badge {{ 'bg-success' if review.would_recommend else 'bg-warning' }}">
                         {{ 'Yes' if review.would_recommend else 'No' }}
                     </span>
                 </div>
@@ -605,7 +653,7 @@
 
         <!-- Review Form -->
         <div class="review-form" id="reviewForm_{{ item.item_id }}" style="display:none;">
-            <h6><i class="fas fa-star"></i> Write Your Review for {{ item.name }}</h6>
+            <h2 style="padding-bottom:8px;"><i class="fas fa-star"></i> Write Your Review for {{ item.name }}</h2>
             <form action="{{ url_for('submit_review', order_id=order.id) }}" method="POST" onsubmit="showLoading()">
                 <input type="hidden" name="item_id" value="{{ item.item_id }}">
 
@@ -698,7 +746,7 @@
     <!-- Order Summary Card -->
     <div class="card review-card order-summary-card">
         <div class="review-header">
-            <i class="fas fa-receipt"></i> Order Summary
+            <i class="fas fa-receipt" style="padding-right:10px;"></i> Order Summary
         </div>
         <div class="card-body">
             <div class="row">
