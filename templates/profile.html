@@ -1,23 +1,58 @@
 {% extends "base.html" %}
 {% block extra_css %}
 <style>
+    /* Your existing CSS unchanged */
+    :root {
+        --primary-color: #f06d28;
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        --transition: all 0.4s ease;
+        --border-radius: 16px;
+        --spacing-sm: 12px;
+        --spacing-md: 20px;
+        --spacing-lg: 30px;
+        --spacing-xl: 40px;
+    }
+
     #profile {
-        padding: 25px;
+        padding: var(--spacing-md);
+        background: var(--primary-gradient);
+        min-height: 100vh;
+        position: relative;
     }
 
     #profile .profile-container {
+        max-width: 1200px;
+        margin: 0 auto;
         display: flex;
-        gap: 25px;
-        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: var(--spacing-lg);
+        transition: var(--transition);
+    }
+
+    /* Add this class when editing */
+    #profile .profile-container.editing {
+        justify-content: flex-start;
+        display: grid;
+        grid-template-columns: 350px 1fr;
     }
 
     #profile .profile-card {
-        background-color: var(--white);
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: var(--shadow);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        padding: var(--spacing-xl);
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
         text-align: center;
-        flex: 0 0 300px;
+        width: 350px;
+        height: fit-content;
+        transition: var(--transition);
+    }
+
+    #profile .profile-container.editing .profile-card {
+        position: sticky;
+        top: var(--spacing-md);
     }
 
     #profile .profile-avatar {
@@ -25,199 +60,453 @@
         height: 120px;
         border-radius: 50%;
         object-fit: cover;
-        margin-bottom: 15px;
+        border: 4px solid var(--primary-color);
+        margin-bottom: var(--spacing-md);
     }
 
     #profile .profile-name {
-        font-size: 20px;
-        font-weight: 600;
-        color: var(--text-dark);
-        margin-bottom: 5px;
+        font-size: 24px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 8px;
     }
 
     #profile .profile-email {
-        font-size: 14px;
-        color: var(--text-light);
-        margin-bottom: 20px;
+        font-size: 15px;
+        color: #666;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    #profile .profile-role {
+        display: inline-block;
+        background: linear-gradient(135deg, var(--primary-color), #e55f1e);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: var(--spacing-lg);
     }
 
     #profile .profile-stats {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-lg);
     }
 
     #profile .stat-box {
-        flex: 1;
-        padding: 10px;
-        background-color: rgba(240, 109, 40, 0.05);
-        border-radius: 8px;
-        margin: 0 5px;
-    }
-
-    #profile .stat-box .value {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--primary-color);
-    }
-
-    #profile .stat-box .label {
-        font-size: 12px;
-        color: var(--text-light);
-    }
-
-    #profile .profile-actions {
-        margin-top: 15px;
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-    }
-
-    #profile .profile-action-btn {
-        padding: 8px 15px;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
+        padding: var(--spacing-md) var(--spacing-sm);
+        background: rgba(240, 109, 40, 0.1);
+        border-radius: 12px;
+        border: 1px solid rgba(240, 109, 40, 0.2);
         transition: var(--transition);
     }
 
+    #profile .stat-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(240, 109, 40, 0.2);
+    }
+
+    #profile .stat-box .value {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--primary-color);
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    #profile .stat-box .label {
+        font-size: 11px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 600;
+    }
+
+    #profile .profile-actions {
+        display: flex;
+        gap: var(--spacing-sm);
+    }
+
+    #profile .profile-action-btn {
+        flex: 1;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
     #profile .edit-profile-btn {
-        background-color: var(--primary-color);
+        background: linear-gradient(135deg, var(--primary-color), #e55f1e);
         color: white;
+    }
+
+    #profile .edit-profile-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(240, 109, 40, 0.4);
     }
 
     #profile .logout-btn {
-        background-color: #ddd;
-        color: var(--text-dark);
-    }
-
-    #profile .profile-details {
-        flex: 1;
-        background-color: var(--white);
-        padding: 25px;
-        border-radius: 12px;
-        box-shadow: var(--shadow);
-    }
-
-    #profile .tabs-header {
-        display: flex;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    #profile .tab-btn {
-        background: none;
-        border: none;
-        font-size: 14px;
-        font-weight: 500;
-        padding: 8px 15px;
-        border-radius: 8px;
-        cursor: pointer;
-        color: var(--text-dark);
-    }
-
-    #profile .tab-btn.active {
-        background-color: var(--primary-color);
+        background: #6c757d;
         color: white;
     }
 
-    #profile .tab-content {
-        border-top: 1px solid var(--border-color);
-        padding-top: 20px;
+    #profile .logout-btn:hover {
+        background: #dc3545;
+        transform: translateY(-2px);
+    }
+
+    #profile .profile-details {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        padding: var(--spacing-xl);
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        display: none;
+        opacity: 0;
+        transform: translateX(30px);
+        transition: var(--transition);
+    }
+
+    /* Show when editing */
+    #profile .profile-details.show {
+        display: block;
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    #profile .profile-details h3 {
+        margin-bottom: var(--spacing-lg);
+        font-size: 24px;
+        color: #333;
+        font-weight: 700;
+        position: relative;
+        padding-bottom: var(--spacing-sm);
+    }
+
+    #profile .profile-details h3::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(135deg, var(--primary-color), #e55f1e);
+        border-radius: 2px;
+    }
+
+    #profile .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
     }
 
     #profile .form-row {
-        margin-bottom: 15px;
+        margin-bottom: var(--spacing-md);
     }
 
     #profile .form-label {
         display: block;
-        font-size: 13px;
-        color: var(--text-dark);
-        margin-bottom: 5px;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     #profile .form-input {
         width: 100%;
-        padding: 10px;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        font-size: 14px;
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        font-size: 15px;
+        transition: var(--transition);
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    #profile .form-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(240, 109, 40, 0.1);
+        background: rgba(255, 255, 255, 1);
+    }
+
+    #profile .form-input:read-only {
+        background-color: rgba(0, 0, 0, 0.05);
+        cursor: not-allowed;
+    }
+
+    #profile .btn-group {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-lg);
+        padding-top: var(--spacing-lg);
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        justify-content: flex-end;
+    }
+
+    #profile .save-btn, #profile .cancel-btn {
+        padding: var(--spacing-md) var(--spacing-lg);
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 120px;
     }
 
     #profile .save-btn {
-        background-color: var(--primary-color);
+        background: linear-gradient(135deg, var(--primary-color), #e55f1e);
         color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
     }
 
     #profile .save-btn:hover {
-        background-color: #e55f1e;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(240, 109, 40, 0.4);
+    }
+
+    #profile .cancel-btn {
+        background: #6c757d;
+        color: white;
+    }
+
+    #profile .cancel-btn:hover {
+        transform: translateY(-2px);
+        background: #5a6268;
+    }
+
+    #profile .message {
+        padding: 16px;
+        border-radius: 10px;
+        margin-bottom: var(--spacing-md);
+        display: none;
+    }
+
+    #profile .success-message {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    #profile .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        #profile {
+            padding: var(--spacing-sm);
+        }
+        
+        #profile .profile-container,
+        #profile .profile-container.editing {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        #profile .profile-card {
+            width: 100%;
+            max-width: 400px;
+            position: static !important;
+        }
+
+        #profile .profile-details {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        #profile .profile-actions {
+            flex-direction: column;
+        }
+
+        #profile .btn-group {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 480px) {
+        #profile .profile-card, #profile .profile-details {
+            padding: var(--spacing-md);
+        }
+        
+        #profile .profile-avatar {
+            width: 100px;
+            height: 100px;
+        }
+        
+        #profile .profile-stats {
+            gap: 8px;
+        }
+        
+        #profile .stat-box {
+            padding: 15px 8px;
+        }
+        
+        #profile .stat-box .value {
+            font-size: 18px;
+        }
     }
 </style>
 {% endblock %}
+
 {% block content %}
- <div id="profile" class="page">
-    <div class="profile-container">
+<div id="profile" class="page">
+    <!-- Add 'editing' class here if flashed messages exist -->
+    <div class="profile-container {% if get_flashed_messages() %}editing{% endif %}" id="profileContainer">
+
+        <!-- Profile Info Card -->
         <div class="profile-card">
-            <img src="{{ url_for('static', filename='img/user.png')}}" alt="User Avatar" class="profile-avatar">
+            <img src="{{ url_for('static', filename='img/user.png') }}" alt="User Avatar" class="profile-avatar">
+            
             <h2 class="profile-name">{{ user.fullname }}</h2>
             <p class="profile-email">{{ user.email }}</p>
-            
-            <div class="profile-stats">
+            <div class="profile-role">{{ user.role }}</div>
+
+           <div class="profile-stats">
                 <div class="stat-box">
-                    <p class="value">32</p>
-                    <p class="label">Orders</p>
+                    <span class="value">{{ total_orders }}</span>
+                    <span class="label">Orders</span>
                 </div>
                 <div class="stat-box">
-                    <p class="value">250</p>
-                    <p class="label">Points</p>
+                    <span class="value">{{ total_points|int }}</span>
+                    <span class="label">Points</span>
                 </div>
                 <div class="stat-box">
-                    <p class="value">8</p>
-                    <p class="label">Months</p>
+                    <span class="value">{{ months_since_joined }}</span>
+                    <span class="label">Months</span>
                 </div>
             </div>
-            
+
+
             <div class="profile-actions">
-                <button class="profile-action-btn edit-profile-btn">Edit Profile</button>
-                <button class="profile-action-btn logout-btn" onclick="window.location.href='{{ url_for('logout') }}'">Logout</button>
+                <button class="profile-action-btn edit-profile-btn" onclick="toggleProfileForm()" id="editBtn">
+                    Edit Profile
+                </button>
+                <button class="profile-action-btn logout-btn" onclick="handleLogout()">
+                    Logout
+                </button>
             </div>
         </div>
-        
-        <div class="profile-details">
-            <div class="tabs-header">
-                <button class="tab-btn active" data-tab="personal">Personal Info</button>
-                <button class="tab-btn" data-tab="address">Address</button>
-                <button class="tab-btn" data-tab="preferences">Preferences</button>
-            </div>
+
+        <!-- Edit Form (Initially Hidden) -->
+        <!-- Add 'show' class here if flashed messages exist -->
+        <div class="profile-details {% if get_flashed_messages() %}show{% endif %}" id="profile-form">
             
-            <div class="tab-content">
-                <div id="personal" class="tab-pane active">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        {% if 'profile_' in category %}
+                            <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                                <span>{{ message }}</span>
+                                <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endwith %}
+            <h3>Edit Personal Information</h3>
+            
+            <form method="POST" id="profileUpdateForm">
+                <div class="form-grid">
                     <div class="form-row">
                         <label class="form-label">Full Name</label>
-                        <input type="text" class="form-input" value="{{ user.fullname }}">
+                        <input type="text" name="fullname" class="form-input" value="{{ user.fullname }}" required>
                     </div>
                     <div class="form-row">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-input" value="{{ user.email }}">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-input" value="{{ user.email }}" required>
                     </div>
                     <div class="form-row">
                         <label class="form-label">Phone Number</label>
-                        <input type="tel" class="form-input" value="+977 9876543212">
+                        <input type="tel" name="phone" class="form-input" value="{{ user.phone or '' }}" placeholder="Your phone number">
                     </div>
                     <div class="form-row">
-                        <button class="save-btn">Save Changes</button>
+                        <label class="form-label">Role</label>
+                        <input type="text" class="form-input" value="{{ user.role }}" readonly>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">Member Since</label>
+                        <input type="text" class="form-input" value="{{ user.created_at.strftime('%B %Y') }}" readonly>
                     </div>
                 </div>
-            </div>
+                
+                <div class="btn-group">
+                    <button type="button" class="cancel-btn" onclick="toggleProfileForm()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="save-btn">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
         </div>
+
     </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set form visible if flash messages exist (injected by Jinja)
+    let isFormVisible = {{ 'true' if get_flashed_messages() else 'false' }};
+    
+    // Adjust initial button and classes on page load
+    window.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('profileContainer');
+        const form = document.getElementById('profile-form');
+        const editBtn = document.getElementById('editBtn');
+        
+        if (isFormVisible) {
+            container.classList.add('editing');
+            form.classList.add('show');
+            editBtn.innerHTML = 'Cancel Edit';
+            editBtn.style.background = '#6c757d';
+
+            // Optionally scroll form into view after update
+            form.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+
+    function toggleProfileForm() {
+        const container = document.getElementById('profileContainer');
+        const form = document.getElementById('profile-form');
+        const editBtn = document.getElementById('editBtn');
+        
+        isFormVisible = !isFormVisible;
+        
+        if (isFormVisible) {
+            container.classList.add('editing');
+            form.classList.add('show');
+            editBtn.innerHTML = 'Cancel Edit';
+            editBtn.style.background = '#6c757d';
+        } else {
+            container.classList.remove('editing');
+            form.classList.remove('show');
+            editBtn.innerHTML = '✏️ Edit Profile';
+            editBtn.style.background = 'linear-gradient(135deg, var(--primary-color), #e55f1e)';
+        }
+    }
+
+    function handleLogout() {
+        if (confirm('Are you sure you want to logout?')) {
+            window.location.href = '{{ url_for("logout") }}';
+        }
+    }
+</script>
 {% endblock %}

@@ -1276,9 +1276,7 @@ h1, h2, h3, h4 {
 @media (max-width: 992px) {
    
     
-    .content {
-        margin-left: 60px;
-    }
+    
     
     .nav-links li a {
         justify-content: center;

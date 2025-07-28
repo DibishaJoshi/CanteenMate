@@ -8,6 +8,28 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        :root {
+    --primary-color: #2563eb;
+    --secondary-color: #f59e0b;
+    --accent-color: #10b981;
+    --danger-color: #ef4444;
+    --dark-color: #1f2937;
+    --light-color: #f8fafc;
+    --border-color: #e2e8f0;
+    --recommendation-color: #667eea;
+    --collaborative-color: #8b5cf6;
+    --popular-color: #f59e0b;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --gradient-primary: linear-gradient(135deg, #cd916e 0%, #776351 100%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --gradient-collaborative: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+    --gradient-popular: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+}
+
         body {
             background-color: #f5f5f5;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -36,13 +58,13 @@
             color: #333;
         }
         .btn-primary {
-            background-color: #198754;
+            background: var(--gradient-primary);
             border-color: #198754;
             padding: 10px 20px;
             font-weight: 600;
         }
         .btn-primary:hover {
-            background-color: #146c43;
+            background: var(--gradient-collaborative);
             border-color: #146c43;
         }
         .form-label {
@@ -107,7 +129,7 @@
             </form>
             <div class="toggle-form">
                 <p>Don't have an account? <a href="javascript:void(0);" onclick="toggleForms()">Sign up</a></p>
-                <p><a href="#">Forgot password?</a></p>
+                <p><a href="{{ url_for('forgot_password') }}">Forgot password?</a></p>
             </div>
         </div>
 
