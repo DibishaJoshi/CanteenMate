@@ -151,20 +151,20 @@
             <form action="{{ url_for('signup') }}" method="POST">
                 <div class="mb-3">
                     <label for="fullname" class="form-label">Full Name</label>
-                    <input type="text" class="form-control" id="fullname" name="fullname" required>
+                    <input type="text" class="form-control" id="fullname" name="fullname" >
                 </div>
                 <div class="mb-3">
                     <label for="signup-email" class="form-label">Email address</label>
-                    <input type="email" class="form-control" id="signup-email" name="email" required>
+                    <input type="text" class="form-control" id="signup-email" name="email" >
                 </div>
                 
                 <div class="mb-3">
                     <label for="signup-password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="signup-password" name="password" required>
+                    <input type="password" class="form-control" id="signup-password" name="password" >
                 </div>
                 <div class="mb-3">
                     <label for="confirm-password" class="form-label">Confirm Password</label>
-                    <input type="password" class="form-control" id="confirm-password" name="confirm_password" required>
+                    <input type="password" class="form-control" id="confirm-password" name="confirm_password" >
                 </div>
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-primary">Sign Up</button>
