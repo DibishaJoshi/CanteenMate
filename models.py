@@ -148,6 +148,39 @@ class Order(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     total_amount = db.Column(db.Float, nullable=False)  
     khalti_token = db.Column(db.String(255), nullable=True)
+    esewa_transaction_code = db.Column(db.String(255), nullable=True)  # New field for eSewa
+
+    items = db.relationship('OrderItem', backref='order', lazy=True)
+
+    @property
+    def delivery_address(self):
+        parts = [self.building, self.floor]
+        return ', '.join([p for p in parts if p]) or "N/A"
+        
+    @property
+    def total_price(self):
+        return sum(item.quantity * item.price for item in self.items)
+    
+    @property
+    def payment_method_display(self):
+        """Return user-friendly payment method name"""
+        payment_methods = {
+            'cash': 'Cash on Delivery',
+            'card': 'Credit/Debit Card',
+            'khalti': 'Khalti',
+            'esewa': 'eSewa'
+        }
+        return payment_methods.get(self.payment, self.payment.title())
+    
+    @property
+    def payment_reference(self):
+        """Return payment reference ID based on payment method"""
+        if self.payment == 'khalti' and self.khalti_token:
+            return f"Khalti: {self.khalti_token[:20]}..."
+        elif self.payment == 'esewa' and self.esewa_ref_id:
+            return f"eSewa: {self.esewa_ref_id}"
+        else:
+            return "N/A"
 
     items = db.relationship('OrderItem', backref='order', lazy=True)
 
@@ -158,6 +191,30 @@ class Order(db.Model):
     @property
     def total_price(self):
         return sum(item.quantity * item.price for item in self.items)
+    @property
+    def primary_payment(self):
+        """Get the primary/latest payment for this order"""
+        return self.payments.order_by(Payment.created_at.desc()).first()
+    
+    @property
+    def payment_status(self):
+        """Get payment status from primary payment"""
+        payment = self.primary_payment
+        return payment.payment_status if payment else 'pending'
+    
+    @property
+    def payment_method_display(self):
+        """Get formatted payment method name"""
+        payment = self.primary_payment
+        if not payment:
+            return 'Unknown'
+        
+        payment_methods = {
+            'cash': 'Cash on Delivery',
+            'khalti': 'Khalti',
+            'esewa': 'eSewa'
+        }
+        return payment_methods.get(payment.payment_method, payment.payment_method.title())
 
 
 class OrderItem(db.Model):
@@ -187,6 +244,53 @@ class OrderAddon(db.Model):
     # Relationships
     order_item = db.relationship('OrderItem', backref='order_addons')
     addon = db.relationship('Addon', backref='order_addons')
+
+# Add these new models to your existing models.py file
+
+class Payment(db.Model):
+    __tablename__ = 'payments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    payment_method = db.Column(db.String(20), nullable=False)  # 'cash', 'khalti', 'esewa'
+    payment_status = db.Column(db.String(20), nullable=False, default='pending')  # 'pending', 'completed', 'failed', 'refunded'
+    amount = db.Column(db.Float, nullable=False)
+    
+    # Gateway specific fields
+    transaction_id = db.Column(db.String(255), nullable=True)  # Khalti/eSewa transaction ID
+    gateway_response = db.Column(db.Text, nullable=True)  # JSON response from gateway
+    
+    # Khalti specific fields
+    khalti_token = db.Column(db.String(255), nullable=True)
+    khalti_idx = db.Column(db.String(255), nullable=True)
+    
+    # eSewa specific fields
+    esewa_transaction_uuid = db.Column(db.String(255), nullable=True)
+    esewa_product_code = db.Column(db.String(100), nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    
+    # Relationships
+    order = db.relationship('Order', backref=db.backref('payments', lazy=True))
+    
+    def __repr__(self):
+        return f'<Payment {self.id}: {self.payment_method} - {self.payment_status}>'
+    
+    @property
+    def is_successful(self):
+        return self.payment_status == 'completed'
+    
+    @property
+    def payment_reference(self):
+        """Return payment reference based on payment method"""
+        if self.payment_method == 'khalti' and self.khalti_token:
+            return f"Khalti: {self.khalti_token[:20]}..."
+        elif self.payment_method == 'esewa' and self.transaction_id:
+            return f"eSewa: {self.transaction_id}"
+        else:
+            return "N/A"
 class CartItem(db.Model):
     __tablename__ = 'cart_items'
 

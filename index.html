@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Badge Example</title>
+<!-- FontAwesome CDN for icons -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+/>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f9f9f9;
+    margin: 40px;
+  }
+
+  /* Sidebar menu link */
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.1);
+    width: 220px;
+    font-weight: 600;
+    user-select: none;
+  }
+
+  .menu-item:hover {
+    background: #ffe6e6;
+  }
+
+  /* Badge */
+  .order_badge {
+    margin-left: auto; /* push to far right */
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 9999px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow:
+      0 2px 6px rgba(255, 75, 43, 0.5),
+      inset 0 -2px 4px rgba(255, 255, 255, 0.3);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    cursor: default;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+
+  .order_badge:hover {
+    background: linear-gradient(135deg, #ff5a7d, #ff6e4a);
+    transform: scale(1.1);
+  }
+</style>
+</head>
+<body>
+
+<a href="#" class="menu-item">
+  <i class="fas fa-shopping-cart"></i>
+  Orders
+  <span class="order_badge">5</span>
+</a>
+
+</body>
+</html>

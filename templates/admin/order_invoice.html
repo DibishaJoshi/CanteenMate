@@ -340,8 +340,10 @@
     />
     <div class="company-info">
       <strong>Invoice #{{ order.id }}</strong><br />
-      <strong>Date:</strong> {{ order.created_at.strftime('%B %d, %Y') }}<br />
-      <strong>Time:</strong> {{ order.created_at.strftime('%H:%M:%S') }}
+      <strong>Order Created:</strong>{{ order.created_at.strftime('%B %d, %Y')}} {{ order.created_at.strftime('%H:%M:%S') }}<br />
+      <strong>Invoice printed at:</strong> {{ printed_at.strftime('%B %d, %Y') }} {{ printed_at.strftime('%H:%M:%S') }}
+    
+
     </div>
   </div>
 
@@ -364,24 +366,55 @@
     </div>
   </div>
 
-  <div class="section no-page-break">
-    <h3>Payment Information</h3>
-    <div class="info">
-      <p>
-        <strong>Payment Method:</strong>
-        {% if order.payment == 'cash' %} Cash on Delivery
+<div class="section no-page-break">
+  <h3>Payment Information</h3>
+  <div class="info">
+    <p>
+      <strong>Payment Method:</strong>
+      {% if order.payment == 'cash' %}
+        Cash on Delivery
         <span class="status-badge unpaid">UNPAID</span>
-        {% elif order.payment == 'khalti' %} Khalti Digital Wallet {% if
-        order.khalti_token %}
+
+      {% elif order.payment == 'khalti' %}
+        Khalti Digital Wallet
+        {% set khalti = (order.payments
+       | selectattr("payment_method", "equalto", "khalti")
+       | sort(attribute="created_at")
+       | last) %}
+  {% if khalti and khalti.payment_status == 'completed' %}
+    <span class="status-badge paid">PAID</span><br>
+    <strong>Transaction Code:</strong> {{ khalti.transaction_id }}
+  {% else %}
+    <span class="status-badge unpaid">UNPAID</span>
+  {% endif %}
+
+      {% elif order.payment == 'esewa' %}
+  eSewa Wallet
+  {% set esewa = (order.payments
+       | selectattr("payment_method", "equalto", "esewa")
+       | sort(attribute="created_at")
+       | last) %}
+  {% if esewa and esewa.payment_status == 'completed' %}
+    <span class="status-badge paid">PAID</span><br>
+    <strong>Transaction Code:</strong> {{ esewa.transaction_id }}
+  {% else %}
+    <span class="status-badge unpaid">UNPAID</span>
+  {% endif %}
+
+
+
+      {% elif order.payment == 'card' %}
+        Credit/Debit Card
         <span class="status-badge paid">PAID</span>
-        {% else %}
-        <span class="status-badge unpaid">UNPAID</span>
-        {% endif %} {% elif order.payment == 'card' %} Credit/Debit Card
-        <span class="status-badge paid">PAID</span>
-        {% else %} Other Payment Method {% endif %}
-      </p>
-    </div>
+
+      {% else %}
+        Other Payment Method
+      {% endif %}
+    </p>
   </div>
+</div>
+
+
 
   <div class="section">
     <h3>Order Details</h3>

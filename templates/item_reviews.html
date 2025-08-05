@@ -62,11 +62,7 @@
         margin: 10px 0;
     }
     
-    .recommendation {
-        color: #28a745;
-        font-weight: 600;
-        font-size: 1.1rem;
-    }
+   
     
     .additional-stats {
         display: flex;
@@ -187,25 +183,28 @@
         gap: 20px;
     }
     
-    .review-card {
-        background: #fff;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        padding: 30px;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    
-    .review-card:hover {
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        transform: translateY(-2px);
-    }
+   .review-card {
+  display: flex;
+  flex-direction: column;
+  position: relative; /* base for any absolute children */
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.review-card:hover {
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
     
     .review-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 15px;
+        margin-bottom: 0px;
     }
     
     .reviewer-info h3 {
@@ -237,7 +236,7 @@
     }
     
     .review-ratings {
-        margin: 15px 0;
+        margin:  0;
     }
     
     .main-rating {
@@ -252,19 +251,50 @@
     }
     
     .review-comment {
-        margin: 20px 0;
-        line-height: 1.6;
-        color: #333;
-        font-size: 16px;
-    }
+  margin-bottom: 10px;
+  line-height: 1.6;
+  color: #333;
+  font-size: 16px;
+}
+
     
-    .recommendation-badge {
-        color: #28a745;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
+    /* Existing styles remain unchanged, adding/updating badge styles */
+.recommendation-badge {
+  position: static !important; /* override any absolute/fixed */
+  float: none !important;       /* override any float */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #e6f4ea;
+  color: #f7f7f7ff;
+  width:fit-content;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  margin-top: 10px;  /* spacing from previous content */
+  align-self: flex-start; /* stay on the left inside flex containers */
+}
+
+.recommendation-badge svg {
+    color: #28a745;
+}
+
+.verified-badge {
+    background: linear-gradient(90deg, #28a745, #218838);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #218838;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.verified-badge:hover {
+    transform: scale(1.05);
+    background: linear-gradient(90deg, #218838, #1e7e34);
+}
     
     .no-reviews {
         text-align: center;
@@ -472,7 +502,8 @@
             
             {% if review.would_recommend %}
                 <div class="recommendation-badge">
-                    <span>✓</span> Recommends this item
+                    <span>✔</span>
+                    <span>Recommended by this user</span>
                 </div>
             {% endif %}
         </div>

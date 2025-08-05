@@ -15,11 +15,17 @@
     <link href="{{ url_for('static', filename='css/content-page.css') }}" rel="stylesheet">
     {% block extra_css %}
     <style>
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-        }
+
+
+@media (max-width: 768px) {
+  .order_badge {
+    min-width: 20px;
+    height: 20px;
+    font-size: 11px;
+    padding: 0 6px;
+  }
+}
+
     </style>{% endblock %}
 </head>
 <body>
@@ -62,6 +68,7 @@
                     <i class="fas fa-utensils"></i>
                     Item
                 </a>
+                
             </div>
             
             <div class="menu-section">
@@ -74,10 +81,13 @@
                     <i class="fas fa-clipboard-list"></i>
                     Reviews
                 </a>
-                <a href="{{ url_for('admin_orders') }}" class="menu-item  {% if active_page == 'admin_orders' %}active{% endif %}">
-                    <i class="fas fa-shopping-cart"></i>
-                    Order
-                </a>
+               <a href="{{ url_for('admin_orders') }}" class="menu-item {% if active_page == 'admin_orders' %}active{% endif %}">
+                <i class="fas fa-shopping-cart"></i>
+                Order
+                {% if new_orders_count > 0 %}
+                <span class="order_badge">{{ new_orders_count }}</span>
+                {% endif %}
+            </a>
                 <a href="{{ url_for('logout') }}" class="menu-item {% if active_page == 'logout' %}active{% endif %}">
                     <div class="menu-icon"><i class="fas fa-sign-out-alt"></i></div>
                     <div class="menu-text">Logout</div>

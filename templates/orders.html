@@ -199,6 +199,16 @@
 {% endblock %} {% block content %}
 <div class="content">
   <h1 class="page-title">My orders</h1>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        {% if 'order_' in category %}
+                            <div class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center" role="alert">
+                                <span>{{ message }}</span>
+                                <button type="button" class="btn-close ms-3" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endwith %}
   <div id="orders-wrapper">
     {% if orders %} {% for order in orders %}
     <div class="order-card">

@@ -16,7 +16,6 @@
 
     #profile {
         padding: var(--spacing-md);
-        background: var(--primary-gradient);
         min-height: 100vh;
         position: relative;
     }
@@ -45,7 +44,7 @@
         border-radius: var(--border-radius);
         box-shadow: var(--card-shadow);
         text-align: center;
-        width: 350px;
+        width: 500px;
         height: fit-content;
         transition: var(--transition);
     }
@@ -53,6 +52,7 @@
     #profile .profile-container.editing .profile-card {
         position: sticky;
         top: var(--spacing-md);
+        width:350px;
     }
 
     #profile .profile-avatar {
@@ -498,7 +498,7 @@
         } else {
             container.classList.remove('editing');
             form.classList.remove('show');
-            editBtn.innerHTML = '✏️ Edit Profile';
+            editBtn.innerHTML = 'Edit Profile';
             editBtn.style.background = 'linear-gradient(135deg, var(--primary-color), #e55f1e)';
         }
     }

@@ -2,186 +2,297 @@
 {% block extra_css %}
 <style>
     #transactions {
-    background-color: var(--white);
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: var(--shadow);
-}
+        background-color: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin: 16px;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
 
-#transactions .filter-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-    flex-wrap: wrap;
-    gap: 15px;
-}
+    #transactions .filter-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        flex-wrap: wrap;
+        gap: 16px;
+        background: #f8fafc;
+        padding: 16px;
+        border-radius: 8px;
+    }
 
-#transactions .filter-group {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-}
+    #transactions .filter-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
 
-#transactions .filter-select {
-    padding: 8px 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-dark);
-    font-size: 14px;
-    background-color: white;
-}
+    #transactions .filter-select {
+        padding: 10px 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        color: #1a202c;
+        font-size: 14px;
+        background-color: white;
+        transition: all 0.2s ease;
+        min-width: 160px;
+        cursor: pointer;
+    }
 
-#transactions .search-box {
-    display: flex;
-    align-items: center;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 5px 10px;
-    color: var(--text-light);
-    background-color: white;
-}
+    #transactions .filter-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
 
-#transactions .search-box i {
-    margin-right: 8px;
-    font-size: 14px;
-}
+    #transactions .search-box {
+        display: flex;
+        align-items: center;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 12px;
+        background-color: white;
+        transition: all 0.2s ease;
+        min-width: 240px;
+    }
 
-#transactions .search-box input {
-    border: none;
-    outline: none;
-    font-size: 14px;
-    color: var(--text-dark);
-    background: none;
-    width: 200px;
-}
+    #transactions .search-box:focus-within {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
 
-#transactions .transaction-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: var(--white);
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    padding: 15px 20px;
-    margin-bottom: 15px;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-}
+    #transactions .search-box i {
+        margin-right: 8px;
+        font-size: 16px;
+        color: #6b7280;
+    }
 
-#transactions .transaction-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-    transform: translateY(-2px);
-}
+    #transactions .search-box input {
+        border: none;
+        outline: none;
+        font-size: 14px;
+        color: #1a202c;
+        background: none;
+        width: 100%;
+    }
 
-#transactions .transaction-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
+    #transactions .transaction-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
 
-#transactions .transaction-id {
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--text-dark);
-}
+    #transactions .transaction-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    }
 
-#transactions .transaction-date {
-    font-size: 13px;
-    color: var(--text-light);
-}
+    #transactions .transaction-main {
+        flex: 2;
+    }
 
-#transactions .transaction-amount {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--primary-color);
-}
+    #transactions .transaction-side {
+        flex: 1;
+        text-align: right;
+    }
 
-#transactions .transaction-status {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    text-align: center;
-}
+    #transactions .transaction-header {
+        display: flex;
+        gap: 16px;
+        align-items: baseline;
+        margin-bottom: 12px;
+    }
 
-#transactions .status-success {
-    background-color: rgba(52, 168, 83, 0.1);
-    color: #34A853;
-}
+    #transactions .transaction-id {
+        font-weight: 600;
+        font-size: 16px;
+        color: #1a202c;
+    }
 
-#transactions .status-failed {
-    background-color: rgba(234, 67, 53, 0.1);
-    color: #EA4335;
-}
+    #transactions .transaction-date {
+        font-size: 14px;
+        color: #6b7280;
+    }
 
+    #transactions .txn-detail-row {
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #4b5563;
+    }
+
+    #transactions .txn-detail-row strong {
+        color: #1a202c;
+        margin-right: 8px;
+    }
+
+    #transactions .transaction-amount {
+        font-size: 18px;
+        font-weight: 700;
+        color: #3b82f6;
+        margin-bottom: 8px;
+    }
+
+    #transactions .transaction-status {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 9999px;
+        font-size: 13px;
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    #transactions .status-success {
+        background-color: #ecfdf5;
+        color: #15803d;
+    }
+
+    #transactions .status-failed {
+        background-color: #fef2f2;
+        color: #b91c1c;
+    }
+
+    #transactions .status-pending {
+        background-color: #f5f5f5;
+        color: #4b5563;
+    }
+
+    @media (max-width: 768px) {
+        #transactions {
+            margin: 8px;
+            padding: 16px;
+        }
+
+        #transactions .filter-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        #transactions .filter-group {
+            justify-content: center;
+        }
+
+        #transactions .search-box {
+            min-width: auto;
+            width: 100%;
+        }
+
+        #transactions .transaction-card {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        #transactions .transaction-side {
+            text-align: left;
+            width: 100%;
+        }
+    }
 </style>
 {% endblock %}
 {% block content %}
 <div id="transactions" class="page">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <select class="filter-select">
-                        <option>All Transactions</option>
-                        <option>Successful</option>
-                        <option>Failed</option>
-                    </select>
-                    <select class="filter-select">
-                        <option>Last 30 Days</option>
-                        <option>Last 3 Months</option>
-                        <option>Last 6 Months</option>
-                        <option>Last Year</option>
-                    </select>
-                </div>
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search transactions...">
-                </div>
+    <div class="filter-row">
+        <div class="filter-group">
+            <select class="filter-select">
+                <option>All Transactions</option>
+                <option>Completed</option>
+                <option>Failed</option>
+                <option>Pending</option>
+            </select>
+            <select class="filter-select">
+                <option>Last 30 Days</option>
+                <option>Last 3 Months</option>
+                <option>Last 6 Months</option>
+                <option>Last Year</option>
+            </select>
+        </div>
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search transactions...">
+        </div>
+    </div>
+    {% for payment in payments %}
+    <div class="transaction-card">
+        <div class="transaction-main">
+            <div class="transaction-header">
+                <span class="transaction-id">#{{ payment.transaction_id or 'TX-' ~ payment.id }}</span>
+                <span class="transaction-date">{{ payment.created_at.strftime('%b %d, %Y') }}</span>
             </div>
-
-            <div class="transaction-card">
-                <div class="transaction-info">
-                    <p class="transaction-id">TX-9387456</p>
-                    <p class="transaction-date">May 18, 2025</p>
-                </div>
-                <div class="transaction-amount">$12.99</div>
-                <div class="transaction-status status-success">Successful</div>
+            <div class="txn-detail-row"><strong>Method:</strong> {{ payment.payment_method|capitalize }}</div>
+            <div class="txn-detail-row"><strong>Order ID:</strong> {{ payment.order_id }}</div>
+            {% if payment.order and payment.order.order_items %}
+            <div class="txn-detail-row">
+                <strong>Items:</strong>
+                {% for item in payment.order.order_items[:3] %}
+                    {{ item.item_name }} (x{{ item.quantity }}){% if not loop.last %}, {% endif %}
+                {% endfor %}
+                {% if payment.order.order_items|length > 3 %}
+                    ...
+                {% endif %}
             </div>
-
-            <div class="transaction-card">
-                <div class="transaction-info">
-                    <p class="transaction-id">TX-9385432</p>
-                    <p class="transaction-date">May 15, 2025</p>
-                </div>
-                <div class="transaction-amount">$15.50</div>
-                <div class="transaction-status status-success">Successful</div>
-            </div>
-
-            <div class="transaction-card">
-                <div class="transaction-info">
-                    <p class="transaction-id">TX-9382198</p>
-                    <p class="transaction-date">May 12, 2025</p>
-                </div>
-                <div class="transaction-amount">$10.75</div>
-                <div class="transaction-status status-success">Successful</div>
-            </div>
-
-            <div class="transaction-card">
-                <div class="transaction-info">
-                    <p class="transaction-id">TX-9379876</p>
-                    <p class="transaction-date">May 10, 2025</p>
-                </div>
-                <div class="transaction-amount">$18.25</div>
-                <div class="transaction-status status-success">Successful</div>
-            </div>
-
-            <div class="transaction-card">
-                <div class="transaction-info">
-                    <p class="transaction-id">TX-9377654</p>
-                    <p class="transaction-date">May 8, 2025</p>
-                </div>
-                <div class="transaction-amount">$5.99</div>
-                <div class="transaction-status status-failed">Failed</div>
+            {% endif %}
+            {% if payment.completed_at %}
+            <div class="txn-detail-row"><strong>Completed:</strong> {{ payment.completed_at.strftime('%b %d, %Y') }}</div>
+            {% endif %}
+            {% if payment.payment_reference != 'N/A' %}
+            <div class="txn-detail-row"><strong>Reference:</strong> {{ payment.payment_reference }}</div>
+            {% endif %}
+            {% if payment.gateway_response %}
+            <div class="txn-detail-row"><strong>Note:</strong> {{ payment.gateway_response[:50] }}...</div>
+            {% endif %}
+        </div>
+        <div class="transaction-side">
+            <div class="transaction-amount">Rs.{{ "%.2f"|format(payment.amount) }}</div>
+            <div class="transaction-status 
+                {% if payment.payment_status == 'completed' %}status-success
+                {% elif payment.payment_status == 'failed' %}status-failed
+                {% else %}status-pending{% endif %}">
+                {{ payment.payment_status.capitalize() }}
             </div>
         </div>
+    </div>
+    {% else %}
+    <p class="text-center text-gray-500">No transactions found.</p>
+    {% endfor %}
+</div>
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const statusFilter = document.querySelectorAll('.filter-select')[0];
+        const dateFilter = document.querySelectorAll('.filter-select')[1];
+        const searchInput = document.querySelector('.search-box input');
+
+        function filterTransactions() {
+            const status = statusFilter.value.toLowerCase();
+            const query = searchInput.value.toLowerCase();
+            const cards = document.querySelectorAll('.transaction-card');
+
+            cards.forEach(card => {
+                const statusText = card.querySelector('.transaction-status').textContent.toLowerCase();
+                const idText = card.querySelector('.transaction-id').textContent.toLowerCase();
+
+                const matchStatus = (status === "all transactions") || statusText.includes(status);
+                const matchSearch = idText.includes(query);
+
+                card.style.display = (matchStatus && matchSearch) ? "flex" : "none";
+            });
+        }
+
+        statusFilter.addEventListener('change', filterTransactions);
+        dateFilter.addEventListener('change', filterTransactions);
+        searchInput.addEventListener('input', filterTransactions);
+    });
+</script>
+{% endblock %}
 {% endblock %}
