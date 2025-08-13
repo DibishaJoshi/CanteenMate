@@ -1,0 +1,7 @@
+Order Management
+Customers can place orders online, providing all necessary details such as item selection, quantity, and pickup or delivery preferences. The system performs real-time validation and verification of order details to ensure accuracy and completeness. Customers and administrators can track the status of orders from the moment they are placed until successful delivery or pickup.
+Payment and Billing
+The system integrates multiple payment options, including cash, digital wallets, and online payment gateways. The billing system ensures transparency by maintaining detailed transaction records for customers and administrators.
+Delivery and Pickup Management
+The system offers both self-pickup and delivery options. Automated notifications keep customers informed about the status of their orders. Automated notifications are sent regarding order confirmations estimated delivery time, delays, and successful order completion.
+By incorporating these functional requirements, CanteenMate will enhance efficiency, improve customer experience, and streamline operations within the canteen management system.

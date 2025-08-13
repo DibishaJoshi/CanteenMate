@@ -245,7 +245,7 @@ class OrderAddon(db.Model):
     order_item = db.relationship('OrderItem', backref='order_addons')
     addon = db.relationship('Addon', backref='order_addons')
 
-# Add these new models to your existing models.py file
+
 
 class Payment(db.Model):
     __tablename__ = 'payments'

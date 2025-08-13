@@ -1,0 +1,16 @@
+Flask
+Flask-SQLAlchemy
+Flask-WTF
+Flask-Login
+Flask-Migrate
+Flask-Bootstrap
+Flask-Assets
+Pillow
+Requests
+Flask-Bcrypt
+Celery
+Gunicorn
+python-dotenv
+sqlite
+mysqlclient
+psycopg2

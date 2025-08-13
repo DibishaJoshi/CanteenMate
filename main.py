@@ -1556,7 +1556,126 @@ def remove_from_cart():
         flash('Item not found in cart.', 'items_error')
 
     return redirect(url_for('cart'))
+@app.route('/cart/recommendations')
+@login_required
+def cart_recommendations():
+    """Get recommendations based on current cart items"""
+    user_id = session['user_id']
+    
+    # Get current cart items
+    cart_items = CartItem.query.filter_by(user_id=user_id).all()
+    
+    if not cart_items:
+        return jsonify({'recommendations': []})
+    
+    try:
+        # Build user-item matrix
+        user_item_matrix, df = recommendation.build_user_item_matrix()
+        
+        if user_item_matrix is None:
+            # Fallback to popular items
+            recommendations = recommendation.get_fallback_recommendations_with_explanations(top_n=4)
+        else:
+            # Train KNN model
+            model, k = recommendation.train_knn(user_item_matrix, n_neighbors=5)
+            
+            if model is None:
+                recommendations = recommendation.get_fallback_recommendations_with_explanations(top_n=4)
+            else:
+                # Get collaborative filtering recommendations
+                recommendations = recommendation.recommend_items_for_user_with_explanations(
+                    user_id, user_item_matrix, model, n_neighbors=5, top_n=4
+                )
+                
+                # If no collaborative recommendations, use fallback
+                if not recommendations:
+                    recommendations = recommendation.get_fallback_recommendations_with_explanations(top_n=4)
+        
+        # Filter out items already in cart
+        cart_item_ids = {item.item_id for item in cart_items}
+        filtered_recommendations = [
+            rec for rec in recommendations 
+            if rec['item'].id not in cart_item_ids
+        ]
+        
+        # Convert to JSON-serializable format
+        recommendations_data = []
+        for rec in filtered_recommendations[:4]:  # Limit to 4 items
+            recommendations_data.append({
+                'id': rec['item'].id,
+                'name': rec['item'].name,
+                'price': float(rec['item'].price),
+                'image_filename': rec['item'].image_filename,
+                'explanation': rec['explanation'],
+                'explanation_type': rec['explanation_type'],
+                'description': getattr(rec['item'], 'description', ''),
+                'category': rec['item'].category.name if hasattr(rec['item'], 'category') and rec['item'].category else '',
+                'popularity_score': rec.get('popularity_score', 0),
+                'order_count': rec.get('order_count', 0)
+            })
 
+            print("DEBUG raw recommendations:", [rec['item'].id for rec in recommendations])
+            print("DEBUG cart items:", cart_item_ids)
+        
+        return jsonify({'recommendations': recommendations_data})
+        
+    except Exception as e:
+        print(f"Error getting cart recommendations: {e}")
+        return jsonify({'recommendations': []})
+
+
+@app.route('/cart/add_recommended', methods=['POST'])
+@login_required
+def add_recommended_to_cart():
+    """Add a recommended item to cart via AJAX"""
+    user_id = session['user_id']
+    item_id = request.json.get('item_id')
+    quantity = request.json.get('quantity', 1)
+    
+    if not item_id:
+        return jsonify({'success': False, 'message': 'Item ID required'})
+    
+    try:
+        # Check if item exists and is available today
+        item = Item.query.get(item_id)
+        if not item:
+            return jsonify({'success': False, 'message': 'Item not found'})
+        
+        # Check if item is available today
+        today = datetime.now().strftime('%A').lower()
+        menu_item = Menu.query.filter_by(item_id=item_id, day=today).first()
+        if not menu_item:
+            return jsonify({'success': False, 'message': 'Item not available today'})
+        
+        # Check if item already in cart
+        existing_cart_item = CartItem.query.filter_by(user_id=user_id, item_id=item_id).first()
+        
+        if existing_cart_item:
+            existing_cart_item.quantity += quantity
+        else:
+            cart_item = CartItem(
+                user_id=user_id,
+                item_id=item_id,
+                quantity=quantity,
+                created_date=date.today()
+            )
+            db.session.add(cart_item)
+        
+        db.session.commit()
+        
+        
+        # Get updated cart count
+        cart_count = CartItem.query.filter_by(user_id=user_id).count()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'{item.name} added to cart!',
+            'cart_count': cart_count
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': 'Error adding item to cart'})
 
 @app.route('/update_cart_addons', methods=['POST'])
 @login_required
@@ -1645,7 +1764,7 @@ def checkout():
     )
     
     total_before_tax = subtotal + addon_total
-    tax = total_before_tax * 0.08
+    tax = 0
     service_fee = 10
     total = total_before_tax + tax + service_fee
 
@@ -1711,7 +1830,7 @@ def checkout():
                 del session['cart_addons']
                 session.modified = True
 
-            flash('Order placed successfully!', 'success')
+            flash('Order placed successfully!', 'order_success')
             return redirect(url_for('orders'))
         else:
             flash('Order failed. Please try again.', 'danger')
@@ -1777,41 +1896,43 @@ def process_order_with_payment(user, cart, form_data, total_amount):
         db.session.flush()
         print(f"✅ Order created with ID: {order.id}")
 
-        # Create payment record
-        payment_status = 'completed' if payment_method == 'cash' else 'pending'
-        
-        payment_data = {
-            'order_id': order.id,
-            'payment_method': payment_method,
-            'payment_status': payment_status,
-            'amount': total_amount,
-            'created_at': created_at
-        }
-        
-        # Add payment method specific data
-        if payment_method == 'khalti':
-            khalti_token = form_data.get('khalti_token')
-            if khalti_token:
-                payment_data['khalti_token'] = khalti_token
-                payment_data['payment_status'] = 'completed'  # Already verified
-                payment_data['completed_at'] = created_at
-                payment_data['transaction_id'] = khalti_token
-        
-        elif payment_method == 'esewa':
-            esewa_code = form_data.get('esewa_transaction_code')
-            if esewa_code:
-                payment_data['transaction_id'] = esewa_code
-                payment_data['esewa_transaction_uuid'] = form_data.get('transaction_uuid', '')
-                payment_data['esewa_product_code'] = ESEWA_MERCHANT_CODE
-                payment_data['payment_status'] = 'completed'  # Already verified
-                payment_data['completed_at'] = created_at
-        
-        payment = Payment(**payment_data)
-        db.session.add(payment)
-        db.session.flush()
-        print(f"✅ Payment record created with ID: {payment.id}")
+        # Only create payment record if NOT cash
+        if payment_method.lower() != 'cash':
+            payment_status = 'pending'
+            payment_data = {
+                'order_id': order.id,
+                'payment_method': payment_method,
+                'payment_status': payment_status,
+                'amount': total_amount,
+                'created_at': created_at
+            }
+            
+            # Add payment method specific data
+            if payment_method == 'khalti':
+                khalti_token = form_data.get('khalti_token')
+                if khalti_token:
+                    payment_data['khalti_token'] = khalti_token
+                    payment_data['payment_status'] = 'completed'  # Already verified
+                    payment_data['completed_at'] = created_at
+                    payment_data['transaction_id'] = khalti_token
+            
+            elif payment_method == 'esewa':
+                esewa_code = form_data.get('esewa_transaction_code')
+                if esewa_code:
+                    payment_data['transaction_id'] = esewa_code
+                    payment_data['esewa_transaction_uuid'] = form_data.get('transaction_uuid', '')
+                    payment_data['esewa_product_code'] = ESEWA_MERCHANT_CODE
+                    payment_data['payment_status'] = 'completed'  # Already verified
+                    payment_data['completed_at'] = created_at
+            
+            payment = Payment(**payment_data)
+            db.session.add(payment)
+            db.session.flush()
+            print(f"💰 Payment record created with ID: {payment.id}")
+        else:
+            print("💵 Cash payment — skipping Payment table entry")
 
-        # Add order items and addons (same as before)
+        # Add order items and addons
         items_added = 0
         addons_added = 0
         
@@ -1845,17 +1966,18 @@ def process_order_with_payment(user, cart, form_data, total_amount):
                     db.session.add(order_addon)
                     addons_added += 1
 
-        print(f"✅ Added {items_added} items and {addons_added} addons")
+        print(f"Added {items_added} items and {addons_added} addons")
         
         db.session.commit()
-        print("✅ Order and payment committed successfully")
+        print("Order committed successfully")
         return True
         
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Order processing failed: {e}")
+        print(f" Order processing failed: {e}")
         traceback.print_exc()
         return False
+
 
 # Enhanced Khalti verification
 def verify_khalti_payment(token, amount):
@@ -2869,13 +2991,16 @@ def forgot_password():
         email = request.form.get('email')
         user = User.query.filter_by(email=email).first()
         if user:
-            session['reset_user_id'] = user.id
-            flash("Email found. Please reset your password.", "success")
-            return redirect(url_for('reset_password'))
+            # ✅ Block admins here
+            if user.role == 'admin':
+                flash("Email not found", "danger")
+            else:
+                session['reset_user_id'] = user.id
+                flash("Email found. Please reset your password.", "success")
+                return redirect(url_for('reset_password'))
         else:
             flash("Email not found!", "danger")
     return render_template('forgot_password.html')
-
 @app.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
     user_id = session.get('reset_user_id')
@@ -2887,6 +3012,8 @@ def reset_password():
     if not user:
         flash("Invalid user!", "danger")
         return redirect(url_for('forgot_password'))
+
+    
 
     if request.method == 'POST':
         new_password = request.form.get('new_password')

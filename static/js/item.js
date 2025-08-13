@@ -122,3 +122,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
   console.log("item.js loaded");
 });
+
