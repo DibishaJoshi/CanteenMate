@@ -1,6 +1,6 @@
-{% extends "admin/admin_base.html" %} {% block extra_css %}
+{% extends "admin/admin_base.html" %}
+{% block extra_css %}
 <style>
-  /* Ensure modal takes full screen width but limits internal content */
   .addon-checkbox-group {
     display: flex;
     flex-wrap: wrap;
@@ -72,6 +72,7 @@
     width: 60px;
     height: 60px;
   }
+
   .modal {
     display: none;
     position: fixed;
@@ -95,7 +96,6 @@
     overflow-x: hidden;
   }
 
-  /* Ensure select doesn’t exceed modal width */
   .form-group select,
   .form-group input,
   .form-group textarea {
@@ -108,7 +108,6 @@
     box-sizing: border-box;
   }
 
-  /* Fix dropdown appearing outside viewport on small screens */
   select {
     max-width: 100%;
     overflow-x: auto;
@@ -129,167 +128,187 @@
       overflow-y: hidden;
     }
   }
+
   td ul {
-  list-style-type: disc;
-  margin: 0;
-  padding-left: 18px;
-  font-size: 0.9rem;
-  color: #555;
-}
+    list-style-type: disc;
+    margin: 0;
+    padding-left: 18px;
+    font-size: 0.9rem;
+    color: #555;
+  }
 
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    color: #fff;
+    text-transform: capitalize;
+    font-size: 0.9rem;
+  }
+
+  .status-badge.available {
+    background-color: green;
+  }
+
+  .status-badge.not-available {
+    background-color: red;
+  }
+
+  /* Pagination container styling */
+  #paginationContainer {
+    margin-top: 1rem;
+    text-align: center;
+  }
+
+  /* Page item styling */
+  #paginationContainer .pagination .page-item .page-link {
+    color: #b4623c;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    margin: 0 3px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  /* Hover effect */
+  #paginationContainer .pagination .page-item .page-link:hover {
+    background-color: #b4623c;
+    color: #fff;
+    border-color: #b4623c;
+  }
+
+  /* Active page */
+  #paginationContainer .pagination .page-item.active .page-link {
+    background-color: #b4623c;
+    color: #fff;
+    border-color: #b4623c;
+    font-weight: bold;
+  }
+
+  /* Disabled page */
+  #paginationContainer .pagination .page-item.disabled .page-link {
+    color: #a0a0a0;
+    pointer-events: none;
+    background-color: #f1f1f1;
+    border-color: #dcdcdc;
+  }
+
+  .error-message {
+    color: #dc3545;
+    text-align: center;
+    padding: 10px;
+    font-weight: 500;
+  }
 </style>
+{% endblock %}
 
-{% endblock %} {% block content %}
-<div class="categories-content">
+{% block content %}
+<div class="category-section">
   <div class="section-header">
     <h1 class="page-title">Items</h1>
     <button class="add-btn" id="addUnitBtn">
       <i class="fas fa-plus"></i> Add Item
     </button>
   </div>
-  <div class="section-filters">
+  <div class="section-filters" style="margin-bottom: 1rem;">
     <div class="search-box">
-      <input type="text" placeholder="Search Items..." />
-      <button><i class="fas fa-search"></i></button>
+      <input type="text" id="searchInput" placeholder="Search items..." />
+      <button type="button" style="background-color: #b4623c;">
+        <i class="fas fa-search"></i>
+      </button>
     </div>
     <div class="filter-dropdown">
-      <select>
-        <option>All Items</option>
-        <option>Active</option>
-        <option>Inactive</option>
+      <select id="statusFilter">
+        <option value="">All Items</option>
+        <option value="available">Available</option>
+        <option value="not-available">Unavailable</option>
       </select>
     </div>
   </div>
-  <div
-    class="data-table-container"
-    style="{% with messages = get_flashed_messages(with_categories=true) %}
-                                                {% for category, message in messages %}
-                                                  {% if 'items_' in category %}
-                                                    display: block;
-                                                  {% endif %}
-                                                {% endfor %}
-                                            {% endwith %}"
-  >
-    {% with messages = get_flashed_messages(with_categories=true) %} {% if
-    messages %} {% for category, message in messages %} {% if 'items_' in
-    category %}
-    <div
-      class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center"
-      role="alert"
-    >
-      <span>{{ message }}</span>
-      <button
-        type="button"
-        class="btn-close ms-3"
-        data-bs-dismiss="alert"
-        aria-label="Close"
-      ></button>
-    </div>
-    {% endif %} {% endfor %} {% endif %} {% endwith %}
-    <table class="data-table">
+  <div class="data-table">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          {% if 'items_' in category %}
+            <div
+              class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center"
+              role="alert"
+            >
+              <span>{{ message }}</span>
+              <button
+                type="button"
+                class="btn-close ms-3"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+              ></button>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    <table>
       <thead>
-  <tr>
-    <th>Item ID</th>
-    <th>Name</th>
-    <th>Image</th>
-    <th>Category</th>
-    <th>Price</th>
-    <th>Available</th>
-    <th>Addons</th>  <!-- new column -->
-    <th>Actions</th>
-  </tr>
-</thead>
-<tbody id="item-table-body">
-  {% for item in items %}
-  <tr>
-    <td>{{ "%03d"|format(item.id) }}</td>
-    <td>{{ item.name }}</td>
-    <td>
-      {% if item.image_filename %}
-      <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) }}" alt="Item Image" style="height: 40px" />
-      {% else %} No image {% endif %}
-    </td>
-    <td>{{ item.category.name if item.category else "N/A" }}</td>
-    <td>Rs. {{ '%.2f' % (item.price) }}</td>
-    <td>
-      {% if item.available %}
-      <span class="status available">Yes</span>
-      {% else %}
-      <span class="status not-available">No</span>
-      {% endif %}
-    </td>
-
-    <td>
-      {% if item.addons|length > 0 %}
-        <ul style="padding-left: 18px; margin: 0;">
-          {% for addon in item.addons %}
-          <li>{{ addon.name }} (Rs. {{ "%.2f"|format(addon.price) }})</li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <em>No addons</em>
-      {% endif %}
-    </td>
-
-    <td class="actions">
-      <button
-        class="btn-edit"
-        data-id="{{ item.id }}"
-        data-name="{{ item.name }}"
-        data-category="{{ item.category.name if item.category else '' }}"
-        data-price="{{ '%.2f' % (item.price) }}"
-        data-description="{{ item.description or '' }}"
-        data-available="{{ 'true' if item.available else 'false' }}"
-        data-addons="{{ item.addons | map(attribute='id') | join(',') }}"
-      >
-        <i class="fas fa-edit"></i>
-      </button>
-      <button class="btn-delete"><i class="fas fa-trash"></i></button>
-    </td>
-  </tr>
-  {% else %}
-  <tr>
-    <td colspan="8">No items found.</td>
-  </tr>
-  {% endfor %}
-</tbody>
-
-      <!--<tbody id="item-table-body">
-            <tr>
-                <td>001</td>
-                <td>Chicken Sandwich</td>
-                <td>Sandwiches</td>
-                <td>$5.99</td>
-                <td><span class="status available">Yes</span></td>
-                <td class="actions">
-                    <button class="btn-edit"><i class="fas fa-edit"></i></button>
-                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-            <tr>
-                <td>002</td>
-                <td>Caesar Salad</td>
-                <td>Salads</td>
-                <td>$4.50</td>
-                <td><span class="status available">Yes</span></td>
-                <td class="actions">
-                    <button class="btn-edit"><i class="fas fa-edit"></i></button>
-                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-            <tr>
-                <td>003</td>
-                <td>Pepperoni Pizza</td>
-                <td>Hot Meals</td>
-                <td>$8.99</td>
-                <td><span class="status not-available">No</span></td>
-                <td class="actions">
-                    <button class="btn-edit"><i class="fas fa-edit"></i></button>
-                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        </tbody>-->
+        <tr>
+          <th>Item ID</th>
+          <th>Name</th>
+          <th>Image</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Available</th>
+          <th>Addons</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="item-table-body">
+        {% for item in items %}
+        <tr class="item-row">
+          <td>{{ "%03d"|format(item.id) }}</td>
+          <td class="item-name">{{ item.name }}</td>
+          <td>
+            {% if item.image_filename %}
+            <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) }}" alt="Item Image" style="height: 40px" />
+            {% else %} No image {% endif %}
+          </td>
+          <td>{{ item.category.name if item.category else "N/A" }}</td>
+          <td>Rs. {{ '%.2f'|format(item.price) }}</td>
+          <td>
+            <span class="status-badge {{ 'available' if item.available else 'not-available' }}">{{ 'Available' if item.available else 'Unavailable' }}</span>
+          </td>
+          <td>
+            {% if item.addons|length > 0 %}
+              <ul style="padding-left: 18px; margin: 0;">
+                {% for addon in item.addons %}
+                <li>{{ addon.name }} (Rs. {{ "%.2f"|format(addon.price) }})</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <em>No addons</em>
+            {% endif %}
+          </td>
+          <td class="actions">
+            <button
+              class="btn btn-sm btn-primary btn-edit"
+              data-id="{{ item.id }}"
+              data-name="{{ item.name }}"
+              data-category="{{ item.category.name if item.category else '' }}"
+              data-price="{{ '%.2f'|format(item.price) }}"
+              data-description="{{ item.description or '' }}"
+              data-available="{{ 'true' if item.available else 'false' }}"
+              data-addons="{{ item.addons | map(attribute='id') | join(',') }}"
+            >
+              <i class="fas fa-edit"></i> 
+            </button>
+            <a href="#" class="btn btn-sm btn-danger btn-delete"><i class="fas fa-trash"></i> </a>
+          </td>
+        </tr>
+        {% endfor %}
+        <tr id="noResultsRow" style="display: none;">
+          <td colspan="8" style="text-align: center; font-weight: bold;">No results found</td>
+        </tr>
+      </tbody>
     </table>
+    <nav id="paginationContainer" aria-label="Page navigation" style="margin-top: 1rem;"></nav>
   </div>
   <div id="item-modal" class="modal">
     <div class="modal-content">
@@ -300,40 +319,42 @@
       <div
         class="modal-body"
         style="{% with messages = get_flashed_messages(with_categories=true) %}
-                        {% for category, message in messages %}
-                          {% if 'items_' in category %}
-                            display: block;
-                          {% endif %}
-                        {% endfor %}
-                    {% endwith %}"
+                {% for category, message in messages %}
+                  {% if 'items_' in category %}
+                    display: block;
+                  {% endif %}
+                {% endfor %}
+              {% endwith %}"
       >
-        {% with messages = get_flashed_messages(with_categories=true) %} {% if
-        messages %} {% for category, message in messages %} {% if
-        category=='items_danger' %}
-        <div
-          class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center"
-          role="alert"
-        >
-          <span>{{ message }}</span>
-          <button
-            type="button"
-            class="btn-close ms-3"
-            data-bs-dismiss="alert"
-            aria-label="Close"
-          ></button>
-        </div>
-        {% endif %} {% endfor %} {% endif %} {% endwith %}
-
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              {% if category=='items_danger' %}
+                <div
+                  class="alert alert-{{ category.split('_')[1] }} d-flex justify-content-between align-items-center"
+                  role="alert"
+                >
+                  <span>{{ message }}</span>
+                  <button
+                    type="button"
+                    class="btn-close ms-3"
+                    data-bs-dismiss="alert"
+                    aria-label="Close"
+                  ></button>
+                </div>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
         <form
           id="item-form"
           method="POST"
-          action="{{ url_for('add_item')}}"
+          action="{{ url_for('add_item') }}"
           enctype="multipart/form-data"
         >
           <div class="form-group">
             <label for="item-name">Item Name</label>
             <input type="hidden" name="item-id" id="item-id" />
-
             <input type="text" name="item-name" id="item-name" required />
           </div>
           <div class="form-group">
@@ -372,8 +393,8 @@
                 id="item-available"
               />
               <span class="custom-checkbox"></span>
-              Available</label
-            >
+              Available
+            </label>
           </div>
           <div class="addon-checkbox-group">
             {% for addon in addons %}
@@ -382,26 +403,16 @@
                 type="checkbox"
                 name="item-addons"
                 value="{{ addon.id }}"
-                {%
-                if
-                addon.id
-                in
-                selected_addons
-                %}checked{%
-                endif
-                %}
+                {% if addon.id in selected_addons %}checked{% endif %}
               />
               <span class="custom-checkbox"></span>
               <span class="addon-details">
                 <span class="addon-name">{{ addon.name }}</span>
-                <span class="addon-price"
-                  >Rs. {{ "%.2f"|format(addon.price) }}</span
-                >
+                <span class="addon-price">Rs. {{ "%.2f"|format(addon.price) }}</span>
               </span>
             </label>
             {% endfor %}
           </div>
-
           <div class="form-group file-upload">
             <label for="item-image">Image</label>
             <input
@@ -422,18 +433,215 @@
     </div>
   </div>
 </div>
-{% endblock%} {% block extra_js %}
-<script src="{{ url_for('static',filename='js/item.js') }}"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/item.js') }}"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Auto-dismiss flash messages
   setTimeout(() => {
-    const flashMessages = document.querySelectorAll(".alert");
+    const flashMessages = document.querySelectorAll('.alert');
     flashMessages.forEach((msg) => {
-      msg.style.transition = "opacity 0.5s ease";
-      msg.style.opacity = "0";
+      msg.style.transition = 'opacity 0.5s ease';
+      msg.style.opacity = '0';
       setTimeout(() => msg.remove(), 500);
     });
   }, 3000);
 
-</script>
+  const searchInput = document.getElementById('searchInput');
+  const statusSelect = document.getElementById('statusFilter');
+  const itemRows = Array.from(document.querySelectorAll('.item-row'));
+  const noResultsRow = document.getElementById('noResultsRow');
+  const errorMessage = document.getElementById('error-message');
 
+  const rowsPerPage = 8; // Match orders template
+  let currentPage = 1;
+
+
+
+  // Function to filter items
+  function filterItems() {
+    const searchQuery = searchInput.value.toLowerCase().trim();
+    const selectedStatus = statusSelect.value.toLowerCase();
+
+    const filteredRows = itemRows.filter(row => {
+      const name = row.querySelector('.item-name').textContent.toLowerCase();
+      const status = row.querySelector('.status-badge').textContent.toLowerCase();
+      const matchesSearch = name.includes(searchQuery);
+      const matchesStatus = !selectedStatus || status === selectedStatus;
+      return matchesSearch && matchesStatus;
+    });
+
+    currentPage = Math.min(currentPage, Math.ceil(filteredRows.length / rowsPerPage) || 1);
+    renderPage(filteredRows, currentPage);
+    renderPagination(filteredRows);
+  }
+
+  // Function to render page
+  function renderPage(rows, page) {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+
+    itemRows.forEach(row => row.style.display = 'none'); // Hide all rows
+    const pageRows = rows.slice(start, end);
+    pageRows.forEach(row => row.style.display = '');
+
+    noResultsRow.style.display = rows.length === 0 ? '' : 'none';
+  }
+
+  // Function to render pagination
+  function renderPagination(filteredRows) {
+    let paginationContainer = document.getElementById('paginationContainer');
+    if (!paginationContainer) {
+      paginationContainer = document.createElement('nav');
+      paginationContainer.id = 'paginationContainer';
+      paginationContainer.setAttribute('aria-label', 'Page navigation');
+      document.querySelector('.data-table').appendChild(paginationContainer);
+    }
+
+    const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+    paginationContainer.innerHTML = '';
+
+    if (totalPages <= 1) return;
+
+    const ul = document.createElement('ul');
+    ul.className = 'pagination justify-content-center';
+
+    const prevLi = document.createElement('li');
+    prevLi.className = 'page-item' + (currentPage === 1 ? ' disabled' : '');
+    const prevLink = document.createElement('a');
+    prevLink.className = 'page-link';
+    prevLink.href = '#';
+    prevLink.textContent = 'Previous';
+    prevLink.addEventListener('click', e => {
+      e.preventDefault();
+      if (currentPage > 1) {
+        currentPage--;
+        renderPage(filteredRows, currentPage);
+        renderPagination(filteredRows);
+      }
+    });
+    prevLi.appendChild(prevLink);
+    ul.appendChild(prevLi);
+
+    for (let i = 1; i <= totalPages; i++) {
+      const li = document.createElement('li');
+      li.className = 'page-item' + (i === currentPage ? ' active' : '');
+      const link = document.createElement('a');
+      link.className = 'page-link';
+      link.href = '#';
+      link.textContent = i;
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        currentPage = i;
+        renderPage(filteredRows, currentPage);
+        renderPagination(filteredRows);
+      });
+      li.appendChild(link);
+      ul.appendChild(li);
+    }
+
+    const nextLi = document.createElement('li');
+    nextLi.className = 'page-item' + (currentPage === totalPages ? ' disabled' : '');
+    const nextLink = document.createElement('a');
+    nextLink.className = 'page-link';
+    nextLink.href = '#';
+    nextLink.textContent = 'Next';
+    nextLink.addEventListener('click', e => {
+      e.preventDefault();
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderPage(filteredRows, currentPage);
+        renderPagination(filteredRows);
+      }
+    });
+    nextLi.appendChild(nextLink);
+    ul.appendChild(nextLi);
+
+    paginationContainer.appendChild(ul);
+  }
+
+  async function fetchItems() {
+    try {
+      const response = await fetch('/admin/items', {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        throw new Error('API response is not an array');
+      }
+      const tableBody = document.getElementById('item-table-body');
+      tableBody.innerHTML = '';
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.className = 'item-row';
+        row.innerHTML = `
+          <td>${item.id ? item.id.toString().padStart(3, '0') : 'N/A'}</td>
+          <td class="item-name">${item.name || 'N/A'}</td>
+          <td>${
+            item.image_filename
+              ? `<img src="/static/uploads/items/${item.image_filename}" alt="Item Image" style="height: 40px" />`
+              : 'No image'
+          }</td>
+          <td>${item.category && item.category.name ? item.category.name : 'N/A'}</td>
+          <td>Rs. ${parseFloat(item.price || 0).toFixed(2)}</td>
+          <td>
+            <span class="status-badge ${item.available ? 'available' : 'not-available'}">
+              ${item.available ? 'Available' : 'Unavailable'}
+            </span>
+          </td>
+          <td>
+            ${
+              item.addons && Array.isArray(item.addons) && item.addons.length > 0
+                ? `<ul style="padding-left: 18px; margin: 0;">
+                     ${item.addons.map(addon => `<li>${addon.name || 'N/A'} (Rs. ${parseFloat(addon.price || 0).toFixed(2)})</li>`).join('')}
+                   </ul>`
+                : '<em>No addons</em>'
+            }
+          </td>
+          <td class="actions">
+            <button
+              class="btn btn-sm btn-primary btn-edit"
+              data-id="${item.id || ''}"
+              data-name="${item.name || ''}"
+              data-category="${item.category && item.category.name ? item.category.name : ''}"
+              data-price="${parseFloat(item.price || 0).toFixed(2)}"
+              data-description="${item.description || ''}"
+              data-available="${item.available || 'false'}"
+              data-addons="${item.addons && Array.isArray(item.addons) ? item.addons.map(a => a.id).join(',') : ''}"
+            >
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <a href="#" class="btn btn-sm btn-danger btn-delete"><i class="fas fa-trash"></i> Delete</a>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+      itemRows.length = 0;
+      itemRows.push(...Array.from(document.querySelectorAll('.item-row')));
+      //errorMessage.style.display = 'none';
+      filterItems();
+    } catch (error) {
+      
+      //errorMessage.style.display = 'block';
+      filterItems();
+    }
+  }
+  searchInput.addEventListener('input', () => {
+    currentPage = 1;
+    filterItems();
+  });
+  statusSelect.addEventListener('change', () => {
+    currentPage = 1;
+    filterItems();
+  });
+
+  filterItems();
+  fetchItems();
+});
+</script>
 {% endblock %}

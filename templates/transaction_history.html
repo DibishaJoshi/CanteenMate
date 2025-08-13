@@ -245,12 +245,7 @@
             {% if payment.completed_at %}
             <div class="txn-detail-row"><strong>Completed:</strong> {{ payment.completed_at.strftime('%b %d, %Y') }}</div>
             {% endif %}
-            {% if payment.payment_reference != 'N/A' %}
-            <div class="txn-detail-row"><strong>Reference:</strong> {{ payment.payment_reference }}</div>
-            {% endif %}
-            {% if payment.gateway_response %}
-            <div class="txn-detail-row"><strong>Note:</strong> {{ payment.gateway_response[:50] }}...</div>
-            {% endif %}
+           
         </div>
         <div class="transaction-side">
             <div class="transaction-amount">Rs.{{ "%.2f"|format(payment.amount) }}</div>

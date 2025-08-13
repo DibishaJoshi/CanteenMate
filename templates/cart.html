@@ -229,6 +229,334 @@
 #cart .checkout-btn:hover {
     background: var(--gradient-collaborative);
 }
+/* Recommendation Popup Styles */
+.recommendations-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.recommendations-popup.show {
+    display: flex;
+}
+
+.popup-content {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    animation: slideInUp 0.4s ease-out;
+    position: relative;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f2f5;
+}
+
+.popup-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-dark);
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.popup-subtitle {
+    font-size: 14px;
+    color: var(--text-light);
+    margin-top: 5px;
+}
+
+.close-popup {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--text-light);
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-popup:hover {
+    background-color: #f0f2f5;
+    color: var(--text-dark);
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.recommendation-card {
+    border: 2px solid #f0f2f5;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(240, 109, 40, 0.15);
+    border-color: var(--primary-color);
+}
+
+.recommendation-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    transition: left 0.3s ease;
+}
+
+.recommendation-card:hover::before {
+    left: 0;
+}
+
+.rec-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    object-fit: cover;
+    margin: 0 auto 15px;
+    border: 3px solid #f0f2f5;
+    transition: border-color 0.3s ease;
+}
+
+.recommendation-card:hover .rec-image {
+    border-color: var(--primary-color);
+}
+
+.rec-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.rec-price {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.rec-explanation {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 15px;
+    line-height: 1.4;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.explanation-collaborative {
+    background: linear-gradient(135deg, rgba(240, 109, 40, 0.1), rgba(255, 193, 7, 0.1));
+    padding: 8px;
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.explanation-popular {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(32, 201, 151, 0.1));
+    padding: 8px;
+    border-radius: 8px;
+    border-left: 3px solid #28a745;
+}
+
+.explanation-new {
+    background: linear-gradient(135deg, rgba(108, 117, 125, 0.1), rgba(173, 181, 189, 0.1));
+    padding: 8px;
+    border-radius: 8px;
+    border-left: 3px solid #6c757d;
+}
+
+.add-to-cart-btn {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    font-size: 14px;
+}
+
+.add-to-cart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(240, 109, 40, 0.3);
+}
+
+.add-to-cart-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+}
+
+.no-recommendations {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+}
+
+.no-recommendations i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #ddd;
+}
+
+.popup-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f2f5;
+}
+
+.continue-shopping {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.continue-shopping:hover {
+    background: linear-gradient(135deg, #5a6268, #3e424a);
+}
+
+.recommendation-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-collaborative {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+}
+
+.badge-popular {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.badge-new {
+    background: linear-gradient(135deg, #6c757d, #adb5bd);
+    color: white;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .popup-content {
+        width: 95%;
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    .recommendations-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .popup-title {
+        font-size: 20px;
+    }
+    
+    .rec-name {
+        font-size: 14px;
+    }
+    
+    .popup-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .continue-shopping {
+        width: 100%;
+    }
+}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -421,12 +749,12 @@
                 {% endif %}
 
                 {% set total_before_tax = ns.subtotal + ns.addon_total %}
-                {% set tax = total_before_tax * 0.08 %}
+                {% set tax = 0 %}
                 {% set service_fee = 10 %}
                 {% set total = total_before_tax + tax + service_fee %}
 
                 <div class="summary-line">
-                    <span>Tax (8%)</span>
+                    <span>Tax (0%)</span>
                     <span id="tax-amount">Rs. {{ '%.2f' % tax }}</span>
                 </div>
                 <div class="summary-line">
@@ -444,6 +772,38 @@
             {% endif %}
         </div>
     </div>
+</div>
+<!-- Recommendations Popup HTML -->
+<div class="recommendations-popup" id="recommendationsPopup">
+    <div class="popup-content">
+        <div class="popup-header">
+            <div>
+                <h3 class="popup-title"> You may also like</h3>
+                <p class="popup-subtitle">Based on your cart and preferences</p>
+            </div>
+            <button class="close-popup" onclick="closeRecommendationsPopup()">×</button>
+        </div>
+        
+        <div id="recommendationsContent">
+            <div class="recommendations-grid" id="recommendationsGrid">
+                <!-- Recommendations will be loaded here -->
+            </div>
+        </div>
+        
+        <div class="popup-actions">
+            <button class="continue-shopping" onclick="closeRecommendationsPopup()">
+                <i class="fas fa-arrow-left"></i> Continue Shopping
+            </button>
+            
+        </div>
+    </div>
+</div>
+
+<!-- Add Recommendation Button to Cart -->
+<div style="text-align: center; margin: 20px 0;">
+    <button class="btn btn-outline-primary" onclick="showRecommendations()" style="border-radius: 25px; padding: 12px 30px; font-weight: 600;">
+        <i class="fas fa-magic"></i> Discover More Items
+    </button>
 </div>
 {% block extra_js %}
 <script>
@@ -470,6 +830,209 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+
+async function showRecommendations() {
+    const popup = document.getElementById('recommendationsPopup');
+    popup.classList.add('show');
+    
+    // Show loading state
+    const grid = document.getElementById('recommendationsGrid');
+    grid.innerHTML = `
+        <div class="no-recommendations">
+            <div class="loading-spinner"></div>
+            <p>Finding perfect recommendations for you...</p>
+        </div>
+    `;
+    
+    try {
+        // Fetch recommendations from server
+        const response = await fetch('/cart/recommendations', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        recommendationsCache = data.recommendations;
+        
+        if (data.recommendations && data.recommendations.length > 0) {
+            displayRecommendations(data.recommendations);
+        } else {
+            showNoRecommendations();
+        }
+        
+    } catch (error) {
+        console.error('Error fetching recommendations:', error);
+        showNoRecommendations();
+    }
+}
+
+function displayRecommendations(recommendations) {
+    const grid = document.getElementById('recommendationsGrid');
+    grid.innerHTML = '';
+    
+    recommendations.forEach(rec => {
+        const card = document.createElement('div');
+        card.className = 'recommendation-card';
+        
+        const badgeClass = `badge-${rec.explanation_type}`;
+        const explanationClass = `explanation-${rec.explanation_type}`;
+        
+        card.innerHTML = `
+            <div class="recommendation-badge ${badgeClass}">
+                ${rec.explanation_type === 'collaborative' ? 'For You' : 
+                  rec.explanation_type === 'popular' ? 'Popular' : 'New'}
+            </div>
+            <img src="/static/uploads/items/${rec.image_filename}" alt="${rec.name}" class="rec-image" onerror="this.src='/static/images/placeholder-food.jpg'">
+            <div class="rec-name">${rec.name}</div>
+            <div class="rec-price">Rs. ${rec.price.toFixed(2)}</div>
+            <div class="rec-explanation ${explanationClass}">
+                ${rec.explanation}
+            </div>
+            <button class="add-to-cart-btn" onclick="addRecommendedToCart(${rec.id}, this)">
+                <i class="fas fa-plus"></i> Add to Cart
+            </button>
+        `;
+        
+        grid.appendChild(card);
+    });
+}
+
+function showNoRecommendations() {
+    const grid = document.getElementById('recommendationsGrid');
+    grid.innerHTML = `
+        <div class="no-recommendations">
+            <i class="fas fa-search"></i>
+            <h4>No recommendations available</h4>
+            <p>Try adding more items to your cart to get personalized suggestions!</p>
+        </div>
+    `;
+}
+
+async function addRecommendedToCart(itemId, buttonElement) {
+    const originalText = buttonElement.innerHTML;
+    buttonElement.disabled = true;
+    buttonElement.innerHTML = '<div class="loading-spinner"></div>Adding...';
+    
+    try {
+        const response = await fetch('/cart/add_recommended', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                item_id: itemId,
+                quantity: 1
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update cart count if you have a cart counter
+            const cartCounter = document.querySelector('.cart-counter, .cart-count');
+            if (cartCounter) {
+                cartCounter.textContent = data.cart_count;
+            }
+            
+            // Show success feedback
+            buttonElement.innerHTML = '<i class="fas fa-check"></i> Added!';
+            buttonElement.style.background = '#28a745';
+            
+            // Show success message
+            showToast(data.message, 'success');
+            
+            // Optionally close popup after adding
+            setTimeout(() => {
+                closeRecommendationsPopup();
+            }, 1500);
+            window.location.reload();
+            
+        } else {
+            throw new Error(data.message);
+        }
+        
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        buttonElement.innerHTML = originalText;
+        buttonElement.disabled = false;
+        showToast('Error adding item to cart', 'error');
+    }
+}
+
+function closeRecommendationsPopup() {
+    const popup = document.getElementById('recommendationsPopup');
+    popup.classList.remove('show');
+}
+
+function showToast(message, type = 'success') {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#28a745' : '#dc3545'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Close popup when clicking outside
+document.getElementById('recommendationsPopup').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRecommendationsPopup();
+    }
+});
+
+// Close popup with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeRecommendationsPopup();
+    }
+});
+
+// Auto-show recommendations when cart has items
+document.addEventListener('DOMContentLoaded', function() {
+    const cartItems = document.querySelectorAll('.cart-item');
+    if (cartItems.length > 0) { 
+        // Delay slightly so page renders before popup
+        setTimeout(() => {
+            showRecommendations();
+        }, 500); 
+    }
+});
+fetch('/cart/add_recommended', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ item_id: itemId, quantity: qty })
+})
+.then(res => res.json())
+.then(data => {
+    if (data.success) {
+        alert(data.message);  // optional
+        window.location.href = '/cart';  // redirect here
+    } else {
+        alert('Error: ' + data.message);
+    }
+})
+.catch(() => alert('Unexpected error'));
+
+// Add CSS for button pulse animation
+
 </script>
 {% endblock %}
 

@@ -17,6 +17,47 @@
     .status-badge.delivered { background-color: green; }
     .status-badge.cancelled { background-color: red; }
     .status-badge.unknown { background-color: gray; }
+    /* Pagination container styling */
+#paginationContainer {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+/* Page item styling */
+#paginationContainer .pagination .page-item .page-link {
+    color:#b4623c;          /* Primary color */
+    background-color: #f8fafc; /* Light background */
+    border: 1px solid #e2e8f0;
+    margin: 0 3px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+/* Hover effect */
+#paginationContainer .pagination .page-item .page-link:hover {
+    background-color: #b4623c;
+    color: #fff;
+    border-color:#b4623c;
+}
+
+/* Active page */
+#paginationContainer .pagination .page-item.active .page-link {
+    background-color:#b4623c;
+    color: #fff;
+    border-color: #b4623c;
+    font-weight: bold;
+}
+
+/* Disabled page */
+#paginationContainer .pagination .page-item.disabled .page-link {
+    color: #a0a0a0;
+    pointer-events: none;
+    background-color: #f1f1f1;
+    border-color: #dcdcdc;
+}
+
+
 </style>
 {% endblock %}
 
@@ -95,40 +136,125 @@
     </div>
 </div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('orderSearch');
     const statusSelect = document.getElementById('statusFilter');
-    const orderRows = document.querySelectorAll('.order-row');
+    const orderRows = Array.from(document.querySelectorAll('.order-row'));
     const noResultsRow = document.getElementById('noResultsRow');
+
+    const rowsPerPage = 8; 
+    let currentPage = 1;
 
     function filterOrders() {
         const searchQuery = searchInput.value.toLowerCase().trim();
         const selectedStatus = statusSelect.value.toLowerCase();
-        let visibleCount = 0;
-
-        orderRows.forEach(row => {
+        const filteredRows = orderRows.filter(row => {
             const customer = row.querySelector('.order-customer').textContent.toLowerCase();
             const status = row.querySelector('.order-status span').textContent.toLowerCase();
 
             const matchesSearch = customer.includes(searchQuery);
             const matchesStatus = !selectedStatus || status === selectedStatus;
 
-            if (matchesSearch && matchesStatus) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
+            return matchesSearch && matchesStatus;
         });
 
-        noResultsRow.style.display = visibleCount === 0 ? '' : 'none';
+        currentPage = Math.min(currentPage, Math.ceil(filteredRows.length / rowsPerPage) || 1);
+        renderPage(filteredRows, currentPage);
+        renderPagination(filteredRows);
     }
 
-    searchInput.addEventListener('input', filterOrders);
-    statusSelect.addEventListener('change', filterOrders);
+    function renderPage(rows, page) {
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        orderRows.forEach(row => row.style.display = 'none'); // hide all first
+        const pageRows = rows.slice(start, end);
+        pageRows.forEach(row => row.style.display = '');
+
+        noResultsRow.style.display = rows.length === 0 ? '' : 'none';
+    }
+
+    function renderPagination(filteredRows) {
+        let paginationContainer = document.getElementById('paginationContainer');
+
+        if (!paginationContainer) {
+            paginationContainer = document.createElement('nav');
+            paginationContainer.id = 'paginationContainer';
+            paginationContainer.setAttribute('aria-label', 'Page navigation');
+            paginationContainer.style.marginTop = '1rem';
+            document.querySelector('.data-table').appendChild(paginationContainer);
+        }
+
+        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+        paginationContainer.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        const ul = document.createElement('ul');
+        ul.className = 'pagination justify-content-center';
+
+        
+        const prevLi = document.createElement('li');
+        prevLi.className = 'page-item' + (currentPage === 1 ? ' disabled' : '');
+        const prevLink = document.createElement('a');
+        prevLink.className = 'page-link';
+        prevLink.href = '#';
+        prevLink.textContent = 'Previous';
+        prevLink.addEventListener('click', e => {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                renderPage(filteredRows, currentPage);
+                renderPagination(filteredRows);
+            }
+        });
+        prevLi.appendChild(prevLink);
+        ul.appendChild(prevLi);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = 'page-item' + (i === currentPage ? ' active' : '');
+            const link = document.createElement('a');
+            link.className = 'page-link';
+            link.href = '#';
+            link.textContent = i;
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                currentPage = i;
+                renderPage(filteredRows, currentPage);
+                renderPagination(filteredRows);
+            });
+            li.appendChild(link);
+            ul.appendChild(li);
+        }
+
+        const nextLi = document.createElement('li');
+        nextLi.className = 'page-item' + (currentPage === totalPages ? ' disabled' : '');
+        const nextLink = document.createElement('a');
+        nextLink.className = 'page-link';
+        nextLink.href = '#';
+        nextLink.textContent = 'Next';
+        nextLink.addEventListener('click', e => {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderPage(filteredRows, currentPage);
+                renderPagination(filteredRows);
+            }
+        });
+        nextLi.appendChild(nextLink);
+        ul.appendChild(nextLi);
+
+        paginationContainer.appendChild(ul);
+    }
+
+    searchInput.addEventListener('input', () => { currentPage = 1; filterOrders(); });
+    statusSelect.addEventListener('change', () => { currentPage = 1; filterOrders(); });
+
+    // Initial render
+    filterOrders();
 });
 </script>
 {% endblock %}

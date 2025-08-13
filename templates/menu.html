@@ -195,7 +195,7 @@
 }
 
 .section-header {
-    margin-bottom: 30px;
+    margin-bottom: 0px;
     text-align: center;
 }
 
@@ -224,8 +224,8 @@
 }
 
 .menu-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 25px;
     padding: 20px 0;
 }
@@ -374,7 +374,7 @@
 
 .no-items-message {
     text-align: center;
-    padding: 60px 20px;
+    
     color: #6b7280;
     font-size: 1.1rem;
 }
@@ -501,9 +501,13 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-
+<div class="search-bar">
+                    <input type="text" id="menuSearch" placeholder="Search menu items..." onkeyup="searchMenuItems()">
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                </div>
     <!-- Category Filter -->
     <div class="category-filter">
+        
         <div class="filter-title"><i class="fas fa-filter"></i> Categories</div>
         <button class="filter-btn active" data-category="all">
             <span><i class="fas fa-th-large"></i> All</span>
@@ -514,67 +518,66 @@
             </button>
         {% endfor %}
     </div>
-
     <!-- Menu Items by Category -->
-    {% for category_name, items in menu_items.items() %}
+{% for category_name, items in menu_items.items() %}
+    <div class="category-section" data-category="{{ category_name }}">
         {% if items %}
-        <div class="category-section">
             <div class="section-header">
                 <h2 class="section-title">{{ category_name }}</h2>
             </div>
             
             <div class="menu-grid">
                 {% for item in items %}
-                <div class="menu-item"
-                     data-id="{{ item.id }}"
-                     data-name="{{ item.name }}"
-                     data-price="{{ item.price }}"
-                     data-image="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/320/220' }}"
-                     data-category="{{ category_name }}">
+                    <div class="menu-item"
+                         data-id="{{ item.id }}"
+                         data-name="{{ item.name }}"
+                         data-price="{{ item.price }}"
+                         data-image="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/320/220' }}"
+                         data-category="{{ category_name }}">
 
-                    <div class="item-image">
-                        <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/320/220' }}" alt="{{ item.name }}">
-                        <div class="item-badge">{{ category_name }}</div>
-                        {% if item.is_popular %}
-                        <div class="popular-tag"><i class="fas fa-star"></i></div>
-                        {% endif %}
+                        <div class="item-image">
+                            <img src="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/320/220' }}" alt="{{ item.name }}">
+                            <div class="item-badge">{{ category_name }}</div>
+                            {% if item.is_popular %}
+                                <div class="popular-tag"><i class="fas fa-star"></i></div>
+                            {% endif %}
+                        </div>
+
+                        <div class="item-details">
+                            <h3 class="item-name">{{ item.name }}</h3>
+                            <p class="item-description">{{ item.description or 'No description available.' }}</p>
+                            <span class="item-price">Rs. {{ '%.2f' % (item.price) }}</span>
+
+                            <form method="POST" action="{{ url_for('add_to_cart') }}">
+                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                <input type="hidden" name="item_name" value="{{ item.name }}">
+                                <input type="hidden" name="item_price" value="{{ '%.2f' % (item.price) }}">
+                                <input type="hidden" name="item_image" value="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/320/220' }}">
+                                <input type="hidden" name="category" value="{{ category_name }}">
+                                <input type="hidden" name="source" value="user_menu">
+
+                                <button type="submit" class="add-to-cart">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    Add to Cart
+                                </button>
+                            </form>
+                        </div>
                     </div>
-
-                    <div class="item-details">
-                        <h3 class="item-name">{{ item.name }}</h3>
-                        <p class="item-description">{{ item.description or 'No description available.' }}</p>
-                        
-                        <span class="item-price">Rs. {{ '%.2f' % (item.price) }}</span>
-                        
-                        <form method="POST" action="{{ url_for('add_to_cart') }}">
-                            <input type="hidden" name="item_id" value="{{ item.id }}">
-                            <input type="hidden" name="item_name" value="{{ item.name }}">
-                            <input type="hidden" name="item_price" value="{{ '%.2f' % (item.price) }}">
-                            <input type="hidden" name="item_image" value="{{ url_for('static', filename='uploads/items/' ~ item.image_filename) if item.image_filename else '/api/placeholder/320/220' }}">
-                            <input type="hidden" name="category" value="{{ category_name }}">
-                            <input type="hidden" name="source" value="user_menu">
-
-                            <button type="submit" class="add-to-cart">
-                                <i class="fas fa-shopping-cart"></i>
-                                Add to Cart
-                            </button>
-                        </form>
-                    </div>
-                </div>
                 {% endfor %}
             </div>
-        </div>
         {% else %}
-        <div class="category-section">
             <div class="section-header">
                 <h2 class="section-title">{{ category_name }}</h2>
             </div>
             <div class="no-items-message">
                 <p>No items available for {{ current_day }}.</p>
             </div>
-        </div>
         {% endif %}
-    {% endfor %}
+    </div>
+{% endfor %}
+<div class="no-result" style="display:none;text-weight:bold;font-size:22px;text-align:center;">
+                <p>No items available .</p>
+            </div>
 </div>
 
 {% block extra_js %}
@@ -589,45 +592,66 @@
             setTimeout(() => msg.remove(), 500);
         });
     }, 3000);
+document.addEventListener("DOMContentLoaded", function() {
+    const filterButtons = document.querySelectorAll(".filter-btn");
+    const categorySections = document.querySelectorAll(".category-section");
 
-    // Category filtering with enhanced animations
-    document.addEventListener("DOMContentLoaded", function() {
-        const filterButtons = document.querySelectorAll(".filter-btn");
-        const items = document.querySelectorAll(".menu-item");
+    filterButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            // Activate button
+            filterButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
 
-        filterButtons.forEach(btn => {
-            btn.addEventListener("click", () => {
-                // Remove active class from all buttons
-                filterButtons.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
+            const selectedCategory = btn.dataset.category;
 
-                const category = btn.dataset.category;
-
-                // Filter items with staggered animation
-                items.forEach((item, index) => {
-                    if (category === "all" || item.dataset.category === category) {
-                        item.style.display = "block";
-                        item.style.animation = `fadeInUp 0.6s ease-out ${index * 0.1}s both`;
-                    } else {
-                        item.style.display = "none";
-                    }
-                });
-            });
-        });
-
-        
-        // Add enhanced hover effects
-        const menuItems = document.querySelectorAll('.menu-item');
-        menuItems.forEach(item => {
-            item.addEventListener('mouseenter', function() {
-                this.style.zIndex = '10';
-            });
-            
-            item.addEventListener('mouseleave', function() {
-                this.style.zIndex = '1';
+            categorySections.forEach(section => {
+                const category = section.dataset.category;
+                if (selectedCategory === "all" || selectedCategory === category) {
+                    section.style.display = "block";
+                } else {
+                    section.style.display = "none";
+                }
             });
         });
     });
+});
+function searchMenuItems() {
+    const searchValue = document.getElementById("menuSearch").value.toLowerCase().trim();
+    const items = document.querySelectorAll(".menu-item");
+    const categorySections = document.querySelectorAll(".category-section");
+    const noResultDiv = document.querySelector(".no-result");
+    let anyVisibleItem = false;
+
+    // First, hide all items initially
+    items.forEach(item => {
+        const nameElement = item.querySelector(".item-name");
+        const name = nameElement ? nameElement.innerText.toLowerCase() : "";
+        const matchesSearch = name.includes(searchValue);
+
+        if (matchesSearch) {
+            item.style.display = "";
+            anyVisibleItem = true;
+        } else {
+            item.style.display = "none";
+        }
+    });
+
+    // Then, hide or show category sections based on visible items inside them
+    categorySections.forEach(section => {
+        const visibleItems = section.querySelectorAll(".menu-item:not([style*='display: none'])");
+        if (visibleItems.length > 0) {
+            section.style.display = "block";
+        } else {
+            section.style.display = "none";
+        }
+    });
+
+    // Show "no results" message if nothing matches
+    noResultDiv.style.display = anyVisibleItem ? "none" : "block";
+}
+
+
+
 </script>
 {% endblock %}
 

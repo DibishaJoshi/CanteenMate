@@ -40,7 +40,11 @@
 {% block content %}
 <div class="main-dashboard-wrapper">
 <div class="dashboard-container">
-    <h1 class="page-title">Special Menu For You</h1>
+    <h1 class="page-title">Recommendations For You</h1>
+    <div class="search-bar">
+                    <input type="text" id="menuSearch" placeholder="Search menu items..." onkeyup="searchMenuItems()">
+                    <button type="submit"><i class="fas fa-search"></i></button>
+                </div>
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -181,6 +185,29 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
+function searchMenuItems() {
+  const searchValue = document.getElementById("menuSearch").value.toLowerCase().trim();
+  const items = document.querySelectorAll(".menu-item");
+  let anyVisible = false;
+
+  items.forEach(item => {
+    const nameElement = item.querySelector(".item-name");
+    const name = nameElement ? nameElement.innerText.toLowerCase() : "";
+    const matches = name.includes(searchValue);
+
+    item.style.display = matches ? "block" : "none";
+
+    if (matches) anyVisible = true;
+  });
+
+  const noItemsMessage = document.getElementById("no-items-message");
+  if (!anyVisible) {
+    noItemsMessage.style.display = "block";
+  } else {
+    noItemsMessage.style.display = "none";
+  }
+}
+
 </script>
 
 {% endblock %}
