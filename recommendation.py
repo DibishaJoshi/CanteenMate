@@ -55,8 +55,8 @@ def train_knn(user_item_matrix, n_neighbors=3):
     return model, k
 
 
-def recommend_items_for_user_with_explanations(user_id, user_item_matrix, model, n_neighbors=3, top_n=5):
-    """Get recommended items for a specific user WITH explanations (menu-filtered)"""
+def recommend_items_for_user(user_id, user_item_matrix, model, n_neighbors=3, top_n=5):
+    """Get recommended items for a specific user  (menu-filtered)"""
     if user_item_matrix is None or user_id not in user_item_matrix.index or model is None:
         return []
 
@@ -140,8 +140,8 @@ def recommend_items_for_user_with_explanations(user_id, user_item_matrix, model,
     return recommendations
 
 
-def get_fallback_recommendations_with_explanations(top_n=5):
-    """Get fallback recommendations with explanations (menu-filtered)"""
+def get_fallback_recommendations(top_n=7):
+    """Get fallback recommendations (menu-filtered)"""
     menu_item_ids = get_today_menu_item_ids()
     if not menu_item_ids:
         return []
@@ -174,7 +174,6 @@ def get_fallback_recommendations_with_explanations(top_n=5):
     except Exception:
         pass
 
-    # Fallback to newest menu items
     fallback_items = Item.query.filter(Item.id.in_(menu_item_ids))\
                                .order_by(Item.id.desc())\
                                .limit(top_n).all()

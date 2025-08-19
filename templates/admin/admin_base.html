@@ -43,8 +43,11 @@
                     <i class="fas fa-tachometer-alt"></i>
                     Dashboard
                 </a>
+                <a href="{{ url_for('admin_user') }}" class="menu-item {% if active_page == 'users' %}active{% endif %}">
+                    <i class="fas fa-user"></i>
+                    Users
+                </a>
             </div>
-            
             <div class="menu-section">
                 <div class="menu-title">ITEM MANAGEMENT</div>
                 <a href="{{ url_for('categories') }}" class="menu-item {% if active_page == 'categories' %}active{% endif %}">
@@ -168,6 +171,10 @@
         }
     });
 </script>
-    {% block extra_js %}{% endblock %}
+    {% block extra_js %}
+
+
+
+    {% endblock %}
 </body>
 </html>

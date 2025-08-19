@@ -21,8 +21,8 @@
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #B5ADA8;
+            color: black;
             padding: 20px 30px;
             display: flex;
             justify-content: space-between;
@@ -65,8 +65,8 @@
         }
         
         .stat-card {
-            background: linear-gradient(135deg, #eaa1f3ff 0%, #ce5b6aff 100%);
-            color: white;
+            background: #E0D5D5;
+            color: #574B4B;
             padding: 20px;
             border-radius: 12px;
             text-align: center;
@@ -425,17 +425,17 @@
                     <h3>{{ total_reviews }}</h3>
                     <small>Total Reviews</small>
                 </div>
-                <div class="stat-card secondary">
+                <div class="stat-card ">
                     <i class="fas fa-chart-line"></i>
                     <h3>{{ avg_rating }}</h3>
                     <small>Average Rating</small>
                 </div>
-                <div class="stat-card success">
+                <div class="stat-card">
                     <i class="fas fa-check-circle"></i>
                     <h3>{{ total_reviews - unverified_count }}</h3>
                     <small>Verified Reviews</small>
                 </div>
-                <div class="stat-card warning">
+                <div class="stat-card ">
                     <i class="fas fa-exclamation-triangle"></i>
                     <h3>{{ unverified_count }}</h3>
                     <small>Pending Reviews</small>
