@@ -441,7 +441,7 @@
     <div id="address-fields" style="display: {{ 'block' if form_data.get('delivery') == 'home' else 'none' }};">
       <h3>Delivery Address</h3>
       <label for="building">Building / Block *</label>
-      <input type="text" id="building" name="building" value="{{ form_data.get('building', '') }}" placeholder="e.g., Sunrise Apartments, Block A" />
+      <input type="text" id="building" name="building" value="{{ form_data.get('building', '') }}" placeholder="e.g., EIC , Block A" />
 
       <label for="floor">Floor / Room No. *</label>
       <input type="text" id="floor" name="floor" value="{{ form_data.get('floor', '') }}" placeholder="e.g., 3rd Floor, Room 301" />
@@ -461,7 +461,7 @@
       </label>
       
       <!-- Khalti Payment -->
-      <label class="payment-method-label" for="payment-khalti">
+      <!--<label class="payment-method-label" for="payment-khalti">
         <input type="radio" id="payment-khalti" name="payment" value="khalti" {% if form_data.get('payment') == 'khalti' %}checked{% endif %}>
         <div class="payment-content">
           <img src="https://khalti.s3.ap-south-1.amazonaws.com/website/logo/khalti-logo.png" alt="Khalti" class="payment-logo" onerror="this.style.display='none'">
@@ -470,7 +470,7 @@
             <div class="payment-description">Pay securely with your Khalti wallet</div>
           </div>
         </div>
-      </label>
+      </label>-->
       
       <!-- eSewa Payment -->
       <label class="payment-method-label" for="payment-esewa">

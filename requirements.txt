@@ -6,3 +6,4 @@ scikit-learn
 sklearn
 numpy
 python-dotenv
+eventlet
