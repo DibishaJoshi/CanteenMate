@@ -150,7 +150,7 @@
     background-color: green;
   }
 
-  .status-badge.not-available {
+  .status-badge.unavailable {
     background-color: red;
   }
 
@@ -222,7 +222,7 @@
       <select id="statusFilter">
         <option value="">All Items</option>
         <option value="available">Available</option>
-        <option value="not-available">Unavailable</option>
+        <option value="unavailable">Unavailable</option>
       </select>
     </div>
   </div>
@@ -250,7 +250,7 @@
     <table>
       <thead>
         <tr>
-          <th>Item ID</th>
+          <th>ID</th>
           <th>Name</th>
           <th>Image</th>
           <th>Category</th>
@@ -263,7 +263,7 @@
       <tbody id="item-table-body">
         {% for item in items %}
         <tr class="item-row">
-          <td>{{ "%03d"|format(item.id) }}</td>
+          <td>{{ loop.index }}</td>
           <td class="item-name">{{ item.name }}</td>
           <td>
             {% if item.image_filename %}
@@ -273,7 +273,7 @@
           <td>{{ item.category.name if item.category else "N/A" }}</td>
           <td>Rs. {{ '%.2f'|format(item.price) }}</td>
           <td>
-            <span class="status-badge {{ 'available' if item.available else 'not-available' }}">{{ 'Available' if item.available else 'Unavailable' }}</span>
+            <span class="status-badge {{ 'available' if item.available else 'unavailable' }}">{{ 'Available' if item.available else 'Unavailable' }}</span>
           </td>
           <td>
             {% if item.addons|length > 0 %}
@@ -299,7 +299,12 @@
             >
               <i class="fas fa-edit"></i> 
             </button>
-            <a href="#" class="btn btn-sm btn-danger btn-delete"><i class="fas fa-trash"></i> </a>
+            <form action="{{ url_for('delete_item', item_id=item.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this item?');">
+    <button type="submit" class="btn btn-sm btn-danger" style="background-color:white;color:red;border-color:white;">
+        <i class="fas fa-trash"></i>
+    </button>
+</form>
+
           </td>
         </tr>
         {% endfor %}
@@ -590,7 +595,7 @@ document.addEventListener('DOMContentLoaded', function () {
           <td>${item.category && item.category.name ? item.category.name : 'N/A'}</td>
           <td>Rs. ${parseFloat(item.price || 0).toFixed(2)}</td>
           <td>
-            <span class="status-badge ${item.available ? 'available' : 'not-available'}">
+            <span class="status-badge ${item.available ? 'available' : 'unavailable'}">
               ${item.available ? 'Available' : 'Unavailable'}
             </span>
           </td>

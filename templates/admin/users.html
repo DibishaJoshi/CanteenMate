@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Management - Admin Panel</title>
+{% extends "admin/admin_base.html" %}
+{% block extra_css %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card.admins {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-card.customers {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .stat-card.inactive {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .section-filters {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .filters-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px 15px;
+            min-width: 300px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .search-box button {
+            background: #667eea;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-box button:hover {
+            background: #5a67d8;
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-select:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .users-list {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .data-table {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9ff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        td {
+            padding: 18px 15px;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .user-details h4 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .user-details p {
+            margin: 2px 0 0 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.admin {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+        }
+
+        .status-badge.customer {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-view {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-edit:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+            padding: 20px;
+        }
+
+        .btn-page {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            background: white;
+            color: #6c757d;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-page:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        .btn-page.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .btn-page:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 14px;
+            color: #666;
+        }
+
+        .no-users {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .no-users i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 10px;
+            }
+
+            .filters-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .stats-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .data-table {
+                font-size: 12px;
+            }
+
+            .user-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+    {% endblock %}
+</head>
+{% block content %}
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="section-header">
+            <h1 class="page-title">
+                <i class="fas fa-users"></i>
+                Customer Management
+            </h1>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-number">148</div>
+                <div class="stat-label">Total Customers</div>
+            </div>
+            <div class="stat-card admins">
+                <div class="stat-number">12</div>
+                <div class="stat-label">New This Month</div>
+            </div>
+            <div class="stat-card customers">
+                <div class="stat-number">98</div>
+                <div class="stat-label">Active Customers</div>
+            </div>
+            <div class="stat-card inactive">
+                <div class="stat-number">25</div>
+                <div class="stat-label">Recent Orders</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="section-filters">
+            <div class="filters-row">
+                <div class="search-box">
+                    <input type="text" placeholder="Search customers by name or email..." id="searchInput">
+                    <button type="button" onclick="searchUsers()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <select class="filter-select" id="sortBy" onchange="sortUsers()">
+                    <option value="created_desc">Newest First</option>
+                    <option value="created_asc">Oldest First</option>
+                    <option value="name_asc">Name A-Z</option>
+                    <option value="name_desc">Name Z-A</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Users List -->
+        <div class="users-list">
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Orders</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td>001</td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">JS</div>
+                                    <div class="user-details">
+                                        <h4>Jane Smith</h4>
+                                        <p>Regular customer</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>jane.smith@email.com</td>
+                            <td>9851234567</td>
+                            <td>
+                                <span class="status-badge customer">12 Orders</span>
+                            </td>
+                            <td>Jan 20, 2024</td>
+                            <td class="actions">
+                                <button class="btn-action btn-view" onclick="viewUser(1)">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button class="btn-action btn-edit" onclick="editUser(1)">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn-action btn-delete" onclick="deleteUser(1)">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>002</td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">MS</div>
+                                    <div class="user-details">
+                                        <h4>Mike Johnson</h4>
+                                        <p>Frequent buyer</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>mike.johnson@email.com</td>
+                            <td>9861234567</td>
+                            <td>
+                                <span class="status-badge customer">8 Orders</span>
+                            </td>
+                            <td>Feb 5, 2024</td>
+                            <td class="actions">
+                                <button class="btn-action btn-view" onclick="viewUser(2)">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button class="btn-action btn-edit" onclick="editUser(2)">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn-action btn-delete" onclick="deleteUser(2)">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>003</td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">EB</div>
+                                    <div class="user-details">
+                                        <h4>Emily Brown</h4>
+                                        <p>VIP customer</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>emily.brown@email.com</td>
+                            <td>9871234567</td>
+                            <td>
+                                <span class="status-badge customer">25 Orders</span>
+                            </td>
+                            <td>Feb 12, 2024</td>
+                            <td class="actions">
+                                <button class="btn-action btn-view" onclick="viewUser(3)">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button class="btn-action btn-edit" onclick="editUser(3)">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn-action btn-delete" onclick="deleteUser(3)">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>004</td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">LS</div>
+                                    <div class="user-details">
+                                        <h4>Lisa Wilson</h4>
+                                        <p>New customer</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>lisa.wilson@email.com</td>
+                            <td>9881234567</td>
+                            <td>
+                                <span class="status-badge customer">3 Orders</span>
+                            </td>
+                            <td>Mar 1, 2024</td>
+                            <td class="actions">
+                                <button class="btn-action btn-view" onclick="viewUser(4)">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button class="btn-action btn-edit" onclick="editUser(4)">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn-action btn-delete" onclick="deleteUser(4)">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>005</td>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">RD</div>
+                                    <div class="user-details">
+                                        <h4>Robert Davis</h4>
+                                        <p>Active customer</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>robert.davis@email.com</td>
+                            <td>9891234567</td>
+                            <td>
+                                <span class="status-badge customer">15 Orders</span>
+                            </td>
+                            <td>Mar 15, 2024</td>
+                            <td class="actions">
+                                <button class="btn-action btn-view" onclick="viewUser(5)">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button class="btn-action btn-edit" onclick="editUser(5)">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn-action btn-delete" onclick="deleteUser(5)">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-info">
+            Showing 1-5 of 148 customers
+        </div>
+        <div class="pagination">
+            <button class="btn-page" onclick="goToPage(1)" disabled>
+                <i class="fas fa-angles-left"></i> First
+            </button>
+            <button class="btn-page" onclick="previousPage()" disabled>
+                <i class="fas fa-angle-left"></i> Previous
+            </button>
+            <button class="btn-page active" onclick="goToPage(1)">1</button>
+            <button class="btn-page" onclick="goToPage(2)">2</button>
+            <button class="btn-page" onclick="goToPage(3)">3</button>
+            <button class="btn-page" onclick="goToPage(4)">4</button>
+            <button class="btn-page" onclick="goToPage(5)">5</button>
+            <button class="btn-page" onclick="nextPage()">
+                Next <i class="fas fa-angle-right"></i>
+            </button>
+            <button class="btn-page" onclick="goToPage(32)">
+                Last <i class="fas fa-angles-right"></i>
+            </button>
+        </div>
+    </div>
+    {% endblock %}
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 32;
+        let usersPerPage = 5;
+
+        function searchUsers() {
+            const searchTerm = document.getElementById('searchInput').value;
+            console.log('Searching for:', searchTerm);
+            // Implement search functionality
+            // This would typically make an AJAX call to your backend
+        }
+
+        function filterByRole() {
+            const roleFilter = document.getElementById('roleFilter').value;
+            console.log('Filtering by role:', roleFilter);
+            // Implement role filtering
+        }
+
+        function sortUsers() {
+            const sortBy = document.getElementById('sortBy').value;
+            console.log('Sorting by:', sortBy);
+            // Implement sorting functionality
+        }
+
+        function viewUser(userId) {
+            console.log('Viewing user:', userId);
+            // Implement view user functionality
+            alert(`Viewing user ${userId}`);
+        }
+
+        function editUser(userId) {
+            console.log('Editing user:', userId);
+            // Implement edit user functionality
+            alert(`Editing user ${userId}`);
+        }
+
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                console.log('Deleting user:', userId);
+                // Implement delete user functionality
+                alert(`User ${userId} deleted`);
+            }
+        }
+
+        function goToPage(page) {
+            if (page !== currentPage && page >= 1 && page <= totalPages) {
+                currentPage = page;
+                updatePagination();
+                loadUsersForPage(page);
+            }
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                goToPage(currentPage - 1);
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                goToPage(currentPage + 1);
+            }
+        }
+
+        function updatePagination() {
+            const buttons = document.querySelectorAll('.btn-page');
+            buttons.forEach(button => {
+                button.classList.remove('active');
+                if (button.textContent == currentPage) {
+                    button.classList.add('active');
+                }
+            });
+
+            // Update pagination info
+            const start = (currentPage - 1) * usersPerPage + 1;
+            const end = Math.min(currentPage * usersPerPage, 156);
+            document.querySelector('.pagination-info').textContent = 
+                `Showing ${start}-${end} of 156 users`;
+        }
+
+        function loadUsersForPage(page) {
+            // This would typically make an AJAX call to load users for the specific page
+            console.log(`Loading users for page ${page}`);
+            // Example: fetch(`/admin/users?page=${page}`)
+        }
+
+        // Search input enter key support
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchUsers();
+            }
+        });
+    </script>
+</body>
+</html>

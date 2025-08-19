@@ -558,7 +558,7 @@ strong{
                     <span class="rating-value">{{ review.rating }}/5</span>
                 </div>
                 
-                {% if review.service_rating %}
+                <!--{% if review.service_rating %}
                     <div class="rating-display">
                         <strong>Service Rating:</strong>
                         <div class="rating-stars">
@@ -581,7 +581,7 @@ strong{
                         <span class="rating-value">{{ review.delivery_rating }}/5</span>
                     </div>
                 {% endif %}
-                
+            -->
                 <div style="margin-top: 15px;">
                     <strong>Your Review:</strong>
                     <p style="margin-top: 8px; font-size:20px;font-style: italic; color: #555;">
@@ -671,7 +671,7 @@ strong{
                     <small class="text-muted">Rate the quality and taste of this item</small>
                 </div>
 
-                <!-- Service Rating -->
+                <!-- Service Rating 
                 <div class="form-group-enhanced">
                     <label class="form-label-enhanced">
                         <i class="fas fa-concierge-bell"></i> Service Rating:
@@ -685,7 +685,7 @@ strong{
                     <small class="text-muted">Rate the customer service experience</small>
                 </div>
 
-                <!-- Delivery Rating -->
+                 Delivery Rating
                 <div class="form-group-enhanced">
                     <label class="form-label-enhanced">
                         <i class="fas fa-truck"></i> Delivery Rating:
@@ -697,8 +697,9 @@ strong{
                         {% endfor %}
                     </div>
                     <small class="text-muted">Rate the delivery speed and packaging</small>
+                    
                 </div>
-
+ -->
                 <!-- Review Comment -->
                 <div class="form-group-enhanced">
                     <label for="review_{{ item.item_id }}" class="form-label-enhanced">

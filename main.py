@@ -2,12 +2,11 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime,timedelta,date,time
-from flask_socketio import SocketIO,join_room, leave_room
+from flask_socketio import SocketIO,join_room, leave_room,emit
 from sqlalchemy import func, desc, asc,and_
 import recommendation
 from pytz import timezone
-
-
+from collections import defaultdict
 import os
 import functools
 import re
@@ -35,10 +34,9 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 KHALTI_INITIATE_URL = "https://a.khalti.com/api/v2/epayment/initiate/"
 KHALTI_SECRET_KEY = "key live_secret_key_68791341fdd94846a146f0457ff7b455"
 
-# eSewa ePay v2 Configuration
-ESEWA_MERCHANT_CODE = "EPAYTEST"  # Use EPAYTEST for testing
-ESEWA_SECRET_KEY = "8gBm/:&EnhH.1/q"  # Test secret key for EPAYTEST
-ESEWA_BASE_URL = "https://rc-epay.esewa.com.np/api/epay/main/v2"  # Production URL with test credentials
+ESEWA_MERCHANT_CODE = "EPAYTEST"  
+ESEWA_SECRET_KEY = "8gBm/:&EnhH.1/q"  
+ESEWA_BASE_URL = "https://rc-epay.esewa.com.np/api/epay/main/v2"  
 
 
 # Initialize database with app
@@ -117,7 +115,6 @@ def signup():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
-        # Check required fields
         if not fullname or not email or not password or not confirm_password:
             flash('All fields are required.', 'warning')
             return redirect(url_for('signup'))
@@ -125,8 +122,6 @@ def signup():
         if '@' not in email and '.' not in email:
             flash("Enter a valid Email address.",'warning')
             return redirect(url_for('signup'))
-
-        # Password validations
         if len(password) < 6:
             flash('Password must be at least 6 characters long.', 'warning')
             return redirect(url_for('signup'))
@@ -135,13 +130,11 @@ def signup():
             flash('Passwords do not match!', 'danger')
             return redirect(url_for('signup'))
 
-        # Check if email already exists
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
             flash('Email address already exists.', 'danger')
             return redirect(url_for('signup'))
 
-        # Always assign role = 'user'
         new_user = User(
             fullname=fullname,
             email=email,
@@ -177,7 +170,6 @@ def dashboard():
         total_customers = User.query.filter(User.role != 'admin').count()
         today = date.today()
 
-        # Create datetime range for today (00:00:00 to 23:59:59.999999)
         start_datetime = datetime.combine(today, time.min)
         end_datetime = datetime.combine(today, time.max)
 
@@ -186,7 +178,7 @@ def dashboard():
             Order.created_at <= end_datetime
         ).all()
 
-        todays_orders_count = len(todays_orders)  # <-- Add this line
+        todays_orders_count = len(todays_orders) 
 
         todays_revenue = sum(order.total_amount for order in todays_orders)
 
@@ -220,6 +212,13 @@ def dashboard():
 def admin():
     return redirect(url_for('dashboard'))
 
+@app.route('/admin/users')
+@login_required
+def admin_user():
+    users = User.query.filter_by(role='user').all()
+    user = User.query.get(session['user_id'])
+    return render_template('admin/user_data.html', users=users, user=user, active_page='users')
+
 @app.route('/dashboard')
 @login_required
 def user_dashboard():
@@ -232,18 +231,20 @@ def user_dashboard():
     user_item_matrix, df = recommendation.build_user_item_matrix()
     
     recommendation_context = recommendation.get_user_order_history_explanation(user_id)
+    print("Matrix users:", user_item_matrix.index.tolist())
+    print("Current user:", user_id)
     
     if user_item_matrix is None or user_item_matrix.empty:
-        menu_recommendations = recommendation.get_fallback_recommendations_with_explanations()
+        menu_recommendations = recommendation.get_fallback_recommendations()
         recommendation_type = "popular"
     else:
         model, k = recommendation.train_knn(user_item_matrix)
         
         if model is None or k == 0:
-            menu_recommendations = recommendation.get_fallback_recommendations_with_explanations()
+            menu_recommendations = recommendation.get_fallback_recommendations()
             recommendation_type = "popular"
         else:
-            menu_recommendations = recommendation.recommend_items_for_user_with_explanations(
+            menu_recommendations = recommendation.recommend_items_for_user(
                 user_id, 
                 user_item_matrix, 
                 model, 
@@ -251,7 +252,7 @@ def user_dashboard():
                 top_n=5
             )
             if not menu_recommendations:
-                menu_recommendations = recommendation.get_fallback_recommendations_with_explanations()
+                menu_recommendations = recommendation.get_fallback_recommendations()
                 recommendation_type = "popular"
             else:
                 recommendation_type = "personalized"
@@ -568,6 +569,31 @@ def add_item():
         flash("Item added successfully!", "items_success")
 
     return redirect(url_for('items'))
+@app.route('/admin/delete-item/<int:item_id>', methods=['POST'])
+@login_required
+def delete_item(item_id):
+    item = Item.query.get(item_id)
+    if not item:
+        flash("Item not found.", "items_danger")
+        return redirect(url_for('items'))
+
+    # Remove references in menus
+    menus = Menu.query.filter_by(item_id=item.id).all()
+    menus = Menu.query.filter_by(item_id=item.id).all()
+    if menus:
+        flash("Cannot delete this item because it is assigned in the menu.", "items_danger")
+        return redirect(url_for('items'))
+    for menu in menus:
+        menu.item_id = None  # Or handle differently
+    db.session.commit()
+
+    # Delete the item
+    db.session.delete(item)
+    db.session.commit()
+    flash("Item deleted successfully!", "items_success")
+    return redirect(url_for('items'))
+
+
 # @app.route('/update_cart_addons', methods=['POST'])
 # @login_required
 # def update_cart_addons():
@@ -697,20 +723,11 @@ def search_menu():
     menu_items = {}
     
     if search_query:
-        # Search in menu items
-        # If using Menu model:
         search_results = db.session.query(Menu).join(Item).filter(
             Menu.day == day,
             Item.name.ilike(f'%{search_query}%')
         ).all()
         
-        # For demo, search in all items
-        # search_results = Item.query.filter(
-        #     Item.name.ilike(f'%{search_query}%'),
-        #     Item.available == True
-        # ).all()
-        
-        # Group by category
         for menu_entry in search_results:
             item = menu_entry.item
             category_name = item.category.name if item.category else 'Other'
@@ -902,11 +919,158 @@ def admin_order_view(order_id):
     user = User.query.get(user_id)
     order = Order.query.get_or_404(order_id)
     return render_template('admin/order_view.html',user=user,active_page='admin_orders', order=order)
+class NotificationManager:
+    def __init__(self):
+        self.notifications = defaultdict(list)  # {str(user_id): [notifications]}
+        self.max_notifications_per_user = 50
 
-# Socket.IO event handlers
+    def add_notification(self, user_id, message, notification_type="info", order_id=None):
+        user_id = str(user_id)
+        notification = {
+            'id': f"{user_id}_{int(datetime.now().timestamp())}",
+            'message': message,
+            'type': notification_type,
+            'order_id': order_id,
+            'timestamp': datetime.now().isoformat(),
+            'time': datetime.now().strftime('%H:%M'),
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'read': False
+        }
+        self.notifications[user_id].insert(0, notification)
+        # Limit list
+        if len(self.notifications[user_id]) > self.max_notifications_per_user:
+            self.notifications[user_id] = self.notifications[user_id][:self.max_notifications_per_user]
+        return notification
+
+    def get_user_notifications(self, user_id, limit=20):
+        user_id = str(user_id)
+        return self.notifications.get(user_id, [])[:limit]
+
+    def mark_all_as_read(self, user_id):
+        user_id = str(user_id)
+        for n in self.notifications.get(user_id, []):
+            n['read'] = True
+
+    def get_unread_count(self, user_id):
+        user_id = str(user_id)
+        return sum(1 for n in self.notifications.get(user_id, []) if not n['read'])
+
+    def get_notifications(self, user_id):
+        user_id = str(user_id)
+        return self.notifications.get(user_id, [])
+
+    def generate_from_orders(self, user_id):
+        """Generate notifications from order history"""
+        try:
+            from models import Order
+            user_id_str = str(user_id)
+            thirty_days_ago = datetime.now() - timedelta(days=30)
+            recent_orders = Order.query.filter(
+                Order.user_id == user_id,
+                Order.created_at >= thirty_days_ago
+            ).order_by(Order.created_at.desc()).limit(10).all()
+
+            notifications = []
+            for order in recent_orders:
+                status_messages = {
+                    'pending': f"🕐 Order #{order.id} is awaiting processing",
+                    'processing': f"👨‍🍳 Order #{order.id} is being prepared",
+                    'ready': f"🔔 Order #{order.id} is ready for pickup!",
+                    'delivered': f"✅ Order #{order.id} has been delivered",
+                    'cancelled': f"❌ Order #{order.id} was cancelled"
+                }
+                message = status_messages.get(order.status, f"Order #{order.id} status: {order.status}")
+                notif = {
+                    'id': f"order_{order.id}_{user_id_str}",
+                    'message': message,
+                    'type': 'order_update',
+                    'order_id': order.id,
+                    'timestamp': order.created_at.isoformat(),
+                    'time': order.created_at.strftime('%H:%M'),
+                    'date': order.created_at.strftime('%Y-%m-%d'),
+                    'read': True
+                }
+                notifications.append(notif)
+
+            existing_ids = {n['id'] for n in self.notifications[user_id_str]}
+            for n in notifications:
+                if n['id'] not in existing_ids:
+                    self.notifications[user_id_str].append(n)
+
+            # Sort newest first
+            self.notifications[user_id_str].sort(key=lambda x: x['timestamp'], reverse=True)
+            return len(notifications)
+        except Exception as e:
+            print(f"Error generating notifications from orders: {e}")
+            return 0
+
+notification_manager = NotificationManager()
+
+@app.route('/api/notifications')
+@login_required
+def get_notifications():
+    """API endpoint to get user notifications"""
+    user_id = session.get('user_id')
+    
+    if not notification_manager.get_user_notifications(user_id):
+        notification_manager.generate_from_orders(user_id)
+    
+    notifications = notification_manager.get_user_notifications(user_id, limit=20)
+    unread_count = notification_manager.get_unread_count(user_id)
+    
+    return jsonify({
+        'notifications': notifications,
+        'unread_count': unread_count,
+        'success': True
+    })
+
+@app.route('/api/notifications/mark-read', methods=['POST'])
+@login_required
+def mark_notifications_read():
+    """Mark notifications as read"""
+    user_id = session.get('user_id')
+    data = request.get_json()
+    notification_id = data.get('notification_id') if data else None
+    
+    notification_manager.mark_all_as_read(user_id)
+    
+    return jsonify({
+        'success': True,
+        'unread_count': notification_manager.get_unread_count(user_id)
+    })
 @socketio.on('connect')
 def handle_connect():
-    print(f'Client {request.sid} connected')
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return False  
+    join_room(f"user_{user_id}")
+    
+    notifications = notification_manager.get_user_notifications(user_id, limit=10)
+    unread_count = notification_manager.get_unread_count(user_id)
+    
+    emit('notification_history', {
+        'notifications': notifications,
+        'unread_count': unread_count
+    })
+
+@socketio.on('request_notifications')
+def handle_notification_request(data):
+    """Handle explicit notification requests from client"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return
+    
+    if not notification_manager.get_user_notifications(user_id):
+        count = notification_manager.generate_from_orders(user_id)
+        print(f"Generated {count} notifications from order history for user {user_id}")
+    
+    notifications = notification_manager.get_user_notifications(user_id, limit=20)
+    unread_count = notification_manager.get_unread_count(user_id)
+    
+    emit('notification_history', {
+        'notifications': notifications,
+        'unread_count': unread_count
+    })
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -926,6 +1090,7 @@ def handle_leave(data):
         leave_room(room)
         print(f'Client {request.sid} left room {room}')
 
+
 @app.route('/admin/orders/<int:order_id>/update-status', methods=['POST'])
 @login_required
 def admin_update_order_status(order_id):
@@ -933,12 +1098,12 @@ def admin_update_order_status(order_id):
     new_status = request.form.get('status')
 
     status_messages = {
-        'pending': "🕒 Your order has been placed and is awaiting processing.",
-        'processing': "👨🍳 Your order is currently being prepared.",
+        'pending': "🕐 Your order has been placed and is awaiting processing",
+        'processing': "👨‍🍳 Your order is currently being prepared",
         'ready': "🔔 Your order is ready for pickup!",
-        'shipped': "🚚 Your order is out for delivery.",
+        'shipped': "🚚 Your order is out for delivery",
         'delivered': "✅ Your order has been delivered. Enjoy your meal!",
-        'cancelled': "❌ Your order was cancelled. Contact support for details."
+        'cancelled': "❌ Your order was cancelled. Contact support for details"
     }
 
     valid_statuses = ['Pending', 'Processing', 'Ready', 'Shipped', 'Delivered', 'Cancelled']
@@ -951,27 +1116,33 @@ def admin_update_order_status(order_id):
         flash('Order status updated successfully.', 'status_success')
 
         # Prepare notification message
-        # Normalize new_status to lowercase to match keys in status_messages
         status_key = new_status.lower()
         message = status_messages.get(status_key, f"Order #{order.id} status updated to {new_status}")
 
         # Add review request if status is delivered
         if status_key == 'delivered':
-            message += " Please provide us a review."
+            message += " Please rate your experience!"
 
-        # Emit notification to user
+        # Add notification to manager
+        notification = notification_manager.add_notification(
+            user_id=order.user_id,
+            message=message,
+            notification_type='order_update',
+            order_id=order.id
+        )
+
+        # Emit real-time notification
         try:
             user_room = f"user_{order.user_id}"
             notification_data = {
-                'order_id': order.id,
-                'status': new_status,
-                'message': message
+                'notification': notification,
+                'unread_count': notification_manager.get_unread_count(order.user_id)
             }
 
-            print(f"Emitting notification to room {user_room}: {notification_data}")
+            print(f"Emitting notification to room {user_room}: {notification['message']}")
 
             socketio.emit(
-                'order_status_update',
+                'new_notification',
                 notification_data,
                 room=user_room
             )
@@ -982,6 +1153,26 @@ def admin_update_order_status(order_id):
         flash('Invalid status selected.', 'status_danger')
 
     return redirect(url_for('admin_order_view', order_id=order.id))
+
+# Enhanced context processor for notification count
+@app.context_processor
+def inject_notification_data():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        
+        # Generate notifications if none exist
+        if not notification_manager.get_user_notifications(user_id):
+            notification_manager.generate_from_orders(user_id)
+        
+        unread_count = notification_manager.get_unread_count(user_id)
+        return dict(notification_count=unread_count)
+    
+    # Also inject new orders count for admin
+    new_orders_count = Order.query.filter_by(status='pending').count()
+    return dict(
+        notification_count=0,
+        new_orders_count=new_orders_count
+    )
 
 @app.route('/admin/orders/<int:order_id>/invoice')
 @login_required
@@ -1002,21 +1193,18 @@ def review_order(order_id):
     user_id = session.get('user_id')
     order = Order.query.filter_by(id=order_id, user_id=user_id).first_or_404()
     
-    # Get items that have been reviewed
     reviewed_items = db.session.query(Review.item_id).filter_by(
         order_id=order_id, 
         user_id=user_id
     ).all()
     reviewed_item_ids = [item.item_id for item in reviewed_items]
     
-    # Get user's reviews for this order
     user_reviews = Review.query.filter_by(
         order_id=order_id, 
         user_id=user_id
     ).all()
     reviews_by_item = {review.item_id: review for review in user_reviews}
     
-    # Get other users' reviews for items in this order
     other_reviews = {}
     for item in order.items:
         other_user_reviews = Review.query.filter(
@@ -1460,20 +1648,19 @@ def user_menu():
 def add_to_cart():
     user_id = session['user_id']
     item_id = request.form.get('item_id')
-    source = request.form.get('source')  # Get source page info
+    source = request.form.get('source')   
+     
     item = Item.query.get(item_id)
 
     if not item:
         flash('Invalid item.', 'cart_error')
-        return redirect(url_for(source))  # fallback redirect to source
+        return redirect(url_for(source)) 
 
     today = date.today()
 
-    # ✅ Delete all cart items older than today
     CartItem.query.filter(CartItem.user_id == user_id, CartItem.created_date != today).delete()
     db.session.commit()
 
-    # Check if item already in cart today
     cart_item = CartItem.query.filter_by(user_id=user_id, item_id=item.id, created_date=today).first()
 
     if cart_item:
@@ -1483,7 +1670,6 @@ def add_to_cart():
             user_id=user_id,
             item_id=item.id,
             quantity=1,
-            created_at=datetime.utcnow(),
             created_date=today
         )
         db.session.add(new_item)
@@ -1491,7 +1677,6 @@ def add_to_cart():
     db.session.commit()
     flash(f'Added "{item.name}" to cart', 'cart_success')
 
-    # ✅ Redirect back to the page where the request came from
     if source == 'dashboard':
         return redirect(url_for('dashboard'))
     return redirect(url_for('user_menu'))
@@ -1574,22 +1759,22 @@ def cart_recommendations():
         
         if user_item_matrix is None:
             # Fallback to popular items
-            recommendations = recommendation.get_fallback_recommendations_with_explanations(top_n=4)
+            recommendations = recommendation.get_fallback_recommendations(top_n=4)
         else:
             # Train KNN model
             model, k = recommendation.train_knn(user_item_matrix, n_neighbors=5)
             
             if model is None:
-                recommendations = recommendation.get_fallback_recommendations_with_explanations(top_n=4)
+                recommendations = recommendation.get_fallback_recommendations(top_n=4)
             else:
                 # Get collaborative filtering recommendations
-                recommendations = recommendation.recommend_items_for_user_with_explanations(
+                recommendations = recommendation.recommend_items_for_user(
                     user_id, user_item_matrix, model, n_neighbors=5, top_n=4
                 )
                 
                 # If no collaborative recommendations, use fallback
                 if not recommendations:
-                    recommendations = recommendation.get_fallback_recommendations_with_explanations(top_n=4)
+                    recommendations = recommendation.get_fallback_recommendations(top_n=4)
         
         # Filter out items already in cart
         cart_item_ids = {item.item_id for item in cart_items}
@@ -1810,7 +1995,6 @@ def checkout():
                                        total=total,
                                        has_errors=True)
 
-        # Process the order (works for all payment methods now)
         cart_dict = {
             item['id']: {
                 'id': item['id'],
@@ -1860,23 +2044,15 @@ def checkout():
 def process_order_with_payment(user, cart, form_data, total_amount):
     """Enhanced order processing with separate payment tracking"""
     try:
-        print(f"=== Processing Order with Payment ===")
-        print(f"User ID: {user.id}")
-        print(f"Payment Method: {form_data.get('payment')}")
-        print(f"Total Amount: {total_amount}")
-        
-        # Validate form data
         required_fields = ['name', 'contact', 'email', 'delivery', 'payment']
         for field in required_fields:
             if not form_data.get(field):
-                print(f"❌ Missing required field: {field}")
                 return False
         
         payment_method = form_data.get('payment')
         nepal_tz = timezone('Asia/Kathmandu')
         created_at = datetime.now(nepal_tz)
         
-        # Create order (without payment-specific fields)
         order_data = {
             'user_id': user.id,
             'name': form_data['name'],
@@ -1885,7 +2061,7 @@ def process_order_with_payment(user, cart, form_data, total_amount):
             'delivery': form_data['delivery'],
             'building': form_data.get('building', ''),
             'floor': form_data.get('floor', ''),
-            'payment': payment_method,  # Keep for backward compatibility
+            'payment': payment_method,  
             'total_amount': total_amount,
             'status': 'pending',
             'created_at': created_at
@@ -1894,9 +2070,7 @@ def process_order_with_payment(user, cart, form_data, total_amount):
         order = Order(**order_data)
         db.session.add(order)
         db.session.flush()
-        print(f"✅ Order created with ID: {order.id}")
 
-        # Only create payment record if NOT cash
         if payment_method.lower() != 'cash':
             payment_status = 'pending'
             payment_data = {
@@ -1907,13 +2081,12 @@ def process_order_with_payment(user, cart, form_data, total_amount):
                 'created_at': created_at
             }
             
-            # Add payment method specific data
             if payment_method == 'khalti':
                 khalti_token = form_data.get('khalti_token')
                 if khalti_token:
                     payment_data['khalti_token'] = khalti_token
-                    payment_data['payment_status'] = 'completed'  # Already verified
-                    payment_data['completed_at'] = created_at
+                    payment_data['payment_status'] = 'completed'  
+                   
                     payment_data['transaction_id'] = khalti_token
             
             elif payment_method == 'esewa':
@@ -1922,17 +2095,16 @@ def process_order_with_payment(user, cart, form_data, total_amount):
                     payment_data['transaction_id'] = esewa_code
                     payment_data['esewa_transaction_uuid'] = form_data.get('transaction_uuid', '')
                     payment_data['esewa_product_code'] = ESEWA_MERCHANT_CODE
-                    payment_data['payment_status'] = 'completed'  # Already verified
-                    payment_data['completed_at'] = created_at
+                    payment_data['payment_status'] = 'completed'  
+                    
             
             payment = Payment(**payment_data)
             db.session.add(payment)
             db.session.flush()
-            print(f"💰 Payment record created with ID: {payment.id}")
+            print(f" Payment record created with ID: {payment.id}")
         else:
-            print("💵 Cash payment — skipping Payment table entry")
+            print(" Cash payment skipping Payment table entry")
 
-        # Add order items and addons
         items_added = 0
         addons_added = 0
         
@@ -1950,10 +2122,8 @@ def process_order_with_payment(user, cart, form_data, total_amount):
             db.session.flush()
             items_added += 1
             
-            # Add selected addons for this order item
             if 'selected_addons' in item and item['selected_addons']:
                 for addon_data in item['selected_addons']:
-                    print(f"  Adding addon: {addon_data['name']} (+Rs. {addon_data['price']})")
                     
                     order_addon = OrderAddon(
                         order_item_id=order_item.id,
@@ -1978,8 +2148,6 @@ def process_order_with_payment(user, cart, form_data, total_amount):
         traceback.print_exc()
         return False
 
-
-# Enhanced Khalti verification
 def verify_khalti_payment(token, amount):
     """Verify Khalti payment with proper error handling"""
     try:
@@ -2000,16 +2168,12 @@ def verify_khalti_payment(token, amount):
             "Content-Type": "application/json"
         }
         
-        # Convert amount to paisa (multiply by 100)
         amount_paisa = int(float(amount) * 100)
         
         payload = {
             "token": token,
             "amount": amount_paisa
         }
-        
-        print(f"Verifying with Khalti API...")
-        print(f"Payload: {payload}")
         
         response = requests.post(
             "https://khalti.com/api/v2/payment/verify/",
@@ -2018,27 +2182,20 @@ def verify_khalti_payment(token, amount):
             timeout=30
         )
         
-        print(f"Khalti API Response Status: {response.status_code}")
-        print(f"Khalti API Response: {response.text}")
-        
         if response.status_code == 200:
             data = response.json()
             print(f"Parsed response: {data}")
             
-            # Verify amount matches
             returned_amount = data.get('amount', 0)
             if returned_amount == amount_paisa:
                 print("✅ Khalti payment verification successful")
                 return True
             else:
-                print(f"❌ Amount mismatch: expected {amount_paisa}, got {returned_amount}")
                 return False
         else:
-            print(f"❌ Khalti verification failed: {response.status_code} - {response.text}")
             return False
             
     except Exception as e:
-        print(f"❌ Khalti verification error: {e}")
         traceback.print_exc()
         return False
 
@@ -2082,7 +2239,7 @@ def khalti_verify():
                 success=True, 
                 message="Payment verified successfully",
                 verified_amount=amount,
-                token=token[:20] + "..."  # Partial token for logging
+                token=token[:20] + "..." 
             )
         else:
             print("❌ Khalti verification failed")
@@ -2096,20 +2253,15 @@ def khalti_verify():
 def generate_esewa_signature(message, secret_key):
     """Generate HMAC-SHA256 signature for eSewa"""
     try:
-        print(f"Generating signature for message: {message}")
-        
-        # Convert message to string if it's a dict
         if isinstance(message, dict):
             message = json.dumps(message, separators=(',', ':'), sort_keys=True)
         
-        # Generate HMAC-SHA256 signature
         signature = hmac.new(
             secret_key.encode('utf-8'),
             message.encode('utf-8'),
             hashlib.sha256
         ).digest()
         
-        # Base64 encode the signature
         signature_b64 = base64.b64encode(signature).decode('utf-8')
         print(f"Generated signature: {signature_b64[:20]}...")
         return signature_b64
@@ -2127,27 +2279,21 @@ def process_esewa_payment(user, cart_items, form_data, total_amount):
         print(f"Total Amount: {total_amount}")
         print(f"Cart Items Count: {len(cart_items)}")
         
-        # Validate inputs
         if not user:
-            print("ERROR: No user provided")
             flash('User session error. Please try again.', 'danger')
             return redirect(url_for('checkout'))
             
         if not cart_items:
-            print("ERROR: No cart items provided")
             flash('Cart is empty. Please add items first.', 'danger')
             return redirect(url_for('checkout'))
             
         if total_amount <= 0:
-            print("ERROR: Invalid total amount")
             flash('Invalid order amount. Please try again.', 'danger')
             return redirect(url_for('checkout'))
         
         # Generate unique transaction ID
         transaction_uuid = str(uuid.uuid4())
-        print(f"Generated transaction UUID: {transaction_uuid}")
         
-        # Store order data in session for later processing
         session_data = {
             'user_id': user.id,
             'cart_items': cart_items,
@@ -2160,8 +2306,7 @@ def process_esewa_payment(user, cart_items, form_data, total_amount):
         session['pending_esewa_order'] = session_data
         session.modified = True
         print("Stored order data in session")
-        
-        # Get base URL for callbacks
+
         base_url = request.url_root.rstrip('/')
         success_url = f"{base_url}/esewa/success"
         failure_url = f"{base_url}/esewa/failure"
@@ -2176,7 +2321,7 @@ def process_esewa_payment(user, cart_items, form_data, total_amount):
             "product_delivery_charge": "0",
             "product_service_charge": "0", 
             "product_code": ESEWA_MERCHANT_CODE,
-            "signature": "",  # Will be filled after signature generation
+            "signature": "",  
             "signed_field_names": "total_amount,transaction_uuid,product_code",
             "success_url": success_url,
             "tax_amount": "0",
@@ -2207,7 +2352,6 @@ def process_esewa_payment(user, cart_items, form_data, total_amount):
         print("Signature added to payment data")
         
         # Return form data for frontend submission
-        print("=== eSewa Payment Process Completed Successfully ===")
         return render_template('esewa_redirect.html', payment_data=payment_data)
         
     except Exception as e:
@@ -2227,7 +2371,6 @@ def esewa_success():
         
         if data_encoded:
             try:
-                # Base64 decode
                 data_json = base64.b64decode(data_encoded).decode('utf-8')
                 data = json.loads(data_json)
                 print(f"Decoded data: {data}")
@@ -2240,7 +2383,6 @@ def esewa_success():
                 flash('Invalid payment response from eSewa.', 'danger')
                 return redirect(url_for('checkout'))
         else:
-            # Get parameters from eSewa v2
             transaction_code = request.args.get('transaction_code')
             transaction_uuid = request.args.get('transaction_uuid') 
             total_amount = request.args.get('total_amount')
@@ -2250,7 +2392,6 @@ def esewa_success():
         print(f"Total Amount: {total_amount}")
         
         if not all([transaction_code, transaction_uuid, total_amount]):
-            print("ERROR: Missing required parameters from eSewa callback")
             missing = []
             if not transaction_code: missing.append('transaction_code')
             if not transaction_uuid: missing.append('transaction_uuid')
@@ -2258,16 +2399,12 @@ def esewa_success():
             print(f"Missing parameters: {missing}")
             flash('Invalid payment response from eSewa. Missing parameters.', 'danger')
             return redirect(url_for('checkout'))
-        
-        # Get pending order from session
         pending_order = session.get('pending_esewa_order')
         if not pending_order:
             print("ERROR: No pending eSewa order found in session")
             print(f"Session keys: {list(session.keys())}")
             flash('Order session expired. Please try again.', 'danger')
             return redirect(url_for('checkout'))
-            
-        print(f"Found pending order for UUID: {pending_order.get('transaction_uuid')}")
         
         if pending_order['transaction_uuid'] != transaction_uuid:
             print(f"ERROR: Transaction UUID mismatch")
@@ -2276,25 +2413,17 @@ def esewa_success():
             flash('Order session mismatch. Please try again.', 'danger')
             return redirect(url_for('checkout'))
         
-        # Verify amount matches
         expected_amount = pending_order['total_amount']
         received_amount = float(total_amount)
         if abs(expected_amount - received_amount) > 0.01:
-            print(f"ERROR: Amount mismatch")
-            print(f"Expected: {expected_amount}")
-            print(f"Received: {received_amount}")
             flash('Payment amount mismatch. Please contact support.', 'danger')
             return redirect(url_for('checkout'))
         
-        print("=== Starting Payment Verification ===")
         # Verify payment with eSewa v2
         if verify_esewa_v2_payment(transaction_code, transaction_uuid, total_amount):
-            print("✅ eSewa payment verification successful")
-            
             # Create the order
             user = User.query.get(pending_order['user_id'])
             if not user:
-                print(f"ERROR: User not found: {pending_order['user_id']}")
                 flash('User session error. Please try again.', 'danger')
                 return redirect(url_for('checkout'))
             
@@ -2310,18 +2439,13 @@ def esewa_success():
                 }
                 for item in pending_order['cart_items']
             }
-            
-            print(f"Cart dictionary created with {len(cart_dict)} items")
-            
-            # Add eSewa transaction code to form data
+        
+        
             form_data = pending_order['form_data'].copy()
             form_data['esewa_transaction_code'] = transaction_code
             
             print("=== Processing Order ===")
-            if process_order_with_payment(user, cart_dict, form_data, pending_order['total_amount']):
-                print("✅ Order processed successfully")
-                
-                # Clear cart and session
+            if process_order_with_payment(user, cart_dict, form_data, pending_order['total_amount']): 
                 try:
                     deleted_count = CartItem.query.filter_by(user_id=user.id).delete()
                     db.session.commit()
@@ -2340,15 +2464,12 @@ def esewa_success():
                     
                 except Exception as e:
                     print(f"ERROR: Failed to clear cart/session: {e}")
-                    # Order was created successfully, so still redirect to orders
                     flash('Order placed successfully! (Note: Cart cleanup had issues)', 'order_success')
                     return redirect(url_for('orders'))
             else:
-                print("❌ Order processing failed")
                 flash('Order processing failed after payment. Please contact support with transaction code: ' + transaction_code, 'danger')
                 return redirect(url_for('checkout'))
         else:
-            print("❌ eSewa payment verification failed")
             flash('Payment verification failed. Please try again.', 'danger')
             return redirect(url_for('checkout'))
             
@@ -2365,13 +2486,11 @@ def esewa_failure():
         print("=== eSewa Payment Failure Callback ===")
         print(f"Request args: {dict(request.args)}")
         
-        # Get failure reason if provided
         failure_reason = request.args.get('failure_reason', 'Unknown')
         print(f"Failure reason: {failure_reason}")
         
         flash(f'Payment was cancelled or failed: {failure_reason}. Please try again.', 'warning')
         
-        # Clean up session
         if 'pending_esewa_order' in session:
             del session['pending_esewa_order']
             session.modified = True
@@ -2394,11 +2513,9 @@ def verify_esewa_v2_payment(transaction_code, transaction_uuid, total_amount):
         print(f"Total Amount: {total_amount}")
         print(f"Merchant Code: {ESEWA_MERCHANT_CODE}")
         
-        # For test environment with EPAYTEST, do basic validation
         if ESEWA_MERCHANT_CODE == "EPAYTEST":
             print("🧪 TEST MODE: Performing basic validation")
             
-            # Check if all required parameters are present and valid
             if not transaction_code or not transaction_uuid or not total_amount:
                 print("❌ Missing required parameters")
                 return False
@@ -2409,8 +2526,7 @@ def verify_esewa_v2_payment(transaction_code, transaction_uuid, total_amount):
                     print(f"❌ Invalid amount: {amount_float}")
                     return False
                     
-                # Check UUID format
-                uuid.UUID(transaction_uuid)  # This will raise ValueError if invalid
+                uuid.UUID(transaction_uuid)  
                 
                 print("✅ Basic validation passed - accepting payment in test mode")
                 return True
@@ -2418,9 +2534,6 @@ def verify_esewa_v2_payment(transaction_code, transaction_uuid, total_amount):
             except (ValueError, TypeError) as e:
                 print(f"❌ Validation failed: {e}")
                 return False
-        
-        # Production verification (when using real merchant code)
-        print("🔍 PRODUCTION MODE: Performing API verification")
         
         verification_data = {
             "product_code": ESEWA_MERCHANT_CODE,
@@ -2430,7 +2543,6 @@ def verify_esewa_v2_payment(transaction_code, transaction_uuid, total_amount):
         
         print(f"Verification data: {verification_data}")
         
-        # Generate signature for verification
         message = f"transaction_uuid={transaction_uuid},product_code={ESEWA_MERCHANT_CODE}"
         signature = generate_esewa_signature(message, ESEWA_SECRET_KEY)
         
@@ -2438,7 +2550,6 @@ def verify_esewa_v2_payment(transaction_code, transaction_uuid, total_amount):
             print("❌ Failed to generate verification signature")
             return False
         
-        # Make verification request
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {signature}'
@@ -2455,16 +2566,11 @@ def verify_esewa_v2_payment(transaction_code, transaction_uuid, total_amount):
             timeout=30
         )
         
-        print(f"Verification response status: {response.status_code}")
-        print(f"Verification response headers: {dict(response.headers)}")
-        print(f"Verification response body: {response.text}")
-        
         if response.status_code == 200:
             try:
                 result = response.json()
                 print(f"Parsed response: {result}")
                 
-                # Check if transaction is successful
                 is_verified = (
                     result.get('status') == 'COMPLETE' and
                     result.get('transaction_uuid') == transaction_uuid and
@@ -2478,120 +2584,20 @@ def verify_esewa_v2_payment(transaction_code, transaction_uuid, total_amount):
                 return is_verified
                 
             except json.JSONDecodeError as e:
-                print(f"❌ Failed to parse JSON response: {e}")
                 return False
         else:
-            print(f"❌ eSewa verification failed: {response.status_code} - {response.text}")
             return False
             
     except Exception as e:
-        print(f"❌ eSewa verification error: {e}")
         traceback.print_exc()
         return False
 
-# def process_order(user, cart, form, calculated_total):
-#     """Process order with enhanced debugging"""
-#     try:
-#         print(f"=== Processing Order ===")
-#         print(f"User ID: {user.id}")
-#         print(f"Payment Method: {form.get('payment')}")
-#         print(f"Calculated Total: {calculated_total}")
-#         print(f"Cart Items: {len(cart)}")
-        
-#         khalti_token = form.get('khalti_token') if form.get('payment') == 'khalti' else None
-#         esewa_transaction_code = form.get('esewa_transaction_code') if form.get('payment') == 'esewa' else None
-        
-#         print(f"Khalti Token: {'Present' if khalti_token else 'None'}")
-#         print(f"eSewa Transaction Code: {esewa_transaction_code}")
-        
-#         # Validate form data
-#         required_fields = ['name', 'contact', 'email', 'delivery', 'payment']
-#         for field in required_fields:
-#             if not form.get(field):
-#                 print(f"❌ Missing required field: {field}")
-#                 return False
-        
-#         print("✅ Form validation passed")
-#         nepal_tz = timezone('Asia/Kathmandu')
-#         created_at = datetime.now(nepal_tz)
-#         # Create order
-#         order_data = {
-#             'user_id': user.id,
-#             'name': form['name'],
-#             'contact': form['contact'],
-#             'email': form['email'],
-#             'delivery': form['delivery'],
-#             'building': form.get('building', ''),
-#             'floor': form.get('floor', ''),
-#             'payment': form['payment'],
-#             'total_amount': calculated_total,
-#             'khalti_token': khalti_token,
-#             'esewa_transaction_code': esewa_transaction_code,
-#             'status': 'pending',
-#             'created_at': created_at
-#         }
-        
-#         print(f"Creating order with data: {order_data}")
-        
-#         order = Order(**order_data)
-#         db.session.add(order)
-#         db.session.flush()
-        
-#         print(f"✅ Order created with ID: {order.id}")
 
-#         # Add order items with their addons
-#         items_added = 0
-#         addons_added = 0
-        
-#         for item in cart.values():
-#             print(f"Adding item: {item['name']} (ID: {item['id']}) x {item['quantity']}")
-            
-#             order_item = OrderItem(
-#                 order_id=order.id,
-#                 item_id=item['id'],
-#                 name=item['name'],
-#                 quantity=item['quantity'],
-#                 price=item['price']
-#             )
-#             db.session.add(order_item)
-#             db.session.flush()
-#             items_added += 1
-            
-#             # Add selected addons for this order item
-#             if 'selected_addons' in item and item['selected_addons']:
-#                 for addon_data in item['selected_addons']:
-#                     print(f"  Adding addon: {addon_data['name']} (+Rs. {addon_data['price']})")
-                    
-#                     order_addon = OrderAddon(
-#                         order_item_id=order_item.id,
-#                         addon_id=addon_data['id'],
-#                         name=addon_data['name'],
-#                         price=addon_data['price'],
-#                         category=addon_data.get('category', ''),
-#                         description=addon_data.get('description', '')
-#                     )
-#                     db.session.add(order_addon)
-#                     addons_added += 1
-
-#         print(f"✅ Added {items_added} items and {addons_added} addons")
-        
-#         db.session.commit()
-#         print("✅ Order committed successfully to database")
-#         return True
-        
-#     except Exception as e:
-#         db.session.rollback()
-#         print(f"❌ Order processing failed: {e}")
-#         traceback.print_exc()
-#         return False
-
-# -------------------- UPDATED FORM VALIDATION --------------------
 
 def validate_checkout_form(form):
     print("Cart contents:", session.get('cart'))
     errors = []
     
-    # Get and validate form fields
     name = form.get('name', '').strip()
     contact = form.get('contact', '').strip()
     email = form.get('email', '').strip()
@@ -2600,7 +2606,6 @@ def validate_checkout_form(form):
     floor = form.get('floor', '').strip()
     payment = form.get('payment', '').strip()
 
-    # Validate required fields
     if not name:
         errors.append("Full Name is required.")
     
@@ -2614,277 +2619,21 @@ def validate_checkout_form(form):
     elif not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
         errors.append("Valid Email address is required.")
     
-    # Validate delivery method
     if delivery not in ['pickup', 'home']:
         errors.append("Please select a valid delivery method.")
     
-    # Validate delivery address if home delivery
     if delivery == 'home':
         if not building:
             errors.append("Building/Block is required for home delivery.")
         if not floor:
             errors.append("Floor/Room No. is required for home delivery.")
     
-    # Validate payment method (now includes esewa)
     if not payment:
         errors.append("Please select a payment method.")
     elif payment not in ['cash', 'card', 'khalti', 'esewa']:
         errors.append("Please select a valid payment method.")
     
     return errors
-
-# -------------------- UPDATED PROCESS ORDER --------------------
-# def process_order(user, cart, form, calculated_total):
-#     try:
-#         khalti_token = form.get('khalti_token') if form.get('payment') == 'khalti' else None
-#         esewa_ref_id = form.get('esewa_ref_id') if form.get('payment') == 'esewa' else None
-        
-#         # For testing: Skip Khalti verification if no secret key
-#         if form.get('payment') == 'khalti':
-#             if not khalti_token:
-#                 print("Khalti payment selected but no token provided")
-#                 return False
-            
-#             # Only verify if we have a secret key
-#             if KHALTI_SECRET_KEY:
-#                 if not verify_khalti_payment(khalti_token, calculated_total):
-#                     print("Khalti payment verification failed")
-#                     return False
-#             else:
-#                 print("TESTING MODE: Skipping Khalti verification (no secret key)")
-
-#         order = Order(
-#             user_id=user.id,
-#             name=form['name'],
-#             contact=form['contact'],
-#             email=form['email'],
-#             delivery=form['delivery'],
-#             building=form.get('building', ''),
-#             floor=form.get('floor', ''),
-#             payment=form['payment'],
-#             total_amount=calculated_total,
-#             khalti_token=khalti_token,
-#             esewa_ref_id=esewa_ref_id,  # Add eSewa reference ID
-#             status='pending'
-#         )
-#         db.session.add(order)
-#         db.session.flush()
-
-#         # Add order items with their addons
-#         for item in cart.values():
-#             order_item = OrderItem(
-#                 order_id=order.id,
-#                 item_id=item['id'],
-#                 name=item['name'],
-#                 quantity=item['quantity'],
-#                 price=item['price']
-#             )
-#             db.session.add(order_item)
-#             db.session.flush()
-            
-#             # Add selected addons for this order item
-#             if 'selected_addons' in item and item['selected_addons']:
-#                 for addon_data in item['selected_addons']:
-#                     order_addon = OrderAddon(
-#                         order_item_id=order_item.id,
-#                         addon_id=addon_data['id'],
-#                         name=addon_data['name'],
-#                         price=addon_data['price'],
-#                         category=addon_data.get('category', ''),
-#                         description=addon_data.get('description', '')
-#                     )
-#                     db.session.add(order_addon)
-
-#         db.session.commit()
-#         return True
-        
-#     except Exception as e:
-#         db.session.rollback()
-#         print(f"Order processing failed: {e}")
-#         return False``
-
-# Keep existing Khalti verification functions unchanged
-
-
-
-
-# -------------------- FORM VALIDATION --------------------
-
-# def validate_checkout_form(form):
-#     print("Cart contents:", session.get('cart'))
-#     errors = []
-    
-#     # Get and validate form fields
-#     name = form.get('name', '').strip()
-#     contact = form.get('contact', '').strip()
-#     email = form.get('email', '').strip()
-#     delivery = form.get('delivery', 'pickup').strip()
-#     building = form.get('building', '').strip()
-#     floor = form.get('floor', '').strip()
-#     payment = form.get('payment', '').strip().lower()
-
-#     # Validate required fields
-#     if not name:
-#         errors.append("Full Name is required.")
-    
-#     if not contact:
-#         errors.append("Contact Number is required.")
-#     elif not re.match(r'^\+?\d{7,15}$', contact):
-#         errors.append("Valid Contact Number required (7-15 digits).")
-    
-#     if not email:
-#         errors.append("Email is required.")
-#     elif not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
-#         errors.append("Valid Email address is required.")
-    
-#     # Validate delivery method
-#     if delivery not in ['pickup', 'home']:
-#         errors.append("Please select a valid delivery method.")
-    
-#     # Validate delivery address if home delivery
-#     if delivery == 'home':
-#         if not building:
-#             errors.append("Building/Block is required for home delivery.")
-#         if not floor:
-#             errors.append("Floor/Room No. is required for home delivery.")
-    
-#     # Validate payment method
-#     if not payment:
-#         errors.append("Please select a payment method.")
-#     elif payment not in ['cash', 'card', 'khalti']:
-#         errors.append("Please select a valid payment method.")
-    
-#     return errors
-
-# -------------------- PROCESS ORDER --------------------
-# def process_order(user, cart, form, calculated_total):
-#     try:
-#         khalti_token = form.get('khalti_token') if form.get('payment') == 'khalti' else None
-        
-#         # For testing: Skip Khalti verification if no secret key
-#         if form.get('payment') == 'khalti':
-#             if not khalti_token:
-#                 print("Khalti payment selected but no token provided")
-#                 return False
-            
-#             # Only verify if we have a secret key
-#             if KHALTI_SECRET_KEY:
-#                 if not verify_khalti_payment(khalti_token, calculated_total):
-#                     print("Khalti payment verification failed")
-#                     return False
-#             else:
-#                 print("TESTING MODE: Skipping Khalti verification (no secret key)")
-
-#         order = Order(
-#             user_id=user.id,
-#             name=form['name'],
-#             contact=form['contact'],
-#             email=form['email'],
-#             delivery=form['delivery'],
-#             building=form.get('building', ''),
-#             floor=form.get('floor', ''),
-#             payment=form['payment'],
-#             total_amount=calculated_total,
-#             khalti_token=khalti_token,
-#             status='pending'   # Different status for testing
-#         )
-#         db.session.add(order)
-#         db.session.flush()
-
-#         # Add order items with their addons
-#         for item in cart.values():
-#             order_item = OrderItem(
-#                 order_id=order.id,
-#                 item_id=item['id'],
-#                 name=item['name'],
-#                 quantity=item['quantity'],
-#                 price=item['price']
-#             )
-#             db.session.add(order_item)
-#             db.session.flush()  # Flush to get the order_item.id
-            
-#             # Add selected addons for this order item
-#             if 'selected_addons' in item and item['selected_addons']:
-#                 for addon_data in item['selected_addons']:
-#                     order_addon = OrderAddon(
-#                         order_item_id=order_item.id,
-#                         addon_id=addon_data['id'],
-#                         name=addon_data['name'],
-#                         price=addon_data['price'],
-#                         category=addon_data.get('category', ''),
-#                         description=addon_data.get('description', '')
-#                     )
-#                     db.session.add(order_addon)
-
-#         db.session.commit()
-#         return True
-        
-#     except Exception as e:
-#         db.session.rollback()
-#         print(f"Order processing failed: {e}")
-#         return False
-# # -------------------- KHALTI VERIFICATION (TEST MODE) --------------------
-
-# def verify_khalti_payment(token, amount):
-#     if not KHALTI_SECRET_KEY:
-#         print("TEST MODE: Verification skipped")
-#         return True
-
-#     try:
-#         headers = {
-#             "Authorization": f"Key {KHALTI_SECRET_KEY}",
-#             "Content-Type": "application/json"
-#         }
-#         payload = {
-#             "token": token,
-#             "amount": int(amount * 100)
-#         }
-#         response = requests.post(
-#             "https://khalti.com/api/v2/payment/verify/",
-#             headers=headers,
-#             json=payload,
-#             timeout=10
-#         )
-
-#         if response.status_code == 200:
-#             data = response.json()
-#             return data.get('amount') == int(amount * 100)
-#         else:
-#             print(f"Khalti response error: {response.text}")
-#             return False
-
-#     except Exception as e:
-#         print(f"Khalti API error: {e}")
-#         return False
-
-
-# @app.route('/khalti-verify', methods=['POST'])
-# def khalti_verify():
-#     try:
-#         data = request.get_json()
-#         print("Received for Khalti verification:", data)  # DEBUG LOG
-
-#         token = data.get('token')
-#         amount = data.get('amount')
-
-#         if not token or not amount:
-#             return jsonify(success=False, message="Token and amount required"), 400
-
-#         if not KHALTI_SECRET_KEY:
-#             print("TEST MODE: Simulating verification")
-#             return jsonify(success=True, message="Test verification success")
-
-#         # Make sure amount is float
-#         success = verify_khalti_payment(token, float(amount))
-#         if success:
-#             return jsonify(success=True, message="Payment verified")
-#         else:
-#             return jsonify(success=False, message="Verification failed"), 400
-
-#     except Exception as e:
-#         print(f"/khalti-verify error: {e}")
-#         return jsonify(success=False, message="Server error"), 500
-
     
 @app.route('/orders')
 @login_required
@@ -2933,20 +2682,17 @@ def profile():
         email = request.form.get('email')
         phone = request.form.get('phone')
 
-        # Validate email uniqueness
         email_exists = User.query.filter(and_(User.email == email, User.id != user.id)).first()
         if email_exists:
             flash('Email is already used by another user.', 'profile_danger')
             return redirect(url_for('profile'))
 
-        # Validate phone uniqueness (if phone provided)
         if phone:
             phone_exists = User.query.filter(and_(User.phone == phone, User.id != user.id)).first()
             if phone_exists:
                 flash('Phone number is already used by another user.', 'profile_danger')
                 return redirect(url_for('profile'))
 
-        # Update user info
         user.fullname = fullname
         user.email = email
         user.phone = phone
@@ -2960,7 +2706,6 @@ def profile():
 
         return redirect(url_for('profile'))
 
-    # Calculate total orders count
     total_orders = Order.query.filter_by(user_id=user.id).count()
 
    
@@ -2969,8 +2714,6 @@ def profile():
     ).filter(Order.user_id == user.id).scalar()
     points = int(total_points // 100)
 
-
-    # Calculate months since user joined
     months_since_joined = (datetime.utcnow().year - user.created_at.year) * 12 + (datetime.utcnow().month - user.created_at.month)
     if months_since_joined < 0:
         months_since_joined = 0
@@ -2991,7 +2734,6 @@ def forgot_password():
         email = request.form.get('email')
         user = User.query.filter_by(email=email).first()
         if user:
-            # ✅ Block admins here
             if user.role == 'admin':
                 flash("Email not found", "danger")
             else:

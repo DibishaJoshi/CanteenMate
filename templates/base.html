@@ -33,7 +33,7 @@
     cursor: pointer;
     padding: 10px;
     border-radius: 50%;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s ease;
 }
 
 .notifications:hover {
@@ -56,25 +56,175 @@
     justify-content: center;
     font-weight: bold;
     z-index: 10;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translate(50%, -50%) scale(1); }
+    50% { transform: translate(50%, -50%) scale(1.1); }
+    100% { transform: translate(50%, -50%) scale(1); }
 }
 
 .notification-dropdown {
     position: absolute;
     top: 110%;
     right: 0;
-    width: 300px;
+    width: 350px;
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     z-index: 1000;
-    max-height: 400px;
-    overflow-y: auto;
+    max-height: 450px;
+    overflow: hidden;
     display: none;
 }
 
 .notification-dropdown.show {
     display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notif-header {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    font-weight: bold;
+    color: #333;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#notif-status {
+    font-weight: normal;
+    font-size: 11px;
+    color: #666;
+}
+
+#notificationList {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.notif-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.notif-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(2px);
+}
+
+.notif-item:last-child {
+    border-bottom: none;
+}
+
+.notif-item.unread {
+    background-color: #f0f7ff;
+    border-left: 3px solid #007bff;
+}
+
+.notif-item.new-notification {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notif-message {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.notif-time {
+    font-size: 12px;
+    color: #666;
+}
+
+.no-notifications, .loading-notifications {
+    padding: 25px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+.notif-footer {
+    padding: 10px;
+    text-align: center;
+    border-top: 1px solid #eee;
+    font-size: 12px;
+    color: #666;
+    background-color: #f8f9fa;
+}
+
+.notif-footer a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.notif-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 576px) {
+    .notification-dropdown {
+        width: 90vw;
+        left: 50%;
+        transform: translateX(-50%);
+        right: auto;
+    }
+    
+    .notif-message {
+        font-size: 13px;
+    }
+    
+    .notif-time {
+        font-size: 11px;
+    }
+}
+
+/* Scrollbar styling */
+#notificationList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#notificationList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#notificationList::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#notificationList::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
 }
 
 .notif-header {
@@ -265,20 +415,25 @@
                 
                 <div class="user-menu">
                     <div class="notifications" id="notificationBtn">
-                        <i class="fas fa-bell"></i>
-                        <span class="notif-badge" id="notif-badge" style="display: none;">0</span>
+        <i class="fas fa-bell"></i>
+        <span class="notif-badge" id="notif-badge" style="display: none;">{{ notification_count or 0 }}</span>
 
-                        <div class="notification-dropdown" id="notificationDropdown">
-                            <div class="notif-header">
-                                Notifications
-                            </div>
-                            <div id="notificationList">
-                                <div class="no-notifications">
-                                    No new notifications
-                                </div>
-                            </div>
-                        </div>
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notif-header">
+                <span>Notifications</span>
+            </div>
+            <div id="notificationList">
+                <div class="loading-notifications">
+                    <div style="text-align: center; padding: 20px; color: #666;">
+                        <i class="fas fa-spinner fa-spin"></i> Loading notifications...
                     </div>
+                </div>
+            </div>
+            <div class="notif-footer" style="padding: 10px; text-align: center; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+                <a href="{{ url_for('orders') }}" style="color: #007bff; text-decoration: none;">View All Orders</a>
+            </div>
+        </div>
+    </div>
                     
                     <div class="user-profile">
                         <div class="user-info">
@@ -318,138 +473,7 @@
         });
     }, 3000);
     </script>
-    <script>
-        // Initialize Socket.IO
-        const socket = io();
-        
-        // Join personal room for this user
-        socket.emit("join", { room: "user_{{ user.id }}" });
-        
-        // Notification management
-        let notifCount = 0;
-        const notificationBtn = document.getElementById('notificationBtn');
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        const notifBadge = document.getElementById('notif-badge');
-        const notificationList = document.getElementById('notificationList');
-        
-        // Toggle notification dropdown
-        function toggleDropdown(event) {
-            event.stopPropagation();
-            notificationDropdown.classList.toggle('show');
-            
-            // If opening dropdown, mark notifications as read
-            if (notificationDropdown.classList.contains('show')) {
-                setTimeout(() => {
-                    notifCount = 0;
-                    updateNotificationBadge();
-                }, 1000);
-            }
-        }
-        
-        // Update notification badge
-        function updateNotificationBadge() {
-            if (notifCount > 0) {
-                notifBadge.textContent = notifCount > 99 ? '99+' : notifCount;
-                notifBadge.style.display = 'flex';
-            } else {
-                notifBadge.style.display = 'none';
-            }
-        }
-        
-        // Add new notification to the list
-        function addNotification(message, time = null) {
-            if (!time) {
-                time = new Date().toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-            }
-            
-            // Remove "no notifications" message if it exists
-            const noNotif = notificationList.querySelector('.no-notifications');
-            if (noNotif) {
-                noNotif.remove();
-            }
-            
-            // Create notification element
-            const notifElement = document.createElement('div');
-            notifElement.className = 'notif-item';
-            notifElement.innerHTML = `
-                <div class="notif-message">${message}</div>
-                <div class="notif-time">${time}</div>
-            `;
-            
-            // Insert at the beginning of the list
-            notificationList.insertBefore(notifElement, notificationList.firstChild);
-            
-            // Limit to 20 notifications
-            const notifications = notificationList.querySelectorAll('.notif-item');
-            if (notifications.length > 20) {
-                notifications[notifications.length - 1].remove();
-            }
-            
-            // Update badge count
-            notifCount++;
-            updateNotificationBadge();
-            
-            // Show a brief highlight animation
-            notifElement.style.backgroundColor = '#e3f2fd';
-            setTimeout(() => {
-                notifElement.style.backgroundColor = '';
-            }, 2000);
-        }
-        
-        // Handle order status updates from server
-        socket.on("order_status_update", function(data) {
-            console.log("Received notification:", data);
-            
-            const message = data.message || `Order #${data.order_id} status: ${data.status}`;
-            addNotification(message);
-            
-            // Optional: Show browser notification if permission granted
-            if (Notification.permission === 'granted') {
-                new Notification('Order Update', {
-                    body: message,
-                    icon: '{{ url_for("static", filename="img/favicon.png") }}'
-                });
-            }
-        });
-        
-        // Event listeners
-        notificationBtn.addEventListener('click', toggleDropdown);
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            if (!notificationBtn.contains(event.target)) {
-                notificationDropdown.classList.remove('show');
-            }
-        });
-        
-        // Request notification permission on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
-            }
-            
-            // Test notification (remove in production)
-            setTimeout(() => {
-                addNotification("🎉 Welcome to the Canteen Management System!");
-            }, 2000);
-        });
-        
-        // Socket connection status
-        socket.on('connect', function() {
-            console.log('Connected to server');
-        });
-        
-        socket.on('disconnect', function() {
-            console.log('Disconnected from server');
-        });
-        
-        socket.on('connect_error', function(error) {
-            console.error('Connection error:', error);
-        });
-    </script>
+    
      <script>
     const sidebar = document.querySelector('.sidebar');
     const toggleBtn = document.querySelector('.nav-toggle');
@@ -463,7 +487,219 @@
         }
     });
 </script>
-    
-    {% block extra_js %}{% endblock %}
+<script>
+  // =========================
+  // Notification System - Fixed
+  // =========================
+
+  const socket = io();
+
+  // Join user-specific room
+  socket.emit("join", { room: "user_{{ user.id }}" });
+
+  // DOM elements
+  const notificationBtn = document.getElementById('notificationBtn');
+  const notificationDropdown = document.getElementById('notificationDropdown');
+  const notifBadge = document.getElementById('notif-badge');
+  const notificationList = document.getElementById('notificationList');
+
+  // Unread count
+  let unreadCount = {{ notification_count or 0 }};
+
+  // Update badge
+  function updateNotificationBadge() {
+    if (unreadCount > 0) {
+      notifBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+      notifBadge.style.display = 'flex';
+    } else {
+      notifBadge.style.display = 'none';
+    }
+  }
+
+  // Load notifications from server
+  async function loadNotifications() {
+    try {
+      const response = await fetch('/api/notifications');
+      const data = await response.json();
+      if (data.success) {
+        displayNotifications(data.notifications);
+        unreadCount = data.unread_count;
+        updateNotificationBadge();
+      }
+    } catch (err) {
+      console.error('Error loading notifications:', err);
+      socket.emit('request_notifications');
+    }
+  }
+
+  // Display notifications
+  function displayNotifications(notifications) {
+    notificationList.innerHTML = '';
+
+    if (!notifications || notifications.length === 0) {
+      notificationList.innerHTML = '<div class="no-notifications">No notifications yet</div>';
+      return;
+    }
+
+    notifications.forEach(notification => {
+      const notifElement = document.createElement('div');
+      notifElement.className = `notif-item ${notification.read ? '' : 'unread'}`;
+      notifElement.dataset.id = notification.id;
+      notifElement.innerHTML = `
+        <div class="notif-message">${notification.message}</div>
+        <div class="notif-time">${notification.time} - ${notification.date}</div>
+      `;
+
+      if (notification.order_id) {
+        notifElement.style.cursor = 'pointer';
+        notifElement.addEventListener('click', () => window.location.href = `/orders`);
+      }
+
+      notificationList.appendChild(notifElement);
+    });
+  }
+
+  // Add a new notification (real-time)
+  async function addNewNotification(notification) {
+    const noNotif = notificationList.querySelector('.no-notifications');
+    if (noNotif) noNotif.remove();
+
+    const notifElement = document.createElement('div');
+    notifElement.className = 'notif-item unread new-notification';
+    notifElement.dataset.id = notification.id;
+    notifElement.innerHTML = `
+      <div class="notif-message">${notification.message}</div>
+      <div class="notif-time">${notification.time}</div>
+    `;
+
+    if (notification.order_id) {
+      notifElement.style.cursor = 'pointer';
+      notifElement.addEventListener('click', () => window.location.href = `/orders`);
+    }
+
+    notificationList.insertBefore(notifElement, notificationList.firstChild);
+
+    const notificationsInList = notificationList.querySelectorAll('.notif-item');
+    if (notificationsInList.length > 20) notificationsInList[notificationsInList.length - 1].remove();
+
+    notifElement.style.backgroundColor = '#e3f2fd';
+    setTimeout(() => {
+      notifElement.style.backgroundColor = '';
+      notifElement.classList.remove('new-notification');
+    }, 3000);
+
+    // If dropdown is open, mark immediately as read
+    if (notificationDropdown.classList.contains('show')) {
+      await markNotificationsRead([notification.id]);
+    } else {
+      unreadCount++;
+      updateNotificationBadge();
+    }
+  }
+
+  // Mark notifications as read by IDs
+  async function markNotificationsRead(ids = null) {
+    const unreadItems = notificationList.querySelectorAll('.notif-item.unread');
+
+    const targetIds = ids || Array.from(unreadItems).map(item => item.dataset.id);
+    if (targetIds.length === 0) return;
+
+    unreadItems.forEach(item => {
+      if (!ids || targetIds.includes(item.dataset.id)) {
+        item.classList.remove('unread');
+      }
+    });
+
+    unreadCount = 0;
+    updateNotificationBadge();
+
+    try {
+      await fetch('/api/notifications/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ ids: targetIds })
+      });
+    } catch (err) {
+      console.error('Error marking notifications as read:', err);
+    }
+  }
+
+  // Toggle dropdown
+  async function toggleDropdown(event) {
+    event.stopPropagation();
+    const isOpening = !notificationDropdown.classList.contains('show');
+
+    if (isOpening) {
+      notificationDropdown.classList.add('show');
+      await markNotificationsRead();
+    } else {
+      notificationDropdown.classList.remove('show');
+    }
+  }
+
+  // Socket event handlers
+  socket.on('notification_history', data => {
+    displayNotifications(data.notifications);
+    unreadCount = data.unread_count || 0;
+    updateNotificationBadge();
+  });
+
+  socket.on('new_notification', data => addNewNotification(data.notification));
+
+  // Event listeners
+  notificationBtn.addEventListener('click', toggleDropdown);
+  document.addEventListener('click', e => {
+    if (!notificationBtn.contains(e.target) && !notificationDropdown.contains(e.target)) {
+      notificationDropdown.classList.remove('show');
+    }
+  });
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(p => console.log('Notification permission:', p));
+    }
+    updateNotificationBadge();
+    setTimeout(() => loadNotifications(), 100);
+  });
+
+  // Reconnect & refresh
+  socket.on('connect', () => {
+    console.log('Connected to notification server');
+    socket.emit("join", { room: "user_{{ user.id }}" });
+    setTimeout(() => socket.emit('request_notifications'), 100);
+  });
+
+  socket.on('disconnect', () => console.log('Disconnected from notification server'));
+  socket.on('connect_error', err => console.error('Notification connection error:', err));
+
+  // Periodic refresh every 5 minutes (if dropdown closed)
+  setInterval(() => {
+    if (!notificationDropdown.classList.contains('show')) loadNotifications();
+  }, 5 * 60 * 1000);
+
+  // Additional CSS
+  const additionalStyles = `
+    .notif-item.unread { background-color: #f0f7ff; border-left: 3px solid #007bff; font-weight: 600; }
+    .notif-item.new-notification { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .notif-item:hover { background-color: #f8f9fa; transform: translateX(2px); transition: all 0.2s ease; }
+    .notif-badge { animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    .notif-dropdown.show { display: block !important; }
+  `;
+
+  if (!document.getElementById('notification-styles')) {
+    const styleElement = document.createElement('style');
+    styleElement.id = 'notification-styles';
+    styleElement.textContent = additionalStyles;
+    document.head.appendChild(styleElement);
+  }
+
+</script>
+
+{% block extra_js %}
+{% endblock %}
 </body>
 </html>

@@ -1,0 +1,45 @@
+{% extends "admin/admin_base.html" %}
+{% block content %}
+<div class="category-section">
+    <div class="section-header">
+        <h1 class="page-title">Users</h1>
+        
+    </div>
+    
+    <div class="section-filters">
+        <div class="search-box">
+            <input type="text" placeholder="Search users">
+            <button style="background-color:#b4623c;"><i class="fas fa-search"></i></button>
+        </div>
+    </div>
+    
+    <div class="data-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>email</th>
+                    <th>Created at</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr data-id="{{ user.id }}" data-name="{{ user.fullname }}" data-email="{{ user.email }}" data-contact="{{ user.phone }} " data-created="{{ user.created_at }}">
+                    <td>{{ loop.index }}</td>
+                    <td>{{ user.fullname }}</td>
+                    <td>{{ user.phone if user.phone else 'N/A'}}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.created_at }}</td>
+                    
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+{% endblock %}
+
